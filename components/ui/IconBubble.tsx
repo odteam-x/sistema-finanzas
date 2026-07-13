@@ -4,9 +4,11 @@ import { Icon, type IconName } from "./Icon";
 interface IconBubbleProps {
   icon: IconName;
   size?: "sm" | "md" | "lg";
-  /** brand: degradado de marca (para elementos protagonistas: cuentas, accesos rápidos).
-   *  neutral/danger: fondo plano (para listas largas — evita que compitan con las cifras). */
-  tone?: "brand" | "danger" | "neutral";
+  /** brand: degradado de marca (elementos protagonistas: cuentas, accesos rápidos).
+   *  warning/info: degradado ámbar/azul grisáceo (para distinguir tipos de widget:
+   *  deuda pendiente, próximo pago, etc.). neutral/danger: fondo plano (listas
+   *  largas — evita que compitan visualmente con las cifras). */
+  tone?: "brand" | "danger" | "warning" | "info" | "neutral";
   className?: string;
 }
 
@@ -18,6 +20,8 @@ const sizes = {
 
 const tones = {
   brand: "icon-badge bg-gradient-brand",
+  warning: "icon-badge bg-gradient-warning",
+  info: "icon-badge bg-gradient-info",
   danger: "bg-danger-soft text-danger",
   neutral: "bg-primary-soft text-primary",
 };

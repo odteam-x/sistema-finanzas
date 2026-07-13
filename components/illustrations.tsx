@@ -15,7 +15,8 @@ function useMounted() {
   return mounted;
 }
 
-/** Alcancía con una moneda que cae (animación suave, idle). */
+/** Alcancía con una moneda que cae (animación suave, idle). Colores de
+ *  marca vía variables de tema, para que cambien con "Personalizar". */
 export function PiggyBank({ size = 120, className }: IllProps) {
   const rm = useReducedMotion();
   const mounted = useMounted();
@@ -57,22 +58,29 @@ export function PiggyBank({ size = 120, className }: IllProps) {
         animate={animate ? { y: [0, -2.5, 0] } : undefined}
         transition={animate ? { duration: 3.2, repeat: Infinity, ease: "easeInOut" } : undefined}
       >
-        <ellipse cx="60" cy="72" rx="41" ry="31" fill="#3FA576" />
-        <ellipse cx="60" cy="72" rx="41" ry="31" fill="#2E7D5B" opacity="0.15" />
-        <rect x="38" y="97" width="9" height="13" rx="3.5" fill="#256B4C" />
-        <rect x="73" y="97" width="9" height="13" rx="3.5" fill="#256B4C" />
-        <path d="M40 47 l9 -13 l6 17 z" fill="#256B4C" />
-        <ellipse cx="94" cy="75" rx="12" ry="10" fill="#7BC4A0" />
-        <circle cx="90.5" cy="75" r="2" fill="#1F5540" />
-        <circle cx="97" cy="75" r="2" fill="#1F5540" />
-        <circle cx="73" cy="63" r="3.2" fill="#1E2A23" />
-        <rect x="51" y="47" width="18" height="4.5" rx="2.25" fill="#1F5540" />
+        <ellipse cx="60" cy="72" rx="41" ry="31" fill="var(--color-accent)" />
+        <ellipse cx="60" cy="72" rx="41" ry="31" fill="var(--color-primary)" opacity="0.15" />
+        <rect x="38" y="97" width="9" height="13" rx="3.5" fill="var(--color-primary-active)" />
+        <rect x="73" y="97" width="9" height="13" rx="3.5" fill="var(--color-primary-active)" />
+        <path d="M40 47 l9 -13 l6 17 z" fill="var(--color-primary-active)" />
+        <ellipse
+          cx="94"
+          cy="75"
+          rx="12"
+          ry="10"
+          fill="color-mix(in srgb, var(--color-accent) 70%, white)"
+        />
+        <circle cx="90.5" cy="75" r="2" fill="var(--color-primary-active)" />
+        <circle cx="97" cy="75" r="2" fill="var(--color-primary-active)" />
+        <circle cx="73" cy="63" r="3.2" fill="var(--color-ink)" />
+        <rect x="51" y="47" width="18" height="4.5" rx="2.25" fill="var(--color-primary-active)" />
       </motion.g>
     </svg>
   );
 }
 
-/** Pila de monedas que aparecen una a una. */
+/** Pila de monedas que aparecen una a una. Oro fijo (las monedas no cambian
+ *  de color con el tema — el dorado es intencional, no marca). */
 export function CoinStack({ size = 120, className }: IllProps) {
   const rm = useReducedMotion();
   const mounted = useMounted();
@@ -110,7 +118,7 @@ export function CoinStack({ size = 120, className }: IllProps) {
   );
 }
 
-/** Billetes (para estados vacíos de dinero). */
+/** Billetes (para estados vacíos de dinero). Colores de marca vía variables. */
 export function MoneyBills({ size = 120, className }: IllProps) {
   const rm = useReducedMotion();
   const mounted = useMounted();
@@ -130,13 +138,126 @@ export function MoneyBills({ size = 120, className }: IllProps) {
         transition={animate ? { duration: 4, repeat: Infinity, ease: "easeInOut" } : undefined}
         style={{ transformOrigin: "60px 60px" }}
       >
-        <rect x="24" y="52" width="72" height="42" rx="8" fill="#7BC4A0" transform="rotate(-8 60 73)" />
-        <rect x="24" y="46" width="72" height="42" rx="8" fill="#3FA576" transform="rotate(-2 60 67)" />
-        <rect x="24" y="40" width="72" height="42" rx="8" fill="#2E7D5B" />
-        <circle cx="60" cy="61" r="12" fill="#E2EFE8" />
-        <text x="60" y="66" textAnchor="middle" fontSize="14" fill="#2E7D5B" fontWeight="800">
+        <rect
+          x="24"
+          y="52"
+          width="72"
+          height="42"
+          rx="8"
+          fill="color-mix(in srgb, var(--color-accent) 70%, white)"
+          transform="rotate(-8 60 73)"
+        />
+        <rect
+          x="24"
+          y="46"
+          width="72"
+          height="42"
+          rx="8"
+          fill="var(--color-accent)"
+          transform="rotate(-2 60 67)"
+        />
+        <rect x="24" y="40" width="72" height="42" rx="8" fill="var(--color-primary)" />
+        <circle cx="60" cy="61" r="12" fill="var(--color-primary-soft)" />
+        <text x="60" y="66" textAnchor="middle" fontSize="14" fill="var(--color-primary)" fontWeight="800">
           $
         </text>
+      </motion.g>
+    </svg>
+  );
+}
+
+/** Bandera de meta ondeando — para el estado vacío de Metas. */
+export function GoalFlag({ size = 120, className }: IllProps) {
+  const rm = useReducedMotion();
+  const mounted = useMounted();
+  const animate = mounted && !rm;
+
+  return (
+    <svg
+      viewBox="0 0 120 120"
+      width={size}
+      height={size}
+      className={className}
+      role="img"
+      aria-label="Meta"
+    >
+      {/* Base / sombra */}
+      <ellipse cx="60" cy="103" rx="26" ry="6" fill="var(--color-ink)" opacity="0.08" />
+      {/* Asta */}
+      <rect x="42" y="20" width="5" height="83" rx="2.5" fill="var(--color-primary-active)" />
+      <circle cx="44.5" cy="18" r="4" fill="var(--color-primary-active)" />
+      {/* Bandera ondeando */}
+      <motion.path
+        d="M47 24 C 68 20, 78 30, 90 26 C 80 34, 80 44, 90 50 C 78 46, 68 56, 47 52 Z"
+        fill="var(--color-accent)"
+        animate={animate ? { d: [
+          "M47 24 C 68 20, 78 30, 90 26 C 80 34, 80 44, 90 50 C 78 46, 68 56, 47 52 Z",
+          "M47 24 C 66 22, 80 26, 90 24 C 82 32, 82 42, 90 48 C 80 44, 66 54, 47 52 Z",
+          "M47 24 C 68 20, 78 30, 90 26 C 80 34, 80 44, 90 50 C 78 46, 68 56, 47 52 Z",
+        ] } : undefined}
+        transition={animate ? { duration: 2.6, repeat: Infinity, ease: "easeInOut" } : undefined}
+      />
+      <circle cx="66" cy="37" r="8" fill="var(--color-primary-soft)" />
+      <path
+        d="M62 37 l3 3.5 l6 -7.5"
+        stroke="var(--color-primary)"
+        strokeWidth="2.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        fill="none"
+      />
+    </svg>
+  );
+}
+
+/** Recibo con check — para el estado vacío de Deudas (nada pendiente). */
+export function ReceiptCheck({ size = 120, className }: IllProps) {
+  const rm = useReducedMotion();
+  const mounted = useMounted();
+  const animate = mounted && !rm;
+
+  return (
+    <svg
+      viewBox="0 0 120 120"
+      width={size}
+      height={size}
+      className={className}
+      role="img"
+      aria-label="Sin deudas pendientes"
+    >
+      <motion.g
+        animate={animate ? { y: [0, -2, 0] } : undefined}
+        transition={animate ? { duration: 3, repeat: Infinity, ease: "easeInOut" } : undefined}
+      >
+        {/* Recibo con borde zigzag abajo */}
+        <path
+          d="M34 18h52v66l-6.5-5-6.5 5-6.5-5-6.5 5-6.5-5-6.5 5-6.5-5-6.5 5Z"
+          fill="color-mix(in srgb, var(--color-cream) 40%, white 60%)"
+          stroke="var(--color-primary-soft)"
+          strokeWidth="2"
+        />
+        <rect x="43" y="30" width="34" height="4" rx="2" fill="var(--color-primary-soft)" />
+        <rect x="43" y="40" width="26" height="4" rx="2" fill="var(--color-primary-soft)" />
+        <rect x="43" y="50" width="30" height="4" rx="2" fill="var(--color-primary-soft)" />
+        <rect x="43" y="60" width="20" height="4" rx="2" fill="var(--color-primary-soft)" />
+      </motion.g>
+
+      {/* Sello de check */}
+      <motion.g
+        initial={{ scale: 0.6, opacity: 0 }}
+        animate={animate ? { scale: 1, opacity: 1 } : { scale: 1, opacity: 1 }}
+        transition={animate ? { type: "spring", stiffness: 260, damping: 16, delay: 0.2 } : undefined}
+        style={{ transformOrigin: "86px 82px" }}
+      >
+        <circle cx="86" cy="82" r="18" fill="var(--color-primary)" />
+        <path
+          d="M78 82 l6 6 l12 -13"
+          stroke="white"
+          strokeWidth="3"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          fill="none"
+        />
       </motion.g>
     </svg>
   );

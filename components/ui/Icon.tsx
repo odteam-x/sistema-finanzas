@@ -33,7 +33,8 @@ export type IconName =
   | "arrowUpRight"
   | "sun"
   | "moon"
-  | "palette";
+  | "palette"
+  | "bank";
 
 const paths: Record<IconName, React.ReactNode> = {
   dashboard: (
@@ -191,6 +192,12 @@ const paths: Record<IconName, React.ReactNode> = {
       <circle cx="9.5" cy="7" r="1.2" fill="currentColor" stroke="none" />
       <circle cx="14.5" cy="7" r="1.2" fill="currentColor" stroke="none" />
       <circle cx="16.5" cy="11" r="1.2" fill="currentColor" stroke="none" />
+    </>
+  ),
+  bank: (
+    <>
+      <path d="M3 21h18M4 21V10M20 21V10M2 10l10-6 10 6" />
+      <path d="M7 10v11M12 10v11M17 10v11" />
     </>
   ),
 };

@@ -1,4 +1,4 @@
-import { getSalaries, getSalarySettings } from "@/lib/data";
+import { getSalaries, getSalarySettings, getSavingsAccounts } from "@/lib/data";
 import {
   formatDOP,
   formatDateLong,
@@ -22,9 +22,10 @@ import { addSalary, deleteSalary, saveSalarySettings } from "./actions";
 export const metadata = { title: "Ingresos · Bolsillo Seguro" };
 
 export default async function IngresosPage() {
-  const [settings, salaries] = await Promise.all([
+  const [settings, salaries, accounts] = await Promise.all([
     getSalarySettings(),
     getSalaries(),
+    getSavingsAccounts(),
   ]);
 
   const today = todayISO();
@@ -70,6 +71,18 @@ export default async function IngresosPage() {
             <Field label="Nota" htmlFor="note">
               <Input id="note" name="note" placeholder="Opcional" />
             </Field>
+            {accounts.length > 0 && (
+              <Field label="Cuenta" htmlFor="account_id" hint="Opcional: suma el monto al saldo de esa cuenta.">
+                <Select id="account_id" name="account_id" defaultValue="">
+                  <option value="">Sin asociar</option>
+                  {accounts.map((a) => (
+                    <option key={a.id} value={a.id}>
+                      {a.name}
+                    </option>
+                  ))}
+                </Select>
+              </Field>
+            )}
           </FormModal>
         }
       />

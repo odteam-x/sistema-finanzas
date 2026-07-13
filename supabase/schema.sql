@@ -37,12 +37,15 @@ create table if not exists public.work_calendar_exceptions (
   unique (user_id, date)
 );
 
--- Categorías de gasto diario (pasaje, desayuno, etc.)
+-- Categorías de gasto diario (pasaje, desayuno, etc.). monthly_limit es
+-- opcional: si se define, la categoría además muestra una barra de
+-- progreso de gasto real del mes vs. ese tope, con alerta ámbar/roja.
 create table if not exists public.budget_categories (
   id                 uuid primary key default gen_random_uuid(),
   user_id            uuid not null references auth.users (id) on delete cascade,
   name               text not null,
   amount_per_workday numeric(12, 2) not null default 0,
+  monthly_limit      numeric(12, 2),
   icon               text,
   active             boolean not null default true,
   sort_order         int not null default 0,
@@ -101,11 +104,14 @@ create table if not exists public.expenses (
   created_at  timestamptz not null default now()
 );
 
--- Cuentas de ahorro (ej. Banco, Efectivo, Alcancía)
+-- Cuentas (ahorro, banco, efectivo, tarjeta) — el saldo se deriva de
+-- savings_movements, sin importar el tipo.
 create table if not exists public.savings_accounts (
   id         uuid primary key default gen_random_uuid(),
   user_id    uuid not null references auth.users (id) on delete cascade,
   name       text not null,
+  type       text not null default 'ahorro'
+             check (type in ('ahorro', 'banco', 'efectivo', 'tarjeta_credito', 'tarjeta_debito')),
   icon       text,
   created_at timestamptz not null default now()
 );
@@ -122,6 +128,14 @@ create table if not exists public.savings_movements (
   created_at timestamptz not null default now()
 );
 
+-- Asociar ingresos y gastos a una cuenta (opcional). Se agrega aquí, no en
+-- los "create table" de arriba, porque savings_accounts se define después
+-- de salaries en este archivo.
+alter table public.salaries
+  add column if not exists account_id uuid references public.savings_accounts (id) on delete set null;
+alter table public.expenses
+  add column if not exists account_id uuid references public.savings_accounts (id) on delete set null;
+
 -- ----------------------------------------------------------------------------
 -- Índices
 -- ----------------------------------------------------------------------------
@@ -136,6 +150,8 @@ create index if not exists idx_expenses_user_date on public.expenses (user_id, d
 create index if not exists idx_savings_accounts_user on public.savings_accounts (user_id, created_at);
 create index if not exists idx_savings_movements_account on public.savings_movements (account_id, date desc);
 create index if not exists idx_savings_movements_user on public.savings_movements (user_id, date desc);
+create index if not exists idx_salaries_account on public.salaries (account_id);
+create index if not exists idx_expenses_account on public.expenses (account_id);
 
 -- ----------------------------------------------------------------------------
 -- Row Level Security: cada usuario solo ve/edita sus propias filas

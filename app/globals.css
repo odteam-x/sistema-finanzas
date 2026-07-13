@@ -17,14 +17,16 @@
   --color-ink: #1e2a23;
   --color-muted: #51625a;
 
-  /* Semánticos: fijos siempre (verde=bien, rojo=mal, sin importar el tema) */
-  --color-danger: #c0392b;
-  --color-danger-soft: #f7e2df;
+  /* Semánticos: fijos siempre (verde=bien, rojo=mal, sin importar el tema).
+     Terracota suave y azul grisáceo apagado en vez de rojo/azul puros, para
+     quedarse dentro de la gama cálida del sitio. */
+  --color-danger: #b8593f;
+  --color-danger-soft: #f6e3dc;
   --color-warning: #b06f10;
   --color-warning-soft: #f7ecd8;
   --color-success: #2e7d5b;
-  --color-info: #2b6cb0;
-  --color-info-soft: #e2ecf7;
+  --color-info: #5c7690;
+  --color-info-soft: #e6ebee;
 
   --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, -apple-system,
     "Segoe UI", Roboto, sans-serif;
@@ -90,9 +92,9 @@
   --color-ink: #edefec;
   --color-muted: #9db0a7;
 
-  --color-danger-soft: rgba(192, 57, 43, 0.2);
+  --color-danger-soft: rgba(184, 89, 63, 0.2);
   --color-warning-soft: rgba(176, 111, 16, 0.2);
-  --color-info-soft: rgba(43, 108, 176, 0.2);
+  --color-info-soft: rgba(92, 118, 144, 0.22);
 
   --glass-bg: rgba(24, 30, 27, 0.55);
   --glass-bg-strong: rgba(24, 30, 27, 0.72);
@@ -220,10 +222,13 @@ body {
   background-image: linear-gradient(135deg, var(--color-accent), var(--color-primary));
 }
 .bg-gradient-danger {
-  background-image: linear-gradient(135deg, #e05a4d, var(--color-danger));
+  background-image: linear-gradient(135deg, #d67c60, var(--color-danger));
 }
 .bg-gradient-warning {
   background-image: linear-gradient(135deg, #d08a2a, var(--color-warning));
+}
+.bg-gradient-info {
+  background-image: linear-gradient(135deg, #7f96a8, var(--color-info));
 }
 
 .text-gradient-brand {

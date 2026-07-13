@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { monthGrid, dayStatus, type DayStatus } from "@/lib/calendar";
 import { parseISODate, formatDateLong } from "@/lib/format";
 import { Modal } from "@/components/ui/Modal";
-import { Icon } from "@/components/ui/Icon";
+import { IconBubble } from "@/components/ui/IconBubble";
 import { cn } from "@/lib/cn";
 import type { ExceptionKind } from "@/lib/types";
 import { setException, removeException } from "./actions";
@@ -195,14 +195,7 @@ function DayOption({
         danger ? "hover:bg-danger-soft" : "hover:bg-black/5",
       )}
     >
-      <span
-        className={cn(
-          "grid place-items-center size-9 rounded-full shrink-0",
-          danger ? "bg-danger-soft text-danger" : "bg-primary-soft text-primary",
-        )}
-      >
-        <Icon name={icon} size={18} />
-      </span>
+      <IconBubble icon={icon} tone={danger ? "danger" : "neutral"} size="sm" />
       <span className="min-w-0">
         <span className="block font-semibold text-ink text-sm">{label}</span>
         <span className="block text-xs text-muted">{hint}</span>

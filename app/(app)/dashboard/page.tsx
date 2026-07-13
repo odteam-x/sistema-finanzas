@@ -3,10 +3,11 @@ import { getFinanceSummary } from "@/lib/summary";
 import { formatDOP, formatDateShort, clampPct } from "@/lib/format";
 import { GreetingHero } from "@/components/ui/GreetingHero";
 import { QuickActions } from "@/components/ui/QuickActions";
+import { BalanceHero } from "@/components/ui/BalanceHero";
+import { MotivationCard } from "@/components/ui/MotivationCard";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { StatTile } from "@/components/ui/StatTile";
 import { ProgressBar } from "@/components/ui/ProgressBar";
-import { Badge } from "@/components/ui/Badge";
 import { Icon, type IconName } from "@/components/ui/Icon";
 import { MoneyValue } from "@/components/ui/MoneyValue";
 import { DonutChart } from "@/components/charts/DonutChart";
@@ -45,85 +46,42 @@ export default async function DashboardPage() {
       <GreetingHero subtitle={`Quincena ${s.quincena.label}`} />
       <QuickActions />
 
-      {/* Saldo estimado (con presupuesto) */}
-      <GlassCard strong className="mb-3 overflow-hidden relative">
-        <div className="flex items-center justify-between gap-3">
-          <div className="min-w-0">
-            <p className="text-sm font-medium text-muted">
-              Saldo estimado <span className="text-muted/70">(con presupuesto)</span>
-            </p>
-            <MoneyValue
-              value={s.saldoEstimado}
-              className={cn(
-                "block text-money-lg font-extrabold mt-1",
-                s.saldoEstimado >= 0 ? "text-gradient-brand" : "text-danger",
-              )}
-            />
-            <p className="text-xs text-muted mt-1">
-              Ingreso {formatDOP(s.ingresoQuincena, false)} − presupuesto{" "}
-              {formatDOP(s.estQuincena, false)} − cuotas{" "}
-              {formatDOP(s.cuotasPeriodo, false)}
-            </p>
-          </div>
-          <span className="grid place-items-center size-12 rounded-2xl icon-badge bg-gradient-brand shrink-0">
-            <Icon name="wallet" size={26} />
-          </span>
-        </div>
-      </GlassCard>
+      <BalanceHero
+        saldoEstimado={s.saldoEstimado}
+        saldoReal={s.saldoReal}
+        ingresoQuincena={s.ingresoQuincena}
+        estQuincena={s.estQuincena}
+        realQuincena={s.realQuincena}
+        cuotasPeriodo={s.cuotasPeriodo}
+      />
 
-      {/* Balance real (sin presupuesto) */}
-      <GlassCard className="mb-4">
-        <div className="flex items-center justify-between gap-3">
-          <div className="min-w-0">
-            <p className="text-sm font-medium text-muted">
-              Balance real <span className="text-muted/70">(sin presupuesto)</span>
-            </p>
-            <MoneyValue
-              value={s.saldoReal}
-              className={cn(
-                "block text-money-md font-extrabold mt-1",
-                s.saldoReal >= 0 ? "text-primary" : "text-danger",
-              )}
-            />
-            <p className="text-xs text-muted mt-1">
-              Ingreso {formatDOP(s.ingresoQuincena, false)} − gastado real{" "}
-              {formatDOP(s.realQuincena, false)} − cuotas{" "}
-              {formatDOP(s.cuotasPeriodo, false)}
-            </p>
-          </div>
-          <span className="grid place-items-center size-12 rounded-2xl icon-badge bg-gradient-brand shrink-0">
-            <Icon name="trendUp" size={26} />
-          </span>
-        </div>
-        <p className="text-[0.7rem] text-muted mt-3 pt-3 border-t border-black/5">
-          El estimado descuenta tu presupuesto planeado; el balance real solo
-          descuenta lo que de verdad has gastado y las cuotas del periodo.
-        </p>
-      </GlassCard>
+      <MotivationCard topGoal={s.goals[0] ?? null} />
 
-      {/* Tiles */}
+      {/* Tiles (tamaños mixtos: total ahorrado/adeudado a todo el ancho) */}
       <div className="grid grid-cols-2 gap-3 mb-4">
         <StatTile
-          label="Próximo pago"
-          value={formatDateShort(s.nextPay)}
-          sub={s.daysToPay === 0 ? "hoy" : `en ${s.daysToPay} días`}
-          icon="clock"
-          tone="primary"
-        />
-        <StatTile
-          label="Próxima deuda"
-          value={s.nextDue ? formatDateShort(s.nextDue) : "—"}
-          sub={s.nextDueName ? `${s.nextDueName} · ${dueSub(s.daysToDue)}` : dueSub(s.daysToDue)}
-          icon="debt"
-          tone={s.daysToDue !== null && s.daysToDue < 0 ? "danger" : "neutral"}
-        />
-        <StatTile
+          className="col-span-2"
           label="Total ahorrado"
           value={<MoneyValue value={s.savingsTotal} decimals={false} />}
           icon="piggy"
           tone="primary"
         />
         <StatTile
+          label="Próximo pago"
+          value={formatDateShort(s.nextPay)}
+          sub={s.daysToPay === 0 ? "hoy" : `en ${s.daysToPay} días`}
+          icon="clock"
+          tone="info"
+        />
+        <StatTile
+          label="Próxima deuda"
+          value={s.nextDue ? formatDateShort(s.nextDue) : "—"}
+          sub={s.nextDueName ? `${s.nextDueName} · ${dueSub(s.daysToDue)}` : dueSub(s.daysToDue)}
+          icon="debt"
+          tone={s.daysToDue !== null && s.daysToDue < 0 ? "danger" : "warning"}
+        />
+        <StatTile
+          className="col-span-2"
           label="Total adeudado"
           value={<MoneyValue value={s.outstandingDebt} decimals={false} />}
           icon="debt"

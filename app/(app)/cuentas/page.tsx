@@ -11,6 +11,8 @@ import type { IconName } from "@/components/ui/Icon";
 import { MoneyValue } from "@/components/ui/MoneyValue";
 import { IconBubble } from "@/components/ui/IconBubble";
 import { PeekCarousel } from "@/components/ui/PeekCarousel";
+import { PiggyBank } from "@/components/illustrations";
+import type { AccountType } from "@/lib/types";
 import {
   addAccount,
   addMovement,
@@ -19,25 +21,26 @@ import {
   updateAccount,
 } from "./actions";
 
-export const metadata = { title: "Ahorros · Bolsillo Seguro" };
+export const metadata = { title: "Cuentas · Bolsillo Seguro" };
 
-const ACCOUNT_ICONS: { value: IconName; label: string }[] = [
-  { value: "piggy", label: "Alcancía" },
-  { value: "wallet", label: "Efectivo" },
-  { value: "debt", label: "Banco / Tarjeta" },
-  { value: "goal", label: "Otro" },
+const ACCOUNT_TYPES: { value: AccountType; label: string; icon: IconName }[] = [
+  { value: "ahorro", label: "Ahorro / Alcancía", icon: "piggy" },
+  { value: "banco", label: "Banco", icon: "bank" },
+  { value: "efectivo", label: "Efectivo", icon: "wallet" },
+  { value: "tarjeta_debito", label: "Tarjeta débito", icon: "debt" },
+  { value: "tarjeta_credito", label: "Tarjeta crédito", icon: "debt" },
 ];
 
-const validIcon = (icon: string | null): IconName =>
-  ACCOUNT_ICONS.some((a) => a.value === icon) ? (icon as IconName) : "piggy";
+const typeInfo = (type: AccountType) =>
+  ACCOUNT_TYPES.find((t) => t.value === type) ?? ACCOUNT_TYPES[0];
 
-function IconField({ defaultValue }: { defaultValue?: string }) {
+function TypeField({ defaultValue }: { defaultValue?: AccountType }) {
   return (
-    <Field label="Ícono" htmlFor="icon">
-      <Select id="icon" name="icon" defaultValue={defaultValue ?? "piggy"}>
-        {ACCOUNT_ICONS.map((a) => (
-          <option key={a.value} value={a.value}>
-            {a.label}
+    <Field label="Tipo de cuenta" htmlFor="type">
+      <Select id="type" name="type" defaultValue={defaultValue ?? "ahorro"}>
+        {ACCOUNT_TYPES.map((t) => (
+          <option key={t.value} value={t.value}>
+            {t.label}
           </option>
         ))}
       </Select>
@@ -45,7 +48,7 @@ function IconField({ defaultValue }: { defaultValue?: string }) {
   );
 }
 
-export default async function AhorrosPage() {
+export default async function CuentasPage() {
   const today = todayISO();
   const [accounts, movements] = await Promise.all([
     getSavingsAccounts(),
@@ -65,8 +68,8 @@ export default async function AhorrosPage() {
   return (
     <>
       <PageHeader
-        title="Ahorros"
-        subtitle="Tus cuentas y movimientos"
+        title="Cuentas"
+        subtitle="Ahorro, banco, efectivo y tarjetas"
         action={
           <FormModal
             title="Nueva cuenta"
@@ -75,20 +78,20 @@ export default async function AhorrosPage() {
             triggerLabel="Cuenta"
           >
             <Field label="Nombre" htmlFor="name" required>
-              <Input id="name" name="name" placeholder="Ej.: Alcancía, Banco…" required />
+              <Input id="name" name="name" placeholder="Ej.: Banco BHD, Efectivo…" required />
             </Field>
+            <TypeField />
             <Field label="Saldo inicial" htmlFor="initial_amount" hint="Opcional.">
               <MoneyInput id="initial_amount" name="initial_amount" />
             </Field>
-            <IconField />
           </FormModal>
         }
       />
 
-      {/* Total ahorrado */}
+      {/* Total */}
       <GlassCard strong className="mb-4 flex items-center justify-between gap-3 overflow-hidden">
         <div className="min-w-0">
-          <p className="text-sm font-medium text-muted">Total ahorrado</p>
+          <p className="text-sm font-medium text-muted">Total en cuentas</p>
           <MoneyValue
             value={totalSaved}
             className="block text-money-lg font-extrabold text-gradient-brand mt-1"
@@ -97,27 +100,32 @@ export default async function AhorrosPage() {
             {accounts.length} {accounts.length === 1 ? "cuenta" : "cuentas"}
           </p>
         </div>
-        <IconBubble icon="piggy" tone="brand" size="lg" />
+        <IconBubble icon="wallet" tone="brand" size="lg" />
       </GlassCard>
 
       {/* Cuentas */}
       {accounts.length === 0 ? (
         <EmptyState
           icon="piggy"
-          title="Sin cuentas de ahorro"
-          message="Crea tu primera cuenta (alcancía, banco, efectivo…) y registra depósitos y retiros."
+          title="Sin cuentas todavía"
+          message="Crea tu primera cuenta (banco, efectivo, ahorro…) y registra depósitos y retiros."
+          illustration={<PiggyBank size={104} />}
         />
       ) : (
         <PeekCarousel>
           {accounts.map((a) => {
             const balance = balanceOf(a.id);
             const count = movements.filter((m) => m.account_id === a.id).length;
+            const info = typeInfo(a.type);
             return (
               <GlassCard key={a.id}>
                   <div className="flex items-start gap-3">
-                    <IconBubble icon={validIcon(a.icon)} tone="brand" />
+                    <IconBubble icon={info.icon} tone="brand" />
                     <div className="min-w-0 flex-1">
-                      <p className="font-bold text-ink truncate">{a.name}</p>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="font-bold text-ink truncate">{a.name}</p>
+                        <Badge tone="neutral">{info.label}</Badge>
+                      </div>
                       <MoneyValue
                         value={balance}
                         className="block text-money-md font-extrabold text-primary leading-tight"
@@ -139,7 +147,7 @@ export default async function AhorrosPage() {
                         <Field label="Nombre" htmlFor={`an-${a.id}`} required>
                           <Input id={`an-${a.id}`} name="name" defaultValue={a.name} required />
                         </Field>
-                        <IconField defaultValue={validIcon(a.icon)} />
+                        <TypeField defaultValue={a.type} />
                       </FormModal>
                       <DeleteButton
                         action={deleteAccount.bind(null, a.id)}

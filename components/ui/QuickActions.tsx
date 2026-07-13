@@ -11,7 +11,7 @@ interface QuickAction {
 const DEFAULT_ACTIONS: QuickAction[] = [
   { icon: "wallet", label: "Ingreso", href: "/ingresos" },
   { icon: "budget", label: "Gasto", href: "/presupuesto" },
-  { icon: "piggy", label: "Ahorro", href: "/ahorros" },
+  { icon: "piggy", label: "Ahorro", href: "/cuentas" },
   { icon: "goal", label: "Metas", href: "/metas" },
 ];
 

@@ -1,21 +1,26 @@
 import { cn } from "@/lib/cn";
-import { Icon, type IconName } from "./Icon";
+import type { IconName } from "./Icon";
+import { IconBubble } from "./IconBubble";
 
 interface StatTileProps {
   label: string;
   value: React.ReactNode;
   icon?: IconName;
   sub?: string;
-  tone?: "primary" | "neutral" | "danger" | "warning";
+  tone?: "primary" | "neutral" | "danger" | "warning" | "info";
   className?: string;
 }
 
-const tones = {
-  primary: "icon-badge bg-gradient-brand",
-  neutral: "text-ink bg-black/5",
-  danger: "icon-badge bg-gradient-danger",
-  warning: "icon-badge bg-gradient-warning",
-};
+// Delegado a IconBubble para que el círculo de ícono sea idéntico en toda
+// la app (antes StatTile tenía su propio mapa de tonos, distinto al de
+// las listas que ya usaban IconBubble).
+const toneToBubble = {
+  primary: "brand",
+  neutral: "neutral",
+  danger: "danger",
+  warning: "warning",
+  info: "info",
+} as const;
 
 export function StatTile({
   label,
@@ -29,16 +34,7 @@ export function StatTile({
     <div className={cn("glass rounded-[var(--radius-glass-sm)] p-3.5 sm:p-4 min-w-0", className)}>
       <div className="flex items-start justify-between gap-2">
         <p className="text-xs font-medium text-muted leading-tight">{label}</p>
-        {icon && (
-          <span
-            className={cn(
-              "grid place-items-center size-8 rounded-full shrink-0",
-              tones[tone],
-            )}
-          >
-            <Icon name={icon} size={18} />
-          </span>
-        )}
+        {icon && <IconBubble icon={icon} tone={toneToBubble[tone]} size="sm" />}
       </div>
       <p className="mt-1.5 text-money-sm font-extrabold tracking-tight text-ink tabular">
         {value}

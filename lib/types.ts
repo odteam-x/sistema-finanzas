@@ -9,6 +9,7 @@ export interface Salary {
   pay_date: string; // YYYY-MM-DD
   kind: SalaryKind;
   note: string | null;
+  account_id: string | null;
   created_at: string;
 }
 
@@ -35,6 +36,8 @@ export interface BudgetCategory {
   user_id: string;
   name: string;
   amount_per_workday: number;
+  /** Tope de gasto mensual opcional; null = sin límite (comportamiento actual). */
+  monthly_limit: number | null;
   icon: string | null;
   active: boolean;
   sort_order: number;
@@ -89,13 +92,17 @@ export interface Expense {
   category_id: string | null;
   amount: number;
   note: string | null;
+  account_id: string | null;
   created_at: string;
 }
+
+export type AccountType = "ahorro" | "banco" | "efectivo" | "tarjeta_credito" | "tarjeta_debito";
 
 export interface SavingsAccount {
   id: string;
   user_id: string;
   name: string;
+  type: AccountType;
   icon: string | null;
   created_at: string;
 }

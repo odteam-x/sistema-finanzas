@@ -10,6 +10,7 @@ function revalidateAll() {
   revalidatePath("/dashboard");
   revalidatePath("/presupuesto");
   revalidatePath("/sugerencias");
+  revalidatePath("/cuentas");
 }
 
 export async function saveSalarySettings(
@@ -43,6 +44,7 @@ export async function addSalary(formData: FormData): Promise<ActionResult> {
   const pay_date = String(formData.get("pay_date") ?? "");
   const kind = String(formData.get("kind") ?? "quincena");
   const note = String(formData.get("note") ?? "").trim() || null;
+  const account_id = String(formData.get("account_id") ?? "") || null;
 
   if (!Number.isFinite(amount) || amount <= 0) {
     return { ok: false, error: "Ingresa un monto válido." };
@@ -52,8 +54,21 @@ export async function addSalary(formData: FormData): Promise<ActionResult> {
   const supabase = await createClient();
   const { error } = await supabase
     .from("salaries")
-    .insert({ user_id: user.id, amount, pay_date, kind, note });
+    .insert({ user_id: user.id, amount, pay_date, kind, note, account_id });
   if (error) return { ok: false, error: "No se pudo registrar el pago." };
+
+  // Si se asoció una cuenta, refleja el ingreso como depósito para que el
+  // saldo de la cuenta se actualice (misma fuente de verdad que Cuentas).
+  if (account_id) {
+    await supabase.from("savings_movements").insert({
+      account_id,
+      user_id: user.id,
+      kind: "deposito",
+      amount,
+      date: pay_date,
+      note: note ? `Ingreso: ${note}` : "Ingreso",
+    });
+  }
 
   revalidateAll();
   return { ok: true };

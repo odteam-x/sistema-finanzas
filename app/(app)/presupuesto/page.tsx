@@ -1,5 +1,10 @@
-import { getBudgetCategories, getExceptions, getExpenses } from "@/lib/data";
-import { formatDOP, formatDateShort, todayISO, toISODate } from "@/lib/format";
+import {
+  getBudgetCategories,
+  getExceptions,
+  getExpenses,
+  getSavingsAccounts,
+} from "@/lib/data";
+import { formatDOP, formatDateShort, todayISO, toISODate, clampPct } from "@/lib/format";
 import { countWorkdays, exceptionsMap } from "@/lib/calendar";
 import { quincenaForDate } from "@/lib/periods";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -7,11 +12,13 @@ import { GlassCard } from "@/components/ui/GlassCard";
 import { StatTile } from "@/components/ui/StatTile";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Badge } from "@/components/ui/Badge";
+import { ProgressBar } from "@/components/ui/ProgressBar";
 import { Field, Input, Select, MoneyInput } from "@/components/ui/Field";
 import { FormModal } from "@/components/ui/FormModal";
 import { DeleteButton } from "@/components/ui/DeleteButton";
 import { IconBubble } from "@/components/ui/IconBubble";
 import { BudgetRing } from "@/components/charts/BudgetRing";
+import { MoneyBills } from "@/components/illustrations";
 import {
   addCategory,
   addExpense,
@@ -28,10 +35,12 @@ export default async function PresupuestoPage() {
   const monthStart = toISODate(new Date(q.year, q.month, 1, 12));
   const monthEnd = toISODate(new Date(q.year, q.month + 1, 0, 12));
 
-  const [categories, exceptions, expenses] = await Promise.all([
+  const [categories, exceptions, expenses, monthExpenses, accounts] = await Promise.all([
     getBudgetCategories(),
     getExceptions(monthStart, monthEnd),
     getExpenses(q.start, q.end),
+    getExpenses(monthStart, monthEnd),
+    getSavingsAccounts(),
   ]);
 
   const exMap = exceptionsMap(exceptions);
@@ -47,6 +56,17 @@ export default async function PresupuestoPage() {
 
   const categoryName = (id: string | null) =>
     id ? (categories.find((c) => c.id === id)?.name ?? "General") : "General";
+
+  // Gasto real del mes calendario por categoría, para el límite mensual
+  // (ventana distinta a la quincena — el límite es un tope del mes completo).
+  const monthlySpentByCategory = new Map<string, number>();
+  for (const e of monthExpenses) {
+    if (!e.category_id) continue;
+    monthlySpentByCategory.set(
+      e.category_id,
+      (monthlySpentByCategory.get(e.category_id) ?? 0) + Number(e.amount),
+    );
+  }
 
   return (
     <>
@@ -70,6 +90,13 @@ export default async function PresupuestoPage() {
             </Field>
             <Field label="Monto por día trabajado" htmlFor="amount_per_workday" required>
               <MoneyInput id="amount_per_workday" name="amount_per_workday" required />
+            </Field>
+            <Field
+              label="Límite mensual"
+              htmlFor="monthly_limit"
+              hint="Opcional. Define cuánto quieres gastar como máximo en esta categoría cada mes — si te pasas, lo verás en ámbar/rojo aquí y en Resumen."
+            >
+              <MoneyInput id="monthly_limit" name="monthly_limit" />
             </Field>
           </FormModal>
         }
@@ -115,51 +142,87 @@ export default async function PresupuestoPage() {
         />
       ) : (
         <ul className="flex flex-col gap-2 mb-6">
-          {categories.map((c) => (
-            <li key={c.id}>
-              <GlassCard className="flex items-center gap-3 py-3">
-                <IconBubble icon="budget" tone="neutral" />
-                <div className="min-w-0 flex-1">
-                  <p className="font-semibold text-ink truncate">{c.name}</p>
-                  <p className="text-xs text-muted tabular">
-                    {formatDOP(Number(c.amount_per_workday))} / día
-                  </p>
-                </div>
-                <div className="text-right shrink-0">
-                  <p className="text-xs text-muted">Quincena</p>
-                  <p className="font-bold text-ink tabular">
-                    {formatDOP(Number(c.amount_per_workday) * workedQuincena, false)}
-                  </p>
-                </div>
-                <FormModal
-                  title="Editar categoría"
-                  action={updateCategory}
-                  submitLabel="Guardar"
-                  trigger="icon"
-                  triggerIcon="edit"
-                  triggerAriaLabel={`Editar ${c.name}`}
-                >
-                  <input type="hidden" name="id" value={c.id} />
-                  <Field label="Nombre" htmlFor={`name-${c.id}`} required>
-                    <Input id={`name-${c.id}`} name="name" defaultValue={c.name} required />
-                  </Field>
-                  <Field label="Monto por día trabajado" htmlFor={`amt-${c.id}`} required>
-                    <MoneyInput
-                      id={`amt-${c.id}`}
-                      name="amount_per_workday"
-                      defaultValue={String(c.amount_per_workday)}
-                      required
+          {categories.map((c) => {
+            const limit = c.monthly_limit != null ? Number(c.monthly_limit) : null;
+            const spent = monthlySpentByCategory.get(c.id) ?? 0;
+            const pct = limit ? clampPct(spent, limit) : 0;
+            const over = limit != null && spent > limit;
+            return (
+              <li key={c.id}>
+                <GlassCard className="py-3">
+                  <div className="flex items-center gap-3">
+                    <IconBubble icon="budget" tone="neutral" />
+                    <div className="min-w-0 flex-1">
+                      <p className="font-semibold text-ink truncate">{c.name}</p>
+                      <p className="text-xs text-muted tabular">
+                        {formatDOP(Number(c.amount_per_workday))} / día
+                      </p>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <p className="text-xs text-muted">Quincena</p>
+                      <p className="font-bold text-ink tabular">
+                        {formatDOP(Number(c.amount_per_workday) * workedQuincena, false)}
+                      </p>
+                    </div>
+                    <FormModal
+                      title="Editar categoría"
+                      action={updateCategory}
+                      submitLabel="Guardar"
+                      trigger="icon"
+                      triggerIcon="edit"
+                      triggerAriaLabel={`Editar ${c.name}`}
+                    >
+                      <input type="hidden" name="id" value={c.id} />
+                      <Field label="Nombre" htmlFor={`name-${c.id}`} required>
+                        <Input id={`name-${c.id}`} name="name" defaultValue={c.name} required />
+                      </Field>
+                      <Field label="Monto por día trabajado" htmlFor={`amt-${c.id}`} required>
+                        <MoneyInput
+                          id={`amt-${c.id}`}
+                          name="amount_per_workday"
+                          defaultValue={String(c.amount_per_workday)}
+                          required
+                        />
+                      </Field>
+                      <Field
+                        label="Límite mensual"
+                        htmlFor={`lim-${c.id}`}
+                        hint="Opcional. Vacío = sin límite."
+                      >
+                        <MoneyInput
+                          id={`lim-${c.id}`}
+                          name="monthly_limit"
+                          defaultValue={limit != null ? String(limit) : ""}
+                        />
+                      </Field>
+                    </FormModal>
+                    <DeleteButton
+                      action={deleteCategory.bind(null, c.id)}
+                      title="¿Eliminar categoría?"
+                      message="Se quitará del presupuesto."
                     />
-                  </Field>
-                </FormModal>
-                <DeleteButton
-                  action={deleteCategory.bind(null, c.id)}
-                  title="¿Eliminar categoría?"
-                  message="Se quitará del presupuesto."
-                />
-              </GlassCard>
-            </li>
-          ))}
+                  </div>
+
+                  {limit != null && (
+                    <div className="mt-3 pt-3 border-t border-black/5">
+                      <div className="flex items-center justify-between mb-1.5 text-xs">
+                        <span className="text-muted">
+                          Este mes: <span className="font-bold text-ink tabular">{formatDOP(spent, false)}</span>
+                        </span>
+                        <span className="text-muted">
+                          Límite <span className="font-bold text-ink tabular">{formatDOP(limit, false)}</span>
+                        </span>
+                      </div>
+                      <ProgressBar
+                        value={pct}
+                        tone={over ? "danger" : pct >= 80 ? "warning" : "primary"}
+                      />
+                    </div>
+                  )}
+                </GlassCard>
+              </li>
+            );
+          })}
         </ul>
       )}
 
@@ -193,6 +256,18 @@ export default async function PresupuestoPage() {
           <Field label="Nota" htmlFor="exp-note">
             <Input id="exp-note" name="note" placeholder="Opcional" />
           </Field>
+          {accounts.length > 0 && (
+            <Field label="Cuenta" htmlFor="exp-account" hint="Opcional: resta el monto del saldo de esa cuenta.">
+              <Select id="exp-account" name="account_id" defaultValue="">
+                <option value="">Sin asociar</option>
+                {accounts.map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.name}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+          )}
         </FormModal>
       </div>
 
@@ -201,6 +276,7 @@ export default async function PresupuestoPage() {
           icon="wallet"
           title="Sin gastos registrados"
           message="Registra tus gastos reales para compararlos con el presupuesto."
+          illustration={<MoneyBills size={100} />}
         />
       ) : (
         <ul className="flex flex-col gap-2">

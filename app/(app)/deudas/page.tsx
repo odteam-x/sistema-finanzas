@@ -12,7 +12,8 @@ import { StatTile } from "@/components/ui/StatTile";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Badge } from "@/components/ui/Badge";
 import { DeleteButton } from "@/components/ui/DeleteButton";
-import { Icon } from "@/components/ui/Icon";
+import { IconBubble } from "@/components/ui/IconBubble";
+import { ReceiptCheck } from "@/components/illustrations";
 import { AddDebtForm } from "./AddDebtForm";
 import { InstallmentRow, DebtPaidToggle } from "./DebtControls";
 import { deleteDebt } from "./actions";
@@ -24,6 +25,11 @@ const statusTone: Record<DebtStatus, "warning" | "info" | "success"> = {
   pendiente: "warning",
   parcial: "info",
   pagada: "success",
+};
+const statusBubbleTone: Record<DebtStatus, "warning" | "info" | "brand"> = {
+  pendiente: "warning",
+  parcial: "info",
+  pagada: "brand",
 };
 const statusLabel: Record<DebtStatus, string> = {
   pendiente: "Pendiente",
@@ -101,6 +107,7 @@ export default async function DeudasPage() {
           icon="debt"
           title="Sin deudas registradas"
           message="Registra una deuda para llevar control de sus pagos y vencimientos."
+          illustration={<ReceiptCheck size={104} />}
         />
       ) : (
         <ul className="flex flex-col gap-3">
@@ -111,9 +118,7 @@ export default async function DeudasPage() {
               <li key={d.id}>
                 <GlassCard>
                   <div className="flex items-start gap-3">
-                    <span className="grid place-items-center size-11 rounded-2xl bg-danger-soft text-danger shrink-0">
-                      <Icon name="debt" size={22} />
-                    </span>
+                    <IconBubble icon="debt" tone={statusBubbleTone[d.status]} />
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
                         <p className="font-bold text-ink truncate">{d.name}</p>
