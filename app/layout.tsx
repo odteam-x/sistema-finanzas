@@ -3,6 +3,7 @@ import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { PWARegister } from "@/components/PWARegister";
 import { ClickSpark } from "@/components/reactbits/ClickSpark";
+import { THEME_INIT_SCRIPT } from "@/lib/theme";
 
 const jakarta = Plus_Jakarta_Sans({
   variable: "--font-jakarta",
@@ -41,8 +42,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es" className={`${jakarta.variable} h-full antialiased`}>
-      <body className="min-h-dvh">
+    <html lang="es" className={`${jakarta.variable} h-full antialiased`} suppressHydrationWarning>
+      <head>
+        {/* Aplica el tema guardado antes del primer pintado (evita flash). */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+      </head>
+      <body className="min-h-dvh" suppressHydrationWarning>
         {children}
         <ClickSpark />
         <PWARegister />

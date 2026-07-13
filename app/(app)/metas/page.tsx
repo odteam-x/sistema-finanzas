@@ -52,7 +52,7 @@ export default async function MetasPage() {
 
       {goals.length > 0 && (
         <GlassCard className="mb-4 flex items-center justify-between gap-3">
-          <div>
+          <div className="min-w-0">
             <p className="text-xs text-muted">Ahorrado en total</p>
             <MoneyValue
               value={totalSaved}
@@ -60,7 +60,7 @@ export default async function MetasPage() {
               className="text-xl font-extrabold text-ink"
             />
           </div>
-          <div className="text-right">
+          <div className="min-w-0 text-right">
             <p className="text-xs text-muted">Objetivo total</p>
             <MoneyValue
               value={totalTarget}
@@ -84,7 +84,7 @@ export default async function MetasPage() {
             const done = Number(g.current_amount) >= Number(g.target_amount);
             const daysLeft = g.deadline ? daysBetween(today, g.deadline) : null;
             return (
-              <GlassCard key={g.id} className="flex flex-col gap-3">
+              <GlassCard key={g.id} className="flex flex-col gap-3 min-w-0">
                 <div className="flex items-start gap-3">
                   <div className="min-w-0 flex-1">
                     <p className="font-bold text-ink truncate">{g.name}</p>

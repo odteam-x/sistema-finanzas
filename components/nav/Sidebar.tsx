@@ -1,11 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/cn";
 import { Icon } from "@/components/ui/Icon";
 import { NAV_ROUTES } from "./routes";
 import { LogoutButton } from "./LogoutButton";
+import { ThemeButton } from "@/components/theme/ThemeButton";
 
 export function Sidebar({ email }: { email: string | null }) {
   const pathname = usePathname();
@@ -13,9 +15,14 @@ export function Sidebar({ email }: { email: string | null }) {
   return (
     <aside className="hidden lg:flex flex-col w-64 shrink-0 h-dvh sticky top-0 p-4 gap-4">
       <div className="flex items-center gap-2.5 px-2 pt-2">
-        <span className="grid place-items-center size-10 rounded-2xl bg-primary text-white">
-          <Icon name="wallet" size={22} />
-        </span>
+        <Image
+          src="/icons/icon-192.png"
+          alt="Bolsillo Seguro"
+          width={40}
+          height={40}
+          className="shrink-0"
+          priority
+        />
         <div className="leading-tight">
           <p className="font-extrabold text-ink">Bolsillo Seguro</p>
           <p className="text-xs text-muted">Control personal</p>
@@ -50,6 +57,7 @@ export function Sidebar({ email }: { email: string | null }) {
             {email}
           </p>
         )}
+        <ThemeButton variant="sidebar" />
         <LogoutButton />
       </div>
     </aside>

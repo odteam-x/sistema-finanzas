@@ -8,6 +8,7 @@ import { cn } from "@/lib/cn";
 import { Icon } from "@/components/ui/Icon";
 import { PRIMARY_ROUTES, SECONDARY_ROUTES } from "./routes";
 import { LogoutButton } from "./LogoutButton";
+import { ThemeButton } from "@/components/theme/ThemeButton";
 
 export function BottomTabBar({ email }: { email: string | null }) {
   const pathname = usePathname();
@@ -35,6 +36,17 @@ export function BottomTabBar({ email }: { email: string | null }) {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  // Bloquear scroll del fondo mientras el menú "Más" está abierto (evita
+  // repintados del contenido detrás mientras anima, que era parte del lag).
+  useEffect(() => {
+    if (!moreOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [moreOpen]);
+
   return (
     <>
       {/* Sheet "Más" */}
@@ -48,14 +60,15 @@ export function BottomTabBar({ email }: { email: string | null }) {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
+              transition={{ duration: 0.18 }}
             />
             <motion.div
-              className="glass-strong absolute inset-x-0 bottom-0 rounded-t-[26px] p-4 pb-[max(1rem,env(safe-area-inset-bottom))]"
+              className="sheet-surface absolute inset-x-0 bottom-0 rounded-t-[26px] p-4 pb-[max(1rem,env(safe-area-inset-bottom))]"
+              style={{ willChange: "transform" }}
               initial={rm ? false : { y: "100%" }}
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
-              transition={{ type: "spring", stiffness: 320, damping: 32 }}
+              transition={{ type: "spring", stiffness: 380, damping: 34 }}
             >
               <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-black/15" />
               <div className="grid grid-cols-4 gap-2">
@@ -78,6 +91,9 @@ export function BottomTabBar({ email }: { email: string | null }) {
                 })}
               </div>
               <div className="mt-2 border-t border-black/5 pt-2">
+                <ThemeButton variant="sheet" onNavigate={() => setMoreOpen(false)} />
+              </div>
+              <div className="mt-1 border-t border-black/5 pt-2">
                 {email && <p className="text-xs text-muted px-1 mb-1 truncate">{email}</p>}
                 <LogoutButton />
               </div>
@@ -89,6 +105,7 @@ export function BottomTabBar({ email }: { email: string | null }) {
       {/* Tab bar */}
       <motion.nav
         className="lg:hidden fixed bottom-0 inset-x-0 z-[80] glass-nav border-t safe-bottom"
+        style={{ willChange: "transform" }}
         animate={{ y: hidden && !moreOpen ? 100 : 0 }}
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
       >

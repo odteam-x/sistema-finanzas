@@ -30,7 +30,10 @@ export type IconName =
   | "eyeOff"
   | "piggy"
   | "arrowDownLeft"
-  | "arrowUpRight";
+  | "arrowUpRight"
+  | "sun"
+  | "moon"
+  | "palette";
 
 const paths: Record<IconName, React.ReactNode> = {
   dashboard: (
@@ -172,6 +175,22 @@ const paths: Record<IconName, React.ReactNode> = {
     <>
       <path d="M7 17 17 7" />
       <path d="M8 7h9v9" />
+    </>
+  ),
+  sun: (
+    <>
+      <circle cx="12" cy="12" r="4.5" />
+      <path d="M12 2.5v2.5M12 19v2.5M4.2 4.2l1.8 1.8M18 18l1.8 1.8M2.5 12H5M19 12h2.5M4.2 19.8 6 18M18 6l1.8-1.8" />
+    </>
+  ),
+  moon: <path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5Z" />,
+  palette: (
+    <>
+      <path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.8-.9 1.4-1.9-.2-.5-.1-1.1.4-1.4.3-.2.7-.3 1.1-.3H17a4 4 0 0 0 4-4c0-5.8-4.5-10.4-9-10.4Z" />
+      <circle cx="7.5" cy="11" r="1.2" fill="currentColor" stroke="none" />
+      <circle cx="9.5" cy="7" r="1.2" fill="currentColor" stroke="none" />
+      <circle cx="14.5" cy="7" r="1.2" fill="currentColor" stroke="none" />
+      <circle cx="16.5" cy="11" r="1.2" fill="currentColor" stroke="none" />
     </>
   ),
 };

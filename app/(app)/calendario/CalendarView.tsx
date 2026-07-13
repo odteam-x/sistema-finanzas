@@ -115,6 +115,7 @@ export function CalendarView({ year, month, exceptions, today }: Props) {
         open={selected !== null}
         onClose={() => setSelected(null)}
         title={selected ? formatDateLong(selected) : ""}
+        compact
       >
         {selInfo && (
           <p className="text-sm text-muted -mt-1 mb-3">

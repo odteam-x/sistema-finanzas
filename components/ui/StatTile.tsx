@@ -26,7 +26,7 @@ export function StatTile({
   className,
 }: StatTileProps) {
   return (
-    <div className={cn("glass rounded-[var(--radius-glass-sm)] p-3.5 sm:p-4", className)}>
+    <div className={cn("glass rounded-[var(--radius-glass-sm)] p-3.5 sm:p-4 min-w-0", className)}>
       <div className="flex items-start justify-between gap-2">
         <p className="text-xs font-medium text-muted leading-tight">{label}</p>
         {icon && (
