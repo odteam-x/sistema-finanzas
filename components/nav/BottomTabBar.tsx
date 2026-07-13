@@ -3,7 +3,12 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import {
+  AnimatePresence,
+  motion,
+  useDragControls,
+  useReducedMotion,
+} from "framer-motion";
 import { cn } from "@/lib/cn";
 import { Icon } from "@/components/ui/Icon";
 import { PRIMARY_ROUTES, SECONDARY_ROUTES } from "./routes";
@@ -13,6 +18,7 @@ import { ThemeButton } from "@/components/theme/ThemeButton";
 export function BottomTabBar({ email }: { email: string | null }) {
   const pathname = usePathname();
   const rm = useReducedMotion();
+  const dragControls = useDragControls();
   const [moreOpen, setMoreOpen] = useState(false);
   const [hidden, setHidden] = useState(false);
   const onSecondary = SECONDARY_ROUTES.some((r) => pathname === r.href);
@@ -69,8 +75,22 @@ export function BottomTabBar({ email }: { email: string | null }) {
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
               transition={{ type: "spring", stiffness: 380, damping: 34 }}
+              drag="y"
+              dragControls={dragControls}
+              dragListener={false}
+              dragConstraints={{ top: 0, bottom: 0 }}
+              dragElastic={{ top: 0, bottom: 0.6 }}
+              onDragEnd={(_, info) => {
+                if (info.offset.y > 90 || info.velocity.y > 500) setMoreOpen(false);
+              }}
             >
-              <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-black/15" />
+              {/* Asa arrastrable: desliza hacia abajo para cerrar */}
+              <div
+                onPointerDown={(e) => dragControls.start(e)}
+                className="-mt-1 mb-2 flex justify-center py-2 touch-none cursor-grab active:cursor-grabbing"
+              >
+                <div className="h-1.5 w-11 rounded-full bg-black/20" />
+              </div>
               <div className="grid grid-cols-4 gap-2">
                 {SECONDARY_ROUTES.map((r) => {
                   const active = pathname === r.href;

@@ -4,6 +4,7 @@ import { requireUser } from "@/lib/auth";
 import { Sidebar } from "@/components/nav/Sidebar";
 import { BottomTabBar } from "@/components/nav/BottomTabBar";
 import { PageTransition } from "@/components/PageTransition";
+import { PersonalizeProvider } from "@/components/theme/PersonalizeContext";
 
 export default async function AppLayout({
   children,
@@ -16,12 +17,14 @@ export default async function AppLayout({
   const email = user.email ?? null;
 
   return (
-    <div className="lg:flex">
-      <Sidebar email={email} />
-      <main className="flex-1 min-w-0 w-full max-w-3xl mx-auto px-4 sm:px-6 pt-6 pb-28 lg:pb-10">
-        <PageTransition>{children}</PageTransition>
-      </main>
-      <BottomTabBar email={email} />
-    </div>
+    <PersonalizeProvider>
+      <div className="lg:flex">
+        <Sidebar email={email} />
+        <main className="flex-1 min-w-0 w-full max-w-3xl mx-auto px-4 sm:px-6 pt-6 pb-28 lg:pb-10">
+          <PageTransition>{children}</PageTransition>
+        </main>
+        <BottomTabBar email={email} />
+      </div>
+    </PersonalizeProvider>
   );
 }

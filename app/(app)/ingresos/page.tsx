@@ -15,7 +15,8 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { Field, Input, Select, MoneyInput } from "@/components/ui/Field";
 import { FormModal } from "@/components/ui/FormModal";
 import { DeleteButton } from "@/components/ui/DeleteButton";
-import { Icon } from "@/components/ui/Icon";
+import { IconBubble } from "@/components/ui/IconBubble";
+import { MoneyValue } from "@/components/ui/MoneyValue";
 import { addSalary, deleteSalary, saveSalarySettings } from "./actions";
 
 export const metadata = { title: "Ingresos · Bolsillo Seguro" };
@@ -73,13 +74,19 @@ export default async function IngresosPage() {
         }
       />
 
-      {/* Resumen */}
-      <div className="grid grid-cols-2 gap-3 mb-4">
-        <StatTile
-          label="Recibido este mes"
-          value={formatDOP(monthTotal)}
-          icon="wallet"
-        />
+      {/* Recibido este mes */}
+      <GlassCard strong className="mb-3 flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-sm font-medium text-muted">Recibido este mes</p>
+          <MoneyValue
+            value={monthTotal}
+            className="block text-money-lg font-extrabold text-gradient-brand mt-1"
+          />
+        </div>
+        <IconBubble icon="wallet" tone="brand" size="lg" />
+      </GlassCard>
+
+      <div className="mb-4">
         <StatTile
           label="Próximo pago"
           value={formatDateShort(nextPay)}
@@ -171,9 +178,7 @@ export default async function IngresosPage() {
           {salaries.map((s) => (
             <li key={s.id}>
               <GlassCard className="flex items-center gap-3 py-3">
-                <span className="grid place-items-center size-10 rounded-full bg-primary-soft text-primary shrink-0">
-                  <Icon name={s.kind === "extra" ? "trendUp" : "wallet"} size={20} />
-                </span>
+                <IconBubble icon={s.kind === "extra" ? "trendUp" : "wallet"} tone="neutral" />
                 <div className="min-w-0 flex-1">
                   <p className="font-bold text-ink tabular">{formatDOP(Number(s.amount))}</p>
                   <p className="text-xs text-muted truncate">

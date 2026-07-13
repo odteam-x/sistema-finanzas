@@ -246,13 +246,29 @@ body {
     inset 0 1px 0 rgba(255, 255, 255, 0.3);
 }
 
-/* Números tabulares para montos y tablas. overflow-wrap evita que un monto
-   largo (ej. "-RD$12,450.00", sin espacios) se salga de su tarjeta en
-   pantallas angostas (S22+ ~384px). */
+/* Números tabulares para montos y tablas. overflow-wrap es un último
+   recurso (un monto largo, ej. "-RD$12,450.00", no tiene espacios donde
+   partirse) — el tamaño fluido de .text-money-* de abajo ya evita que se
+   necesite en la práctica, encogiendo el número en vez de cortarlo. */
 .tabular {
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum";
   overflow-wrap: anywhere;
+}
+
+/* Tamaños fluidos para montos: el número se encoge en pantallas angostas
+   (S22+ ~360-384px) en vez de partirse a la mitad. */
+.text-money-sm {
+  font-size: clamp(1.05rem, 0.85rem + 1.6vw, 1.5rem);
+  line-height: 1.15;
+}
+.text-money-md {
+  font-size: clamp(1.5rem, 1.05rem + 2.6vw, 1.875rem);
+  line-height: 1.1;
+}
+.text-money-lg {
+  font-size: clamp(1.65rem, 1.1rem + 3.2vw, 2.25rem);
+  line-height: 1.1;
 }
 
 /* Áreas seguras (barra de gestos S22+, notch) */

@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { getFinanceSummary } from "@/lib/summary";
 import { formatDOP, formatDateShort, clampPct } from "@/lib/format";
-import { PageHeader } from "@/components/ui/PageHeader";
+import { GreetingHero } from "@/components/ui/GreetingHero";
+import { QuickActions } from "@/components/ui/QuickActions";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { StatTile } from "@/components/ui/StatTile";
 import { ProgressBar } from "@/components/ui/ProgressBar";
@@ -41,7 +42,8 @@ export default async function DashboardPage() {
 
   return (
     <>
-      <PageHeader title="Resumen" subtitle={`Quincena ${s.quincena.label}`} />
+      <GreetingHero subtitle={`Quincena ${s.quincena.label}`} />
+      <QuickActions />
 
       {/* Saldo estimado (con presupuesto) */}
       <GlassCard strong className="mb-3 overflow-hidden relative">
@@ -53,7 +55,7 @@ export default async function DashboardPage() {
             <MoneyValue
               value={s.saldoEstimado}
               className={cn(
-                "block text-3xl sm:text-4xl font-extrabold mt-1",
+                "block text-money-lg font-extrabold mt-1",
                 s.saldoEstimado >= 0 ? "text-gradient-brand" : "text-danger",
               )}
             />
@@ -79,7 +81,7 @@ export default async function DashboardPage() {
             <MoneyValue
               value={s.saldoReal}
               className={cn(
-                "block text-2xl sm:text-3xl font-extrabold mt-1",
+                "block text-money-md font-extrabold mt-1",
                 s.saldoReal >= 0 ? "text-primary" : "text-danger",
               )}
             />

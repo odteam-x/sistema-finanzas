@@ -10,7 +10,8 @@ import { Badge } from "@/components/ui/Badge";
 import { Field, Input, Select, MoneyInput } from "@/components/ui/Field";
 import { FormModal } from "@/components/ui/FormModal";
 import { DeleteButton } from "@/components/ui/DeleteButton";
-import { Icon } from "@/components/ui/Icon";
+import { IconBubble } from "@/components/ui/IconBubble";
+import { BudgetRing } from "@/components/charts/BudgetRing";
 import {
   addCategory,
   addExpense,
@@ -74,8 +75,13 @@ export default async function PresupuestoPage() {
         }
       />
 
+      {/* Anillo gastado vs. presupuesto */}
+      <GlassCard className="mb-3">
+        <BudgetRing spent={realQuincena} budget={estQuincena} />
+      </GlassCard>
+
       {/* Resumen del periodo */}
-      <div className="grid grid-cols-3 gap-3 mb-3">
+      <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-3">
         <StatTile label="Estimado quincena" value={formatDOP(estQuincena, false)} icon="calc" />
         <StatTile label="Gasto real" value={formatDOP(realQuincena, false)} tone="neutral" icon="wallet" />
         <StatTile
@@ -112,9 +118,7 @@ export default async function PresupuestoPage() {
           {categories.map((c) => (
             <li key={c.id}>
               <GlassCard className="flex items-center gap-3 py-3">
-                <span className="grid place-items-center size-10 rounded-full bg-primary-soft text-primary shrink-0">
-                  <Icon name="budget" size={20} />
-                </span>
+                <IconBubble icon="budget" tone="neutral" />
                 <div className="min-w-0 flex-1">
                   <p className="font-semibold text-ink truncate">{c.name}</p>
                   <p className="text-xs text-muted tabular">
@@ -203,6 +207,7 @@ export default async function PresupuestoPage() {
           {expenses.map((e) => (
             <li key={e.id}>
               <GlassCard className="flex items-center gap-3 py-2.5">
+                <IconBubble icon="wallet" tone="neutral" size="sm" />
                 <div className="min-w-0 flex-1">
                   <p className="font-semibold text-ink tabular">
                     {formatDOP(Number(e.amount))}

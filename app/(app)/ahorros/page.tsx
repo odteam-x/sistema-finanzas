@@ -7,8 +7,10 @@ import { Badge } from "@/components/ui/Badge";
 import { Field, Input, Select, MoneyInput } from "@/components/ui/Field";
 import { FormModal } from "@/components/ui/FormModal";
 import { DeleteButton } from "@/components/ui/DeleteButton";
-import { Icon, type IconName } from "@/components/ui/Icon";
+import type { IconName } from "@/components/ui/Icon";
 import { MoneyValue } from "@/components/ui/MoneyValue";
+import { IconBubble } from "@/components/ui/IconBubble";
+import { PeekCarousel } from "@/components/ui/PeekCarousel";
 import {
   addAccount,
   addMovement,
@@ -89,15 +91,13 @@ export default async function AhorrosPage() {
           <p className="text-sm font-medium text-muted">Total ahorrado</p>
           <MoneyValue
             value={totalSaved}
-            className="block text-3xl font-extrabold text-gradient-brand mt-1"
+            className="block text-money-lg font-extrabold text-gradient-brand mt-1"
           />
           <p className="text-xs text-muted mt-1">
             {accounts.length} {accounts.length === 1 ? "cuenta" : "cuentas"}
           </p>
         </div>
-        <span className="grid place-items-center size-14 rounded-2xl icon-badge bg-gradient-brand shrink-0">
-          <Icon name="piggy" size={30} />
-        </span>
+        <IconBubble icon="piggy" tone="brand" size="lg" />
       </GlassCard>
 
       {/* Cuentas */}
@@ -108,22 +108,19 @@ export default async function AhorrosPage() {
           message="Crea tu primera cuenta (alcancía, banco, efectivo…) y registra depósitos y retiros."
         />
       ) : (
-        <ul className="flex flex-col gap-3 mb-6">
+        <PeekCarousel>
           {accounts.map((a) => {
             const balance = balanceOf(a.id);
             const count = movements.filter((m) => m.account_id === a.id).length;
             return (
-              <li key={a.id}>
-                <GlassCard>
+              <GlassCard key={a.id}>
                   <div className="flex items-start gap-3">
-                    <span className="grid place-items-center size-11 rounded-2xl icon-badge bg-gradient-brand shrink-0">
-                      <Icon name={validIcon(a.icon)} size={22} />
-                    </span>
+                    <IconBubble icon={validIcon(a.icon)} tone="brand" />
                     <div className="min-w-0 flex-1">
                       <p className="font-bold text-ink truncate">{a.name}</p>
                       <MoneyValue
                         value={balance}
-                        className="block text-2xl font-extrabold text-primary leading-tight"
+                        className="block text-money-md font-extrabold text-primary leading-tight"
                       />
                       <p className="text-xs text-muted">
                         {count} {count === 1 ? "movimiento" : "movimientos"}
@@ -196,11 +193,10 @@ export default async function AhorrosPage() {
                       </Field>
                     </FormModal>
                   </div>
-                </GlassCard>
-              </li>
+              </GlassCard>
             );
           })}
-        </ul>
+        </PeekCarousel>
       )}
 
       {/* Movimientos recientes */}
@@ -213,14 +209,11 @@ export default async function AhorrosPage() {
               return (
                 <li key={m.id}>
                   <GlassCard className="flex items-center gap-3 py-2.5">
-                    <span
-                      className={
-                        "grid place-items-center size-9 rounded-full shrink-0 " +
-                        (isDep ? "bg-primary-soft text-primary" : "bg-danger-soft text-danger")
-                      }
-                    >
-                      <Icon name={isDep ? "arrowDownLeft" : "arrowUpRight"} size={18} />
-                    </span>
+                    <IconBubble
+                      icon={isDep ? "arrowDownLeft" : "arrowUpRight"}
+                      tone={isDep ? "neutral" : "danger"}
+                      size="sm"
+                    />
                     <div className="min-w-0 flex-1">
                       <p className="font-semibold text-ink tabular">
                         {isDep ? "+" : "−"}

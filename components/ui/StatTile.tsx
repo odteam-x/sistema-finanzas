@@ -40,7 +40,7 @@ export function StatTile({
           </span>
         )}
       </div>
-      <p className="mt-1.5 text-xl sm:text-2xl font-extrabold tracking-tight text-ink tabular">
+      <p className="mt-1.5 text-money-sm font-extrabold tracking-tight text-ink tabular">
         {value}
       </p>
       {sub && <p className="mt-0.5 text-xs text-muted">{sub}</p>}
