@@ -22,8 +22,13 @@ interface GeminiResponse {
  */
 export async function getFinanceAdvice(
   summary: FinanceSummary,
+  displayName?: string,
 ): Promise<string | null> {
   if (!isGeminiConfigured) return null;
+
+  const saludo = displayName?.trim()
+    ? `El usuario se llama ${displayName.trim()}; dirígete a él/ella por su nombre de forma natural. `
+    : "";
 
   const contexto = [
     `Ingreso quincenal: ${formatDOP(summary.ingresoQuincena)}`,
@@ -38,6 +43,7 @@ export async function getFinanceAdvice(
 
   const prompt =
     "Eres un asistente de finanzas personales en República Dominicana (moneda RD$). " +
+    saludo +
     "Con base en estos datos del usuario, da 3 consejos breves, concretos y accionables " +
     "en español, con tono cercano. No des asesoría de inversión. Datos:\n\n" +
     contexto;

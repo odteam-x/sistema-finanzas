@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Modal } from "@/components/ui/Modal";
 import { Icon } from "@/components/ui/Icon";
+import { Input } from "@/components/ui/Field";
 import { cn } from "@/lib/cn";
 import {
   readTheme,
@@ -11,6 +12,7 @@ import {
   type ThemePref,
   type ThemeMode,
 } from "@/lib/theme";
+import { readProfile, writeProfile } from "@/lib/profile";
 
 interface ThemeButtonProps {
   /** "sidebar": fila como los enlaces del sidebar. "sheet": tile como en el menú "Más". */
@@ -24,11 +26,17 @@ export function ThemeButton({ variant, onNavigate }: ThemeButtonProps) {
   // maneja devolviendo el default); el trigger no depende de `pref`, así
   // que no hay riesgo de mismatch de hidratación con el panel cerrado.
   const [pref, setPref] = useState<ThemePref>(readTheme);
+  const [name, setName] = useState<string>(() => readProfile().displayName);
 
   function update(next: Partial<ThemePref>) {
     const merged = { ...pref, ...next };
     setPref(merged);
     writeTheme(merged);
+  }
+
+  function updateName(value: string) {
+    setName(value);
+    writeProfile({ displayName: value });
   }
 
   function openPanel() {
@@ -59,6 +67,21 @@ export function ThemeButton({ variant, onNavigate }: ThemeButtonProps) {
       <Modal open={open} onClose={() => setOpen(false)} title="Personalizar" compact>
         <p className="text-sm text-muted -mt-1 mb-4">
           Elige un color y el modo de la app. Se guarda en este dispositivo.
+        </p>
+
+        <label htmlFor="display-name" className="text-xs font-bold text-ink mb-2 block">
+          Tu nombre
+        </label>
+        <Input
+          id="display-name"
+          value={name}
+          onChange={(e) => updateName(e.target.value)}
+          placeholder="¿Cómo te llamas?"
+          maxLength={40}
+          className="mb-1.5"
+        />
+        <p className="text-xs text-muted mb-5">
+          El asistente IA lo usará para dirigirse a ti cuando esté activo.
         </p>
 
         <p className="text-xs font-bold text-ink mb-2">Color</p>
