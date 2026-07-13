@@ -1,24 +1,48 @@
 // Utilidades de formato (moneda DOP, fechas es-DO) y manejo de fechas
 // tipo "YYYY-MM-DD" sin problemas de zona horaria.
+//
+// Los formateadores Intl se crean de forma perezosa (no al importar el
+// módulo) y con respaldo a "en-US" si el runtime no soporta el locale
+// "es-DO", para que un entorno con ICU reducido nunca tumbe la página.
 
-const currencyFmt = new Intl.NumberFormat("es-DO", {
-  style: "currency",
-  currency: "DOP",
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2,
-});
+function safeIntl<T>(build: (locale: string) => T): T {
+  try {
+    return build("es-DO");
+  } catch {
+    return build("en-US");
+  }
+}
 
-const currencyFmtNoDecimals = new Intl.NumberFormat("es-DO", {
-  style: "currency",
-  currency: "DOP",
-  minimumFractionDigits: 0,
-  maximumFractionDigits: 0,
-});
+let _currencyFmt: Intl.NumberFormat | null = null;
+function currencyFmt(): Intl.NumberFormat {
+  return (_currencyFmt ??= safeIntl(
+    (locale) =>
+      new Intl.NumberFormat(locale, {
+        style: "currency",
+        currency: "DOP",
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }),
+  ));
+}
+
+let _currencyFmtNoDecimals: Intl.NumberFormat | null = null;
+function currencyFmtNoDecimals(): Intl.NumberFormat {
+  return (_currencyFmtNoDecimals ??= safeIntl(
+    (locale) =>
+      new Intl.NumberFormat(locale, {
+        style: "currency",
+        currency: "DOP",
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+      }),
+  ));
+}
 
 /** Formato RD$ (ej. "RD$1,250.00"). */
 export function formatDOP(amount: number, decimals = true): string {
   const n = Number.isFinite(amount) ? amount : 0;
-  return decimals ? currencyFmt.format(n) : currencyFmtNoDecimals.format(n);
+  return decimals ? currencyFmt().format(n) : currencyFmtNoDecimals().format(n);
 }
 
 /** Convierte "YYYY-MM-DD" a un Date local al mediodía (evita saltos por TZ). */
@@ -40,41 +64,56 @@ export function todayISO(): string {
   return toISODate(new Date());
 }
 
-const dateFmtLong = new Intl.DateTimeFormat("es-DO", {
-  day: "numeric",
-  month: "long",
-  year: "numeric",
-});
+let _dateFmtLong: Intl.DateTimeFormat | null = null;
+function dateFmtLong(): Intl.DateTimeFormat {
+  return (_dateFmtLong ??= safeIntl(
+    (locale) =>
+      new Intl.DateTimeFormat(locale, {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      }),
+  ));
+}
 
-const dateFmtShort = new Intl.DateTimeFormat("es-DO", {
-  day: "numeric",
-  month: "short",
-});
+let _dateFmtShort: Intl.DateTimeFormat | null = null;
+function dateFmtShort(): Intl.DateTimeFormat {
+  return (_dateFmtShort ??= safeIntl(
+    (locale) => new Intl.DateTimeFormat(locale, { day: "numeric", month: "short" }),
+  ));
+}
 
-const monthFmt = new Intl.DateTimeFormat("es-DO", {
-  month: "long",
-  year: "numeric",
-});
+let _monthFmt: Intl.DateTimeFormat | null = null;
+function monthFmt(): Intl.DateTimeFormat {
+  return (_monthFmt ??= safeIntl(
+    (locale) => new Intl.DateTimeFormat(locale, { month: "long", year: "numeric" }),
+  ));
+}
 
-const weekdayFmt = new Intl.DateTimeFormat("es-DO", { weekday: "long" });
+let _weekdayFmt: Intl.DateTimeFormat | null = null;
+function weekdayFmt(): Intl.DateTimeFormat {
+  return (_weekdayFmt ??= safeIntl(
+    (locale) => new Intl.DateTimeFormat(locale, { weekday: "long" }),
+  ));
+}
 
 /** "12 de julio de 2026" */
 export function formatDateLong(iso: string): string {
-  return dateFmtLong.format(parseISODate(iso));
+  return dateFmtLong().format(parseISODate(iso));
 }
 
 /** "12 jul" */
 export function formatDateShort(iso: string): string {
-  return dateFmtShort.format(parseISODate(iso));
+  return dateFmtShort().format(parseISODate(iso));
 }
 
 /** "julio de 2026" (a partir de año/mes 0-index) */
 export function formatMonth(year: number, month: number): string {
-  return monthFmt.format(new Date(year, month, 1, 12));
+  return monthFmt().format(new Date(year, month, 1, 12));
 }
 
 export function formatWeekday(iso: string): string {
-  return weekdayFmt.format(parseISODate(iso));
+  return weekdayFmt().format(parseISODate(iso));
 }
 
 /** Diferencia en días entre dos fechas ISO (b - a). */

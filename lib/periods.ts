@@ -19,13 +19,23 @@ export interface Period {
   key: string; // "2026-07-Q1"
 }
 
-const monthShort = new Intl.DateTimeFormat("es-DO", { month: "short" });
+let _monthShort: Intl.DateTimeFormat | null = null;
+function monthShort(): Intl.DateTimeFormat {
+  if (!_monthShort) {
+    try {
+      _monthShort = new Intl.DateTimeFormat("es-DO", { month: "short" });
+    } catch {
+      _monthShort = new Intl.DateTimeFormat("en-US", { month: "short" });
+    }
+  }
+  return _monthShort;
+}
 
 function makePeriod(year: number, month: number, half: 1 | 2): Period {
   const lastDay = new Date(year, month + 1, 0).getDate();
   const start = half === 1 ? 1 : 16;
   const end = half === 1 ? 15 : lastDay;
-  const mLabel = monthShort.format(new Date(year, month, 1, 12)).replace(".", "");
+  const mLabel = monthShort().format(new Date(year, month, 1, 12)).replace(".", "");
   return {
     start: toISODate(new Date(year, month, start, 12)),
     end: toISODate(new Date(year, month, end, 12)),
