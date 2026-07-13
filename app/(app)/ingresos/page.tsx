@@ -120,15 +120,9 @@ async function IngresosContent() {
           <FormModal
             title="Configuración del sueldo"
             action={saveSalarySettings}
-            renderTrigger={(open) => (
-              <button
-                onClick={open}
-                aria-label="Editar configuración"
-                className="grid place-items-center size-9 rounded-full text-muted hover:bg-black/5 cursor-pointer shrink-0"
-              >
-                <Icon name="edit" size={18} />
-              </button>
-            )}
+            trigger="icon"
+            triggerIcon="edit"
+            triggerAriaLabel="Editar configuración"
           >
             <Field
               label="Sueldo quincenal por defecto"

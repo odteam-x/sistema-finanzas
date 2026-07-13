@@ -4,19 +4,23 @@ import { useState, useTransition } from "react";
 import { Modal } from "./Modal";
 import { Button } from "./Button";
 import { Icon, type IconName } from "./Icon";
+import { cn } from "@/lib/cn";
 import type { ActionResult } from "@/lib/actions-shared";
+
+type TriggerStyle = "button" | "icon" | "link" | "pill";
 
 interface FormModalProps {
   title: string;
   action: (formData: FormData) => Promise<ActionResult>;
   children: React.ReactNode;
   submitLabel?: string;
+  /** Estilo del botón que abre el modal (todo serializable, sin funciones). */
+  trigger?: TriggerStyle;
   triggerLabel?: string;
   triggerIcon?: IconName;
   triggerVariant?: "primary" | "secondary";
+  triggerAriaLabel?: string;
   triggerFull?: boolean;
-  /** Trigger personalizado (recibe la función para abrir el modal). */
-  renderTrigger?: (open: () => void) => React.ReactNode;
 }
 
 export function FormModal({
@@ -24,11 +28,12 @@ export function FormModal({
   action,
   children,
   submitLabel = "Guardar",
+  trigger = "button",
   triggerLabel,
   triggerIcon = "plus",
   triggerVariant = "primary",
+  triggerAriaLabel,
   triggerFull,
-  renderTrigger,
 }: FormModalProps) {
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -54,18 +59,44 @@ export function FormModal({
 
   return (
     <>
-      {renderTrigger ? (
-        renderTrigger(openModal)
-      ) : (
-        <Button
-          variant={triggerVariant}
-          onClick={openModal}
-          full={triggerFull}
-          size="md"
-        >
+      {trigger === "button" && (
+        <Button variant={triggerVariant} onClick={openModal} full={triggerFull} size="md">
           <Icon name={triggerIcon} size={18} />
           {triggerLabel}
         </Button>
+      )}
+
+      {trigger === "icon" && (
+        <button
+          onClick={openModal}
+          aria-label={triggerAriaLabel ?? triggerLabel ?? "Abrir"}
+          className="grid place-items-center size-9 rounded-full text-muted hover:bg-black/5 cursor-pointer shrink-0"
+        >
+          <Icon name={triggerIcon} size={18} />
+        </button>
+      )}
+
+      {trigger === "link" && (
+        <button
+          onClick={openModal}
+          className="inline-flex items-center gap-1 text-sm font-semibold text-primary hover:text-primary-hover cursor-pointer"
+        >
+          <Icon name={triggerIcon} size={16} />
+          {triggerLabel}
+        </button>
+      )}
+
+      {trigger === "pill" && (
+        <button
+          onClick={openModal}
+          className={cn(
+            "inline-flex items-center justify-center gap-1.5 min-h-9 rounded-full bg-primary-soft text-primary font-semibold text-sm hover:bg-primary/15 cursor-pointer",
+            triggerFull ? "w-full" : "flex-1",
+          )}
+        >
+          <Icon name={triggerIcon} size={16} />
+          {triggerLabel}
+        </button>
       )}
 
       <Modal open={open} onClose={() => setOpen(false)} title={title}>

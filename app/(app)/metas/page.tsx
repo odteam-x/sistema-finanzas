@@ -158,15 +158,9 @@ async function MetasContent() {
                     title={`Aportar a “${g.name}”`}
                     action={addProgress}
                     submitLabel="Aportar"
-                    renderTrigger={(open) => (
-                      <button
-                        onClick={open}
-                        className="flex-1 inline-flex items-center justify-center gap-1.5 min-h-9 rounded-full bg-primary-soft text-primary font-semibold text-sm hover:bg-primary/15 cursor-pointer"
-                      >
-                        <Icon name="plus" size={16} />
-                        Aportar
-                      </button>
-                    )}
+                    trigger="pill"
+                    triggerIcon="plus"
+                    triggerLabel="Aportar"
                   >
                     <input type="hidden" name="id" value={g.id} />
                     <Field
@@ -183,15 +177,9 @@ async function MetasContent() {
                     title="Editar meta"
                     action={updateGoal}
                     submitLabel="Guardar"
-                    renderTrigger={(open) => (
-                      <button
-                        onClick={open}
-                        aria-label={`Editar ${g.name}`}
-                        className="grid place-items-center size-9 rounded-full text-muted hover:bg-black/5 cursor-pointer"
-                      >
-                        <Icon name="edit" size={18} />
-                      </button>
-                    )}
+                    trigger="icon"
+                    triggerIcon="edit"
+                    triggerAriaLabel={`Editar ${g.name}`}
                   >
                     <input type="hidden" name="id" value={g.id} />
                     <Field label="Nombre" htmlFor={`gn-${g.id}`} required>

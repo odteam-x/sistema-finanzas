@@ -140,15 +140,9 @@ async function PresupuestoContent() {
                   title="Editar categoría"
                   action={updateCategory}
                   submitLabel="Guardar"
-                  renderTrigger={(open) => (
-                    <button
-                      onClick={open}
-                      aria-label={`Editar ${c.name}`}
-                      className="grid place-items-center size-9 rounded-full text-muted hover:bg-black/5 cursor-pointer shrink-0"
-                    >
-                      <Icon name="edit" size={18} />
-                    </button>
-                  )}
+                  trigger="icon"
+                  triggerIcon="edit"
+                  triggerAriaLabel={`Editar ${c.name}`}
                 >
                   <input type="hidden" name="id" value={c.id} />
                   <Field label="Nombre" htmlFor={`name-${c.id}`} required>
@@ -181,15 +175,9 @@ async function PresupuestoContent() {
           title="Registrar gasto"
           action={addExpense}
           submitLabel="Registrar"
-          renderTrigger={(open) => (
-            <button
-              onClick={open}
-              className="inline-flex items-center gap-1 text-sm font-semibold text-primary hover:text-primary-hover cursor-pointer"
-            >
-              <Icon name="plus" size={16} />
-              Registrar
-            </button>
-          )}
+          trigger="link"
+          triggerIcon="plus"
+          triggerLabel="Registrar"
         >
           <Field label="Monto" htmlFor="exp-amount" required>
             <MoneyInput id="exp-amount" name="amount" required />
