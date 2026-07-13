@@ -1,0 +1,149 @@
+@import "tailwindcss";
+
+/* ---------------------------------------------------------------------------
+   Design tokens — Finanzas Personales
+   Estilo: glassmorfismo, fondo crema/beige, acento verde.
+--------------------------------------------------------------------------- */
+@theme {
+  /* Fondo crema / beige */
+  --color-cream: #f4efe3;
+  --color-cream-deep: #ebe3d2;
+
+  /* Verde principal + variantes de estado */
+  --color-primary: #2e7d5b;
+  --color-primary-hover: #27694c;
+  --color-primary-active: #1f5540;
+  --color-primary-soft: #e2efe8;
+  --color-accent: #3fa576;
+
+  /* Texto */
+  --color-ink: #1e2a23; /* ~13:1 sobre crema */
+  --color-muted: #51625a; /* ~4.8:1 sobre crema */
+
+  /* Semánticos */
+  --color-danger: #c0392b;
+  --color-danger-soft: #f7e2df;
+  --color-warning: #b06f10;
+  --color-warning-soft: #f7ecd8;
+  --color-success: #2e7d5b;
+  --color-info: #2b6cb0;
+
+  /* Tipografía */
+  --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", Roboto, sans-serif;
+
+  /* Radios */
+  --radius-glass: 20px;
+  --radius-glass-sm: 14px;
+}
+
+:root {
+  color-scheme: light;
+}
+
+html {
+  min-height: 100%;
+  background-color: var(--color-cream);
+}
+
+/* Fondo con blobs suaves (capa fija, sin background-attachment para evitar
+   jank/repaint en móvil) para que el vidrio tenga sobre qué reflejar. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image:
+    radial-gradient(
+      42rem 42rem at 12% -8%,
+      rgba(63, 165, 118, 0.16),
+      transparent 60%
+    ),
+    radial-gradient(
+      38rem 38rem at 108% 12%,
+      rgba(46, 125, 91, 0.14),
+      transparent 58%
+    ),
+    radial-gradient(
+      46rem 46rem at 50% 118%,
+      rgba(176, 111, 16, 0.08),
+      transparent 60%
+    );
+}
+
+body {
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* ---------------------------------------------------------------------------
+   Utilidades de vidrio (glassmorphism)
+--------------------------------------------------------------------------- */
+@layer components {
+  .glass {
+    background: rgba(255, 255, 255, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    box-shadow:
+      0 8px 30px -12px rgba(31, 42, 35, 0.25),
+      inset 0 1px 0 rgba(255, 255, 255, 0.5);
+    @apply backdrop-blur-md backdrop-saturate-150;
+  }
+
+  .glass-strong {
+    background: rgba(255, 255, 255, 0.72);
+    border: 1px solid rgba(255, 255, 255, 0.7);
+    box-shadow:
+      0 12px 40px -14px rgba(31, 42, 35, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.6);
+    @apply backdrop-blur-lg backdrop-saturate-150;
+  }
+
+  /* Barra de navegación translúcida */
+  .glass-nav {
+    background: rgba(244, 239, 227, 0.78);
+    border-color: rgba(255, 255, 255, 0.6);
+    @apply backdrop-blur-md backdrop-saturate-150;
+  }
+}
+
+/* Números tabulares para montos y tablas (evita saltos de layout) */
+.tabular {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/* Áreas seguras (barra de gestos S22+, notch) */
+.safe-bottom {
+  padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+}
+.safe-top {
+  padding-top: max(0.5rem, env(safe-area-inset-top));
+}
+
+/* Foco visible y accesible en toda la app */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* Respeta reduce-motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Scrollbar sutil */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(46, 125, 91, 0.35) transparent;
+}
