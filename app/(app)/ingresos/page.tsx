@@ -16,6 +16,7 @@ import { Field, Input, Select, MoneyInput } from "@/components/ui/Field";
 import { FormModal } from "@/components/ui/FormModal";
 import { DeleteButton } from "@/components/ui/DeleteButton";
 import { IconBubble } from "@/components/ui/IconBubble";
+import { Icon } from "@/components/ui/Icon";
 import { MoneyValue } from "@/components/ui/MoneyValue";
 import { addSalary, deleteSalary, saveSalarySettings } from "./actions";
 
@@ -88,16 +89,15 @@ export default async function IngresosPage() {
       />
 
       {/* Recibido este mes */}
-      <GlassCard strong className="mb-3 flex items-center justify-between gap-3">
+      <div className="bg-gradient-brand rounded-[var(--radius-glass)] p-4 sm:p-5 mb-3 flex items-center justify-between gap-3 shadow-lg shadow-black/10">
         <div className="min-w-0">
-          <p className="text-sm font-medium text-muted">Recibido este mes</p>
-          <MoneyValue
-            value={monthTotal}
-            className="block text-money-lg font-extrabold text-gradient-brand mt-1"
-          />
+          <p className="text-sm font-medium text-white/80">Recibido este mes</p>
+          <MoneyValue value={monthTotal} className="block text-money-lg font-extrabold text-white mt-1" />
         </div>
-        <IconBubble icon="wallet" tone="brand" size="lg" />
-      </GlassCard>
+        <span className="grid place-items-center size-14 rounded-full bg-white/20 text-white shrink-0">
+          <Icon name="wallet" size={28} />
+        </span>
+      </div>
 
       <div className="mb-4">
         <StatTile

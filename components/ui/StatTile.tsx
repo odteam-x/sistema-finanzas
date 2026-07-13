@@ -22,6 +22,17 @@ const toneToBubble = {
   info: "info",
 } as const;
 
+// Danger/warning/info tiñen también el FONDO de la tarjeta (no solo el
+// ícono) — le da variedad de color al tablero y refuerza la urgencia sin
+// depender solo del color del ícono.
+const toneBg = {
+  primary: "glass",
+  neutral: "glass",
+  danger: "bg-danger-soft border border-black/5",
+  warning: "bg-warning-soft border border-black/5",
+  info: "bg-info-soft border border-black/5",
+} as const;
+
 export function StatTile({
   label,
   value,
@@ -31,7 +42,13 @@ export function StatTile({
   className,
 }: StatTileProps) {
   return (
-    <div className={cn("glass rounded-[var(--radius-glass-sm)] p-3.5 sm:p-4 min-w-0", className)}>
+    <div
+      className={cn(
+        toneBg[tone],
+        "rounded-[var(--radius-glass-sm)] p-3.5 sm:p-4 min-w-0",
+        className,
+      )}
+    >
       <div className="flex items-start justify-between gap-2">
         <p className="text-xs font-medium text-muted leading-tight">{label}</p>
         {icon && <IconBubble icon={icon} tone={toneToBubble[tone]} size="sm" />}

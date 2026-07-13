@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Field, Input, Select, MoneyInput } from "@/components/ui/Field";
 import { FormModal } from "@/components/ui/FormModal";
 import { DeleteButton } from "@/components/ui/DeleteButton";
-import type { IconName } from "@/components/ui/Icon";
+import { Icon, type IconName } from "@/components/ui/Icon";
 import { MoneyValue } from "@/components/ui/MoneyValue";
 import { IconBubble } from "@/components/ui/IconBubble";
 import { PeekCarousel } from "@/components/ui/PeekCarousel";
@@ -89,19 +89,18 @@ export default async function CuentasPage() {
       />
 
       {/* Total */}
-      <GlassCard strong className="mb-4 flex items-center justify-between gap-3 overflow-hidden">
+      <div className="bg-gradient-brand rounded-[var(--radius-glass)] p-4 sm:p-5 mb-4 flex items-center justify-between gap-3 overflow-hidden shadow-lg shadow-black/10">
         <div className="min-w-0">
-          <p className="text-sm font-medium text-muted">Total en cuentas</p>
-          <MoneyValue
-            value={totalSaved}
-            className="block text-money-lg font-extrabold text-gradient-brand mt-1"
-          />
-          <p className="text-xs text-muted mt-1">
+          <p className="text-sm font-medium text-white/80">Total en cuentas</p>
+          <MoneyValue value={totalSaved} className="block text-money-lg font-extrabold text-white mt-1" />
+          <p className="text-xs text-white/70 mt-1">
             {accounts.length} {accounts.length === 1 ? "cuenta" : "cuentas"}
           </p>
         </div>
-        <IconBubble icon="wallet" tone="brand" size="lg" />
-      </GlassCard>
+        <span className="grid place-items-center size-14 rounded-full bg-white/20 text-white shrink-0">
+          <Icon name="wallet" size={28} />
+        </span>
+      </div>
 
       {/* Cuentas */}
       {accounts.length === 0 ? (

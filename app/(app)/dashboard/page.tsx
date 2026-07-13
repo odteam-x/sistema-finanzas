@@ -142,9 +142,9 @@ export default async function DashboardPage() {
               const pct = clampPct(Number(g.current_amount), Number(g.target_amount));
               return (
                 <div key={g.id}>
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-sm font-semibold text-ink truncate">{g.name}</span>
-                    <span className="text-xs text-muted tabular">{Math.round(pct)}%</span>
+                  <div className="flex items-center justify-between gap-2 mb-1">
+                    <span className="text-sm font-semibold text-ink truncate min-w-0">{g.name}</span>
+                    <span className="text-xs text-muted tabular shrink-0">{Math.round(pct)}%</span>
                   </div>
                   <ProgressBar value={pct} />
                 </div>

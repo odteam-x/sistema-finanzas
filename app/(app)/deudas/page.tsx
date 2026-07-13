@@ -120,9 +120,9 @@ export default async function DeudasPage() {
                   <div className="flex items-start gap-3">
                     <IconBubble icon="debt" tone={statusBubbleTone[d.status]} />
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <p className="font-bold text-ink truncate">{d.name}</p>
-                        <Badge tone={statusTone[d.status]}>
+                      <div className="flex items-center gap-2 min-w-0">
+                        <p className="font-bold text-ink truncate min-w-0">{d.name}</p>
+                        <Badge tone={statusTone[d.status]} className="shrink-0">
                           {statusLabel[d.status]}
                         </Badge>
                       </div>
