@@ -10,10 +10,21 @@ import { Icon } from "@/components/ui/Icon";
 import { CalendarView } from "./CalendarView";
 import { LoadHolidaysButton } from "./LoadHolidaysButton";
 import type { ExceptionKind } from "@/lib/types";
+import { DebugError } from "@/components/DebugError";
 
 export const metadata = { title: "Calendario · Finanzas" };
 
-export default async function CalendarioPage({
+export default async function CalendarioPage(props: {
+  searchParams: Promise<{ y?: string; m?: string }>;
+}) {
+  try {
+    return await CalendarioContent(props);
+  } catch (error) {
+    return <DebugError error={error} />;
+  }
+}
+
+async function CalendarioContent({
   searchParams,
 }: {
   searchParams: Promise<{ y?: string; m?: string }>;

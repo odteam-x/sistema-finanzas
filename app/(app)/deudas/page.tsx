@@ -17,6 +17,7 @@ import { AddDebtForm } from "./AddDebtForm";
 import { InstallmentRow, DebtPaidToggle } from "./DebtControls";
 import { deleteDebt } from "./actions";
 import type { DebtStatus } from "@/lib/types";
+import { DebugError } from "@/components/DebugError";
 
 export const metadata = { title: "Deudas · Finanzas" };
 
@@ -32,6 +33,14 @@ const statusLabel: Record<DebtStatus, string> = {
 };
 
 export default async function DeudasPage() {
+  try {
+    return await DeudasContent();
+  } catch (error) {
+    return <DebugError error={error} />;
+  }
+}
+
+async function DeudasContent() {
   const today = todayISO();
   const [debts, installments] = await Promise.all([
     getDebts(),
