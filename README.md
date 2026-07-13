@@ -71,6 +71,19 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=tu-anon-public-key
 > Si aún no configuras Supabase, la app se abre igual y muestra las
 > instrucciones en pantalla.
 
+### Asistente IA (opcional, Gemini)
+
+El proyecto trae preparada la integración con Gemini (`lib/ai/gemini.ts`), pero
+**desactivada** por defecto. Para activarla más adelante:
+
+1. Crea una API key gratis en [aistudio.google.com/apikey](https://aistudio.google.com/apikey).
+2. Agrega `GEMINI_API_KEY=tu-key` en `.env.local` (local) y en las Environment
+   Variables de Vercel (producción).
+3. Sin key, la función se comporta como "no configurada" y la app funciona igual.
+
+> Nota: al usar el asistente, un resumen de tus datos financieros se envía a la
+> API de Google para generar los consejos.
+
 ## 3. Ejecutar en local
 
 ```bash

@@ -6,7 +6,7 @@ import { Icon, type IconName } from "@/components/ui/Icon";
 import { cn } from "@/lib/cn";
 import type { Alert } from "@/lib/summary";
 
-export const metadata = { title: "Consejos · Finanzas" };
+export const metadata = { title: "Consejos · Bolsillo Seguro" };
 
 const alertStyle: Record<
   Alert["tone"],

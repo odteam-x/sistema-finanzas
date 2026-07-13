@@ -8,7 +8,7 @@ import { Field, Input, Select, MoneyInput } from "@/components/ui/Field";
 import { FormModal } from "@/components/ui/FormModal";
 import { DeleteButton } from "@/components/ui/DeleteButton";
 import { Icon, type IconName } from "@/components/ui/Icon";
-import { CoinStack } from "@/components/illustrations";
+import { MoneyValue } from "@/components/ui/MoneyValue";
 import {
   addAccount,
   addMovement,
@@ -17,7 +17,7 @@ import {
   updateAccount,
 } from "./actions";
 
-export const metadata = { title: "Ahorros · Finanzas" };
+export const metadata = { title: "Ahorros · Bolsillo Seguro" };
 
 const ACCOUNT_ICONS: { value: IconName; label: string }[] = [
   { value: "piggy", label: "Alcancía" },
@@ -85,16 +85,19 @@ export default async function AhorrosPage() {
 
       {/* Total ahorrado */}
       <GlassCard strong className="mb-4 flex items-center justify-between gap-3 overflow-hidden">
-        <div>
+        <div className="min-w-0">
           <p className="text-sm font-medium text-muted">Total ahorrado</p>
-          <p className="text-3xl font-extrabold tracking-tight text-primary tabular mt-1">
-            {formatDOP(totalSaved)}
-          </p>
+          <MoneyValue
+            value={totalSaved}
+            className="block text-3xl font-extrabold text-gradient-brand mt-1"
+          />
           <p className="text-xs text-muted mt-1">
             {accounts.length} {accounts.length === 1 ? "cuenta" : "cuentas"}
           </p>
         </div>
-        <CoinStack size={96} className="shrink-0 -mr-1" />
+        <span className="grid place-items-center size-14 rounded-2xl icon-badge bg-gradient-brand shrink-0">
+          <Icon name="piggy" size={30} />
+        </span>
       </GlassCard>
 
       {/* Cuentas */}
@@ -113,14 +116,15 @@ export default async function AhorrosPage() {
               <li key={a.id}>
                 <GlassCard>
                   <div className="flex items-start gap-3">
-                    <span className="grid place-items-center size-11 rounded-2xl bg-primary-soft text-primary shrink-0">
+                    <span className="grid place-items-center size-11 rounded-2xl icon-badge bg-gradient-brand shrink-0">
                       <Icon name={validIcon(a.icon)} size={22} />
                     </span>
                     <div className="min-w-0 flex-1">
                       <p className="font-bold text-ink truncate">{a.name}</p>
-                      <p className="text-2xl font-extrabold text-primary tabular leading-tight">
-                        {formatDOP(balance)}
-                      </p>
+                      <MoneyValue
+                        value={balance}
+                        className="block text-2xl font-extrabold text-primary leading-tight"
+                      />
                       <p className="text-xs text-muted">
                         {count} {count === 1 ? "movimiento" : "movimientos"}
                       </p>

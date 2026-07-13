@@ -1,21 +1,24 @@
+"use client";
+
+import { motion, type HTMLMotionProps } from "framer-motion";
 import { cn } from "@/lib/cn";
 
 type Variant = "primary" | "secondary" | "danger" | "ghost";
 type Size = "sm" | "md";
 
-interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+interface ButtonProps extends Omit<HTMLMotionProps<"button">, "children"> {
   variant?: Variant;
   size?: Size;
   loading?: boolean;
   full?: boolean;
+  children?: React.ReactNode;
 }
 
 const variants: Record<Variant, string> = {
   primary:
-    "bg-primary text-white hover:bg-primary-hover active:bg-primary-active shadow-sm",
-  secondary:
-    "glass-strong text-ink hover:bg-white/85 active:bg-white/90",
-  danger: "bg-danger text-white hover:opacity-90 active:opacity-100",
+    "bg-gradient-brand text-white shadow-sm hover:brightness-[0.97] active:brightness-95",
+  secondary: "glass-strong text-ink hover:bg-white/85 active:bg-white/90",
+  danger: "bg-gradient-danger text-white hover:brightness-[0.97] active:brightness-95",
   ghost: "text-ink hover:bg-black/5 active:bg-black/10",
 };
 
@@ -35,11 +38,13 @@ export function Button({
   ...props
 }: ButtonProps) {
   return (
-    <button
+    <motion.button
+      whileTap={{ scale: 0.96 }}
+      transition={{ type: "spring", stiffness: 500, damping: 30 }}
       className={cn(
         "inline-flex items-center justify-center rounded-full font-semibold",
-        "transition-[color,background-color,transform] duration-150 cursor-pointer select-none",
-        "active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100",
+        "transition-[filter,background-color] duration-150 cursor-pointer select-none",
+        "disabled:opacity-50 disabled:cursor-not-allowed",
         variants[variant],
         sizes[size],
         full && "w-full",
@@ -55,6 +60,6 @@ export function Button({
         />
       )}
       {children}
-    </button>
+    </motion.button>
   );
 }

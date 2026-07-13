@@ -18,7 +18,7 @@ import { DeleteButton } from "@/components/ui/DeleteButton";
 import { Icon } from "@/components/ui/Icon";
 import { addSalary, deleteSalary, saveSalarySettings } from "./actions";
 
-export const metadata = { title: "Ingresos · Finanzas" };
+export const metadata = { title: "Ingresos · Bolsillo Seguro" };
 
 export default async function IngresosPage() {
   const [settings, salaries] = await Promise.all([

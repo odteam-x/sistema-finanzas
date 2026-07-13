@@ -3,7 +3,7 @@ import { Icon, type IconName } from "./Icon";
 
 interface StatTileProps {
   label: string;
-  value: string;
+  value: React.ReactNode;
   icon?: IconName;
   sub?: string;
   tone?: "primary" | "neutral" | "danger" | "warning";
@@ -11,10 +11,10 @@ interface StatTileProps {
 }
 
 const tones = {
-  primary: "text-primary bg-primary-soft",
+  primary: "icon-badge bg-gradient-brand",
   neutral: "text-ink bg-black/5",
-  danger: "text-danger bg-danger-soft",
-  warning: "text-warning bg-warning-soft",
+  danger: "icon-badge bg-gradient-danger",
+  warning: "icon-badge bg-gradient-warning",
 };
 
 export function StatTile({

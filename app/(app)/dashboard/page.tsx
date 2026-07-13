@@ -7,11 +7,12 @@ import { StatTile } from "@/components/ui/StatTile";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { Badge } from "@/components/ui/Badge";
 import { Icon, type IconName } from "@/components/ui/Icon";
+import { MoneyValue } from "@/components/ui/MoneyValue";
 import { DonutChart } from "@/components/charts/DonutChart";
 import { BarCompare } from "@/components/charts/BarCompare";
 import { cn } from "@/lib/cn";
 
-export const metadata = { title: "Inicio · Finanzas" };
+export const metadata = { title: "Inicio · Bolsillo Seguro" };
 
 const alertTone: Record<string, string> = {
   warning: "text-warning",
@@ -42,31 +43,60 @@ export default async function DashboardPage() {
     <>
       <PageHeader title="Resumen" subtitle={`Quincena ${s.quincena.label}`} />
 
-      {/* Saldo estimado */}
-      <GlassCard strong className="mb-4 overflow-hidden relative">
-        <div className="flex items-center justify-between">
-          <div>
+      {/* Saldo estimado (con presupuesto) */}
+      <GlassCard strong className="mb-3 overflow-hidden relative">
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
             <p className="text-sm font-medium text-muted">
-              Saldo disponible estimado
+              Saldo estimado <span className="text-muted/70">(con presupuesto)</span>
             </p>
-            <p
+            <MoneyValue
+              value={s.saldoEstimado}
               className={cn(
-                "text-3xl sm:text-4xl font-extrabold tracking-tight tabular mt-1",
-                s.saldoEstimado >= 0 ? "text-primary" : "text-danger",
+                "block text-3xl sm:text-4xl font-extrabold mt-1",
+                s.saldoEstimado >= 0 ? "text-gradient-brand" : "text-danger",
               )}
-            >
-              {formatDOP(s.saldoEstimado)}
-            </p>
+            />
             <p className="text-xs text-muted mt-1">
-              Ingreso {formatDOP(s.ingresoQuincena, false)} − gastos{" "}
+              Ingreso {formatDOP(s.ingresoQuincena, false)} − presupuesto{" "}
               {formatDOP(s.estQuincena, false)} − cuotas{" "}
               {formatDOP(s.cuotasPeriodo, false)}
             </p>
           </div>
-          <span className="grid place-items-center size-12 rounded-2xl bg-primary text-white shrink-0">
+          <span className="grid place-items-center size-12 rounded-2xl icon-badge bg-gradient-brand shrink-0">
             <Icon name="wallet" size={26} />
           </span>
         </div>
+      </GlassCard>
+
+      {/* Balance real (sin presupuesto) */}
+      <GlassCard className="mb-4">
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-muted">
+              Balance real <span className="text-muted/70">(sin presupuesto)</span>
+            </p>
+            <MoneyValue
+              value={s.saldoReal}
+              className={cn(
+                "block text-2xl sm:text-3xl font-extrabold mt-1",
+                s.saldoReal >= 0 ? "text-primary" : "text-danger",
+              )}
+            />
+            <p className="text-xs text-muted mt-1">
+              Ingreso {formatDOP(s.ingresoQuincena, false)} − gastado real{" "}
+              {formatDOP(s.realQuincena, false)} − cuotas{" "}
+              {formatDOP(s.cuotasPeriodo, false)}
+            </p>
+          </div>
+          <span className="grid place-items-center size-12 rounded-2xl icon-badge bg-gradient-brand shrink-0">
+            <Icon name="trendUp" size={26} />
+          </span>
+        </div>
+        <p className="text-[0.7rem] text-muted mt-3 pt-3 border-t border-black/5">
+          El estimado descuenta tu presupuesto planeado; el balance real solo
+          descuenta lo que de verdad has gastado y las cuotas del periodo.
+        </p>
       </GlassCard>
 
       {/* Tiles */}
@@ -87,13 +117,13 @@ export default async function DashboardPage() {
         />
         <StatTile
           label="Total ahorrado"
-          value={formatDOP(s.savingsTotal, false)}
+          value={<MoneyValue value={s.savingsTotal} decimals={false} />}
           icon="piggy"
           tone="primary"
         />
         <StatTile
           label="Total adeudado"
-          value={formatDOP(s.outstandingDebt, false)}
+          value={<MoneyValue value={s.outstandingDebt} decimals={false} />}
           icon="debt"
           tone={s.outstandingDebt > 0 ? "danger" : "neutral"}
         />

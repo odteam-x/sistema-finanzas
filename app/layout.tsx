@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { PWARegister } from "@/components/PWARegister";
+import { ClickSpark } from "@/components/reactbits/ClickSpark";
 
 const jakarta = Plus_Jakarta_Sans({
   variable: "--font-jakarta",
@@ -11,19 +12,19 @@ const jakarta = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Finanzas Personales",
+  title: "Bolsillo Seguro",
   description:
-    "Control de finanzas personales: sueldo, presupuesto diario, metas y deudas.",
-  applicationName: "Finanzas",
+    "Control de finanzas personales: sueldo, presupuesto diario, ahorros, metas y deudas.",
+  applicationName: "Bolsillo Seguro",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Finanzas",
+    title: "Bolsillo Seguro",
   },
   icons: {
     icon: "/icons/icon-192.png",
-    apple: "/icons/icon-192.png",
+    apple: "/icons/apple-touch-icon.png",
   },
 };
 
@@ -43,6 +44,7 @@ export default function RootLayout({
     <html lang="es" className={`${jakarta.variable} h-full antialiased`}>
       <body className="min-h-dvh">
         {children}
+        <ClickSpark />
         <PWARegister />
       </body>
     </html>

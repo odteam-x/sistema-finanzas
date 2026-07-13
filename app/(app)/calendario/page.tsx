@@ -11,7 +11,7 @@ import { CalendarView } from "./CalendarView";
 import { LoadHolidaysButton } from "./LoadHolidaysButton";
 import type { ExceptionKind } from "@/lib/types";
 
-export const metadata = { title: "Calendario · Finanzas" };
+export const metadata = { title: "Calendario · Bolsillo Seguro" };
 
 export default async function CalendarioPage({
   searchParams,

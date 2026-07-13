@@ -1,100 +1,64 @@
-// Genera iconos PNG del PWA sin dependencias externas.
-// Diseño: fondo verde + tarjeta (wallet) blanca + moneda de acento.
-import { deflateSync } from "node:zlib";
-import { writeFileSync, mkdirSync } from "node:fs";
-import { dirname, join } from "node:path";
+// Genera favicon + iconos PWA a partir del logo de marca en /Imagenes/Icon.png.
+// Uso: node scripts/gen-icons.mjs   (requiere devDeps: sharp, png-to-ico)
+import sharp from "sharp";
+import pngToIco from "png-to-ico";
+import { mkdir, writeFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
+import path from "node:path";
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const outDir = join(__dirname, "..", "public", "icons");
-mkdirSync(outDir, { recursive: true });
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const SRC = path.join(root, "Imagenes", "Icon.png");
+const OUT = path.join(root, "public", "icons");
+const CREAM = "#f4efe3";
 
-// CRC32
-const crcTable = (() => {
-  const t = new Uint32Array(256);
-  for (let n = 0; n < 256; n++) {
-    let c = n;
-    for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
-    t[n] = c >>> 0;
-  }
-  return t;
-})();
-function crc32(buf) {
-  let c = 0xffffffff;
-  for (let i = 0; i < buf.length; i++) c = crcTable[(c ^ buf[i]) & 0xff] ^ (c >>> 8);
-  return (c ^ 0xffffffff) >>> 0;
-}
-function chunk(type, data) {
-  const len = Buffer.alloc(4);
-  len.writeUInt32BE(data.length, 0);
-  const typeBuf = Buffer.from(type, "ascii");
-  const crc = Buffer.alloc(4);
-  crc.writeUInt32BE(crc32(Buffer.concat([typeBuf, data])), 0);
-  return Buffer.concat([len, typeBuf, data, crc]);
-}
+await mkdir(OUT, { recursive: true });
 
-function roundRect(x, y, cx, cy, halfW, halfH, radius) {
-  const dx = Math.abs(x - cx) - (halfW - radius);
-  const dy = Math.abs(y - cy) - (halfH - radius);
-  if (dx <= 0 || dy <= 0) {
-    return Math.abs(x - cx) <= halfW && Math.abs(y - cy) <= halfH;
-  }
-  return dx * dx + dy * dy <= radius * radius;
-}
+const transparent = { r: 0, g: 0, b: 0, alpha: 0 };
 
-function makePNG(size) {
-  const green = [46, 125, 91];
-  const greenDark = [31, 85, 64];
-  const white = [244, 239, 227];
-  const accent = [63, 165, 118];
-
-  const cx = size / 2;
-  const cardHalfW = size * 0.3;
-  const cardHalfH = size * 0.21;
-  const cardCy = size * 0.52;
-  const radius = size * 0.07;
-  const coinCx = cx + cardHalfW * 0.45;
-  const coinCy = cardCy;
-  const coinR = size * 0.06;
-
-  const raw = Buffer.alloc((size * 4 + 1) * size);
-  let p = 0;
-  for (let y = 0; y < size; y++) {
-    raw[p++] = 0; // filtro
-    for (let x = 0; x < size; x++) {
-      let col = green;
-      // degradado sutil vertical
-      const t = y / size;
-      col = [
-        Math.round(green[0] * (1 - t) + greenDark[0] * t),
-        Math.round(green[1] * (1 - t) + greenDark[1] * t),
-        Math.round(green[2] * (1 - t) + greenDark[2] * t),
-      ];
-      if (roundRect(x, y, cx, cardCy, cardHalfW, cardHalfH, radius)) col = white;
-      const cd = Math.hypot(x - coinCx, y - coinCy);
-      if (cd <= coinR) col = accent;
-      raw[p++] = col[0];
-      raw[p++] = col[1];
-      raw[p++] = col[2];
-      raw[p++] = 255;
-    }
-  }
-
-  const ihdr = Buffer.alloc(13);
-  ihdr.writeUInt32BE(size, 0);
-  ihdr.writeUInt32BE(size, 4);
-  ihdr[8] = 8; // bit depth
-  ihdr[9] = 6; // color type RGBA
-  const png = Buffer.concat([
-    Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
-    chunk("IHDR", ihdr),
-    chunk("IDAT", deflateSync(raw, { level: 9 })),
-    chunk("IEND", Buffer.alloc(0)),
-  ]);
-  return png;
-}
-
+// 1) icon "any" — logo transparente tal cual
 for (const size of [192, 512]) {
-  writeFileSync(join(outDir, `icon-${size}.png`), makePNG(size));
-  console.log(`icon-${size}.png generado`);
+  await sharp(SRC)
+    .resize(size, size, { fit: "contain", background: transparent })
+    .png()
+    .toFile(path.join(OUT, `icon-${size}.png`));
 }
+
+// Compone el logo centrado a `ratio` sobre fondo `bg` (sólido u opaco)
+async function composed(size, ratio, bg, file) {
+  const inner = Math.round(size * ratio);
+  const logo = await sharp(SRC)
+    .resize(inner, inner, { fit: "contain", background: transparent })
+    .png()
+    .toBuffer();
+  const pad = Math.round((size - inner) / 2);
+  await sharp({ create: { width: size, height: size, channels: 4, background: bg } })
+    .composite([{ input: logo, top: pad, left: pad }])
+    .png()
+    .toFile(path.join(OUT, file));
+}
+
+// 2) maskable (safe zone ~68%) sobre crema sólido
+await composed(192, 0.68, CREAM, "icon-maskable-192.png");
+await composed(512, 0.68, CREAM, "icon-maskable-512.png");
+
+// 3) apple-touch-icon 180 (sin transparencia)
+await composed(180, 0.72, CREAM, "apple-touch-icon.png");
+
+// 4) favicon.ico (16/32/48) sobre crema
+const icoBuffers = await Promise.all(
+  [16, 32, 48].map(async (s) => {
+    const inner = Math.round(s * 0.82);
+    const logo = await sharp(SRC)
+      .resize(inner, inner, { fit: "contain", background: transparent })
+      .png()
+      .toBuffer();
+    const pad = Math.round((s - inner) / 2);
+    return sharp({ create: { width: s, height: s, channels: 4, background: CREAM } })
+      .composite([{ input: logo, top: pad, left: pad }])
+      .png()
+      .toBuffer();
+  }),
+);
+await writeFile(path.join(root, "app", "favicon.ico"), await pngToIco(icoBuffers));
+
+console.log("✓ Iconos generados en public/icons y app/favicon.ico");

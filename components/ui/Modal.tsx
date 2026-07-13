@@ -42,7 +42,7 @@ export function Modal({ open, onClose, title, children, footer }: ModalProps) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="absolute inset-0 bg-black/45 backdrop-blur-[2px] cursor-default"
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm cursor-default"
           />
 
           <motion.div
@@ -50,7 +50,7 @@ export function Modal({ open, onClose, title, children, footer }: ModalProps) {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 36, scale: 0.98 }}
             transition={{ type: "spring", stiffness: 320, damping: 30 }}
-            className="glass-strong relative w-full sm:max-w-md max-h-[90dvh] overflow-y-auto
+            className="modal-surface relative w-full sm:max-w-md max-h-[90dvh] overflow-y-auto
                        rounded-t-[26px] sm:rounded-[26px] p-5 sm:p-6
                        pb-[max(1.25rem,env(safe-area-inset-bottom))]"
           >

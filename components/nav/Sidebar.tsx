@@ -17,7 +17,7 @@ export function Sidebar({ email }: { email: string | null }) {
           <Icon name="wallet" size={22} />
         </span>
         <div className="leading-tight">
-          <p className="font-extrabold text-ink">Finanzas</p>
+          <p className="font-extrabold text-ink">Bolsillo Seguro</p>
           <p className="text-xs text-muted">Control personal</p>
         </div>
       </div>

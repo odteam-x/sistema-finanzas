@@ -16,7 +16,6 @@ export async function addGoal(formData: FormData): Promise<ActionResult> {
   const target = parseAmount(formData.get("target_amount"));
   const current = parseAmount(formData.get("current_amount"));
   const deadline = String(formData.get("deadline") ?? "") || null;
-  const icon = String(formData.get("icon") ?? "goal") || "goal";
 
   if (!name) return { ok: false, error: "Escribe un nombre para la meta." };
   if (!Number.isFinite(target) || target <= 0) {
@@ -29,7 +28,6 @@ export async function addGoal(formData: FormData): Promise<ActionResult> {
     target_amount: target,
     current_amount: Number.isFinite(current) && current > 0 ? current : 0,
     deadline,
-    icon,
   });
   if (error) return { ok: false, error: "No se pudo crear la meta." };
   revalidateAll();
@@ -42,7 +40,6 @@ export async function updateGoal(formData: FormData): Promise<ActionResult> {
   const name = String(formData.get("name") ?? "").trim();
   const target = parseAmount(formData.get("target_amount"));
   const deadline = String(formData.get("deadline") ?? "") || null;
-  const icon = String(formData.get("icon") ?? "goal") || "goal";
   if (!id) return { ok: false };
   if (!name) return { ok: false, error: "Escribe un nombre." };
   if (!Number.isFinite(target) || target <= 0) {
@@ -51,7 +48,7 @@ export async function updateGoal(formData: FormData): Promise<ActionResult> {
   const supabase = await createClient();
   const { error } = await supabase
     .from("goals")
-    .update({ name, target_amount: target, deadline, icon })
+    .update({ name, target_amount: target, deadline })
     .eq("id", id);
   if (error) return { ok: false, error: "No se pudo actualizar." };
   revalidateAll();

@@ -4,7 +4,7 @@ import { GlassCard } from "@/components/ui/GlassCard";
 import { PiggyBank } from "@/components/illustrations";
 import { LoginForm } from "./LoginForm";
 
-export const metadata = { title: "Entrar · Finanzas" };
+export const metadata = { title: "Entrar · Bolsillo Seguro" };
 
 export default function LoginPage() {
   if (!isSupabaseConfigured) return <SetupNotice />;
@@ -14,7 +14,7 @@ export default function LoginPage() {
       <div className="w-full max-w-sm">
         <div className="flex flex-col items-center text-center mb-4">
           <PiggyBank size={96} className="mb-1" />
-          <h1 className="text-2xl font-extrabold text-ink">Finanzas Personales</h1>
+          <h1 className="text-2xl font-extrabold text-ink">Bolsillo Seguro</h1>
           <p className="text-sm text-muted mt-1">
             Entra para ver tu resumen financiero
           </p>

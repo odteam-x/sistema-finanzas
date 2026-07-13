@@ -5,39 +5,13 @@ import { GlassCard } from "@/components/ui/GlassCard";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { Badge } from "@/components/ui/Badge";
-import { Field, Input, Select, MoneyInput } from "@/components/ui/Field";
+import { Field, Input, MoneyInput } from "@/components/ui/Field";
 import { FormModal } from "@/components/ui/FormModal";
 import { DeleteButton } from "@/components/ui/DeleteButton";
-import { Icon, type IconName } from "@/components/ui/Icon";
+import { MoneyValue } from "@/components/ui/MoneyValue";
 import { addGoal, addProgress, deleteGoal, updateGoal } from "./actions";
 
-export const metadata = { title: "Metas · Finanzas" };
-
-const GOAL_ICONS: { value: IconName; label: string }[] = [
-  { value: "goal", label: "Meta" },
-  { value: "wallet", label: "Ahorro" },
-  { value: "clock", label: "Tiempo" },
-  { value: "calendar", label: "Viaje" },
-  { value: "bulb", label: "Idea" },
-  { value: "trendUp", label: "Inversión" },
-];
-
-const validIcon = (icon: string | null): IconName =>
-  GOAL_ICONS.some((g) => g.value === icon) ? (icon as IconName) : "goal";
-
-function IconField({ defaultValue }: { defaultValue?: string }) {
-  return (
-    <Field label="Ícono" htmlFor="icon">
-      <Select id="icon" name="icon" defaultValue={defaultValue ?? "goal"}>
-        {GOAL_ICONS.map((g) => (
-          <option key={g.value} value={g.value}>
-            {g.label}
-          </option>
-        ))}
-      </Select>
-    </Field>
-  );
-}
+export const metadata = { title: "Metas · Bolsillo Seguro" };
 
 export default async function MetasPage() {
   const goals = await getGoals();
@@ -72,7 +46,6 @@ export default async function MetasPage() {
             <Field label="Fecha límite" htmlFor="deadline">
               <Input id="deadline" name="deadline" type="date" />
             </Field>
-            <IconField />
           </FormModal>
         }
       />
@@ -81,15 +54,19 @@ export default async function MetasPage() {
         <GlassCard className="mb-4 flex items-center justify-between gap-3">
           <div>
             <p className="text-xs text-muted">Ahorrado en total</p>
-            <p className="text-xl font-extrabold text-ink tabular">
-              {formatDOP(totalSaved, false)}
-            </p>
+            <MoneyValue
+              value={totalSaved}
+              decimals={false}
+              className="text-xl font-extrabold text-ink"
+            />
           </div>
           <div className="text-right">
             <p className="text-xs text-muted">Objetivo total</p>
-            <p className="text-xl font-extrabold text-primary tabular">
-              {formatDOP(totalTarget, false)}
-            </p>
+            <MoneyValue
+              value={totalTarget}
+              decimals={false}
+              className="text-xl font-extrabold text-primary"
+            />
           </div>
         </GlassCard>
       )}
@@ -109,9 +86,6 @@ export default async function MetasPage() {
             return (
               <GlassCard key={g.id} className="flex flex-col gap-3">
                 <div className="flex items-start gap-3">
-                  <span className="grid place-items-center size-11 rounded-2xl bg-primary-soft text-primary shrink-0">
-                    <Icon name={validIcon(g.icon)} size={22} />
-                  </span>
                   <div className="min-w-0 flex-1">
                     <p className="font-bold text-ink truncate">{g.name}</p>
                     {g.deadline && (
@@ -192,7 +166,6 @@ export default async function MetasPage() {
                         defaultValue={g.deadline ?? ""}
                       />
                     </Field>
-                    <IconField defaultValue={validIcon(g.icon)} />
                   </FormModal>
 
                   <DeleteButton

@@ -19,7 +19,7 @@ import {
   updateCategory,
 } from "./actions";
 
-export const metadata = { title: "Presupuesto · Finanzas" };
+export const metadata = { title: "Presupuesto · Bolsillo Seguro" };
 
 export default async function PresupuestoPage() {
   const today = todayISO();

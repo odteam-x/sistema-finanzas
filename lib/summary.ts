@@ -39,6 +39,7 @@ export interface FinanceSummary {
   realQuincena: number;
   cuotasPeriodo: number;
   saldoEstimado: number;
+  saldoReal: number;
   nextPay: string;
   daysToPay: number;
   nextDue: string | null;
@@ -153,6 +154,8 @@ export async function getFinanceSummary(): Promise<FinanceSummary> {
   const nextPay = nextPayDate(today, settings.pay_day_1, settings.pay_day_2);
 
   const saldoEstimado = ingresoQuincena - estQuincena - cuotasPeriodo;
+  // Balance real: usa el gasto REAL registrado (no el presupuesto estimado).
+  const saldoReal = ingresoQuincena - realQuincena - cuotasPeriodo;
 
   const totalSaved = goals.reduce((s, g) => s + Number(g.current_amount), 0);
   const totalTarget = goals.reduce((s, g) => s + Number(g.target_amount), 0);
@@ -225,6 +228,7 @@ export async function getFinanceSummary(): Promise<FinanceSummary> {
     realQuincena,
     cuotasPeriodo,
     saldoEstimado,
+    saldoReal,
     nextPay,
     daysToPay: daysBetween(today, nextPay),
     nextDue: next?.date ?? null,
