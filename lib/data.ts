@@ -9,6 +9,8 @@ import type {
   Goal,
   Salary,
   SalarySettings,
+  SavingsAccount,
+  SavingsMovement,
   WorkException,
 } from "./types";
 
@@ -96,5 +98,24 @@ export async function getExpenses(
   if (fromISO) q = q.gte("date", fromISO);
   if (toISO) q = q.lte("date", toISO);
   const { data } = await q.order("date", { ascending: false });
+  return data ?? [];
+}
+
+export async function getSavingsAccounts(): Promise<SavingsAccount[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("savings_accounts")
+    .select("*")
+    .order("created_at", { ascending: true });
+  return data ?? [];
+}
+
+export async function getSavingsMovements(): Promise<SavingsMovement[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("savings_movements")
+    .select("*")
+    .order("date", { ascending: false })
+    .order("created_at", { ascending: false });
   return data ?? [];
 }

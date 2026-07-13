@@ -27,7 +27,10 @@ export type IconName =
   | "clock"
   | "settings"
   | "eye"
-  | "eyeOff";
+  | "eyeOff"
+  | "piggy"
+  | "arrowDownLeft"
+  | "arrowUpRight";
 
 const paths: Record<IconName, React.ReactNode> = {
   dashboard: (
@@ -149,6 +152,26 @@ const paths: Record<IconName, React.ReactNode> = {
       <path d="M4 4l16 16" />
       <path d="M9.9 5.2A9.5 9.5 0 0 1 12 5c6 0 9.5 6.5 9.5 6.5a15 15 0 0 1-3 3.6M6.5 7.6A15 15 0 0 0 2.5 12s3.5 6.5 9.5 6.5a9 9 0 0 0 3.4-.66" />
       <path d="M9.9 9.9a3 3 0 0 0 4.2 4.2" />
+    </>
+  ),
+  piggy: (
+    <>
+      <path d="M4 12a6 6 0 0 1 6-6h4.5a5.5 5.5 0 0 1 4.3 2.1l2 .5v3l-1.5.4A5.5 5.5 0 0 1 16 17H9a5 5 0 0 1-4.4-2.6" />
+      <path d="M6 16.5V19a1 1 0 0 0 1 1h1.5a1 1 0 0 0 1-1v-1M14 16.5V19a1 1 0 0 0 1 1h1.5a1 1 0 0 0 1-1v-1.5" />
+      <path d="M10 6.5 9 4M11.5 9h3" />
+      <circle cx="16" cy="11" r="0.8" fill="currentColor" stroke="none" />
+    </>
+  ),
+  arrowDownLeft: (
+    <>
+      <path d="M17 7 7 17" />
+      <path d="M16 17H7V8" />
+    </>
+  ),
+  arrowUpRight: (
+    <>
+      <path d="M7 17 17 7" />
+      <path d="M8 7h9v9" />
     </>
   ),
 };

@@ -91,3 +91,24 @@ export interface Expense {
   note: string | null;
   created_at: string;
 }
+
+export interface SavingsAccount {
+  id: string;
+  user_id: string;
+  name: string;
+  icon: string | null;
+  created_at: string;
+}
+
+export type MovementKind = "deposito" | "retiro";
+
+export interface SavingsMovement {
+  id: string;
+  account_id: string;
+  user_id: string;
+  kind: MovementKind;
+  amount: number;
+  date: string; // YYYY-MM-DD
+  note: string | null;
+  created_at: string;
+}

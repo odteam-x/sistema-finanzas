@@ -26,10 +26,14 @@ de gastos diarios, metas de ahorro, deudas y un dashboard con resumen y gráfico
 3. **Presupuesto** — montos por día trabajado (pasaje, desayuno, etc.), cálculo
    automático por quincena/mes y comparación con el gasto real.
 4. **Metas** — tablero visual con barra de progreso por objetivo.
-5. **Deudas** — pago único o en cuotas, vencimientos y estado.
-6. **Consejos** — tips de finanzas + alertas según tus datos.
-7. **Dashboard** — saldo estimado, próximo pago, próxima deuda, metas y gráfico
-   de distribución de gastos.
+5. **Ahorros** — cuentas de ahorro (banco, efectivo, alcancía) con depósitos,
+   retiros e historial de movimientos.
+6. **Deudas** — pago único o en cuotas, vencimientos y estado.
+7. **Consejos** — tips de finanzas + alertas según tus datos.
+8. **Dashboard** — saldo estimado, próximo pago, próxima deuda, ahorros, metas
+   y gráfico de distribución de gastos.
+
+Incluye animaciones fluidas (Framer Motion), skeleton loaders e ilustraciones.
 
 ---
 
@@ -39,7 +43,10 @@ de gastos diarios, metas de ahorro, deudas y un dashboard con resumen y gráfico
    proyecto**.
 2. Ve a **SQL Editor → New query**, pega el contenido de
    [`supabase/schema.sql`](supabase/schema.sql) y ejecútalo (crea las tablas, los
-   índices y las políticas de seguridad RLS).
+   índices y las políticas de seguridad RLS). Este script ya incluye el módulo
+   de Ahorros. Si aplicaste una versión anterior del esquema, ejecuta además
+   [`supabase/savings.sql`](supabase/savings.sql) para agregar las tablas de
+   ahorros.
 3. Crea tu usuario en **Authentication → Users → Add user**
    (email + contraseña). Marca "Auto Confirm User".
    - Recomendado: en **Authentication → Providers → Email**, desactiva

@@ -13,6 +13,7 @@ export const NAV_ROUTES: NavRoute[] = [
   { href: "/ingresos", label: "Ingresos", shortLabel: "Ingresos", icon: "wallet", primary: true },
   { href: "/calendario", label: "Calendario", shortLabel: "Días", icon: "calendar", primary: true },
   { href: "/presupuesto", label: "Presupuesto", shortLabel: "Gastos", icon: "budget", primary: true },
+  { href: "/ahorros", label: "Ahorros", shortLabel: "Ahorros", icon: "piggy", primary: false },
   { href: "/metas", label: "Metas", shortLabel: "Metas", icon: "goal", primary: false },
   { href: "/deudas", label: "Deudas", shortLabel: "Deudas", icon: "debt", primary: false },
   { href: "/sugerencias", label: "Consejos", shortLabel: "Consejos", icon: "bulb", primary: false },

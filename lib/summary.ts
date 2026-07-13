@@ -10,6 +10,7 @@ import {
   getInstallments,
   getSalaries,
   getSalarySettings,
+  getSavingsMovements,
 } from "./data";
 import { countWorkdays, exceptionsMap } from "./calendar";
 import { quincenaForDate, nextPayDate, type Period } from "./periods";
@@ -47,6 +48,7 @@ export interface FinanceSummary {
   goals: Goal[];
   totalSaved: number;
   totalTarget: number;
+  savingsTotal: number;
   estByCategory: NamedValue[];
   realByCategory: NamedValue[];
   alerts: Alert[];
@@ -58,17 +60,32 @@ export async function getFinanceSummary(): Promise<FinanceSummary> {
   const monthStart = toISODate(new Date(q.year, q.month, 1, 12));
   const monthEnd = toISODate(new Date(q.year, q.month + 1, 0, 12));
 
-  const [settings, salaries, categories, exceptions, expenses, debts, installments, goals] =
-    await Promise.all([
-      getSalarySettings(),
-      getSalaries(),
-      getBudgetCategories(),
-      getExceptions(monthStart, monthEnd),
-      getExpenses(q.start, q.end),
-      getDebts(),
-      getInstallments(),
-      getGoals(),
-    ]);
+  const [
+    settings,
+    salaries,
+    categories,
+    exceptions,
+    expenses,
+    debts,
+    installments,
+    goals,
+    savingsMovements,
+  ] = await Promise.all([
+    getSalarySettings(),
+    getSalaries(),
+    getBudgetCategories(),
+    getExceptions(monthStart, monthEnd),
+    getExpenses(q.start, q.end),
+    getDebts(),
+    getInstallments(),
+    getGoals(),
+    getSavingsMovements(),
+  ]);
+
+  const savingsTotal = savingsMovements.reduce(
+    (s, m) => s + (m.kind === "deposito" ? 1 : -1) * Number(m.amount),
+    0,
+  );
 
   // Ingreso quincenal: config por defecto o última quincena registrada
   const lastQuincena = salaries.find((s) => s.kind === "quincena");
@@ -217,6 +234,7 @@ export async function getFinanceSummary(): Promise<FinanceSummary> {
     goals,
     totalSaved,
     totalTarget,
+    savingsTotal,
     estByCategory,
     realByCategory,
     alerts,

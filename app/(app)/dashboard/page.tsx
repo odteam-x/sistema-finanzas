@@ -10,7 +10,6 @@ import { Icon, type IconName } from "@/components/ui/Icon";
 import { DonutChart } from "@/components/charts/DonutChart";
 import { BarCompare } from "@/components/charts/BarCompare";
 import { cn } from "@/lib/cn";
-import { DebugError } from "@/components/DebugError";
 
 export const metadata = { title: "Inicio · Finanzas" };
 
@@ -30,14 +29,6 @@ function dueSub(days: number | null): string {
 }
 
 export default async function DashboardPage() {
-  try {
-    return await DashboardContent();
-  } catch (error) {
-    return <DebugError error={error} />;
-  }
-}
-
-async function DashboardContent() {
   const s = await getFinanceSummary();
 
   const donutData =
@@ -93,6 +84,18 @@ async function DashboardContent() {
           sub={s.nextDueName ? `${s.nextDueName} · ${dueSub(s.daysToDue)}` : dueSub(s.daysToDue)}
           icon="debt"
           tone={s.daysToDue !== null && s.daysToDue < 0 ? "danger" : "neutral"}
+        />
+        <StatTile
+          label="Total ahorrado"
+          value={formatDOP(s.savingsTotal, false)}
+          icon="piggy"
+          tone="primary"
+        />
+        <StatTile
+          label="Total adeudado"
+          value={formatDOP(s.outstandingDebt, false)}
+          icon="debt"
+          tone={s.outstandingDebt > 0 ? "danger" : "neutral"}
         />
       </div>
 

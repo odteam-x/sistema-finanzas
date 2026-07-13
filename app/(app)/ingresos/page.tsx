@@ -17,19 +17,10 @@ import { FormModal } from "@/components/ui/FormModal";
 import { DeleteButton } from "@/components/ui/DeleteButton";
 import { Icon } from "@/components/ui/Icon";
 import { addSalary, deleteSalary, saveSalarySettings } from "./actions";
-import { DebugError } from "@/components/DebugError";
 
 export const metadata = { title: "Ingresos · Finanzas" };
 
 export default async function IngresosPage() {
-  try {
-    return await IngresosContent();
-  } catch (error) {
-    return <DebugError error={error} />;
-  }
-}
-
-async function IngresosContent() {
   const [settings, salaries] = await Promise.all([
     getSalarySettings(),
     getSalaries(),

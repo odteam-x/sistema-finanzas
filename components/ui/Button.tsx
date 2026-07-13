@@ -38,8 +38,8 @@ export function Button({
     <button
       className={cn(
         "inline-flex items-center justify-center rounded-full font-semibold",
-        "transition-colors duration-150 cursor-pointer select-none",
-        "disabled:opacity-50 disabled:cursor-not-allowed",
+        "transition-[color,background-color,transform] duration-150 cursor-pointer select-none",
+        "active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100",
         variants[variant],
         sizes[size],
         full && "w-full",

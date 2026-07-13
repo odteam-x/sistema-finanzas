@@ -18,19 +18,10 @@ import {
   deleteExpense,
   updateCategory,
 } from "./actions";
-import { DebugError } from "@/components/DebugError";
 
 export const metadata = { title: "Presupuesto · Finanzas" };
 
 export default async function PresupuestoPage() {
-  try {
-    return await PresupuestoContent();
-  } catch (error) {
-    return <DebugError error={error} />;
-  }
-}
-
-async function PresupuestoContent() {
   const today = todayISO();
   const q = quincenaForDate(today);
   const monthStart = toISODate(new Date(q.year, q.month, 1, 12));

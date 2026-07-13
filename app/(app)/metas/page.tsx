@@ -10,7 +10,6 @@ import { FormModal } from "@/components/ui/FormModal";
 import { DeleteButton } from "@/components/ui/DeleteButton";
 import { Icon, type IconName } from "@/components/ui/Icon";
 import { addGoal, addProgress, deleteGoal, updateGoal } from "./actions";
-import { DebugError } from "@/components/DebugError";
 
 export const metadata = { title: "Metas · Finanzas" };
 
@@ -41,14 +40,6 @@ function IconField({ defaultValue }: { defaultValue?: string }) {
 }
 
 export default async function MetasPage() {
-  try {
-    return await MetasContent();
-  } catch (error) {
-    return <DebugError error={error} />;
-  }
-}
-
-async function MetasContent() {
   const goals = await getGoals();
   const today = todayISO();
 

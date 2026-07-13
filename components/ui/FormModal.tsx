@@ -19,6 +19,7 @@ interface FormModalProps {
   triggerLabel?: string;
   triggerIcon?: IconName;
   triggerVariant?: "primary" | "secondary";
+  triggerTone?: "solid" | "ghost";
   triggerAriaLabel?: string;
   triggerFull?: boolean;
 }
@@ -32,6 +33,7 @@ export function FormModal({
   triggerLabel,
   triggerIcon = "plus",
   triggerVariant = "primary",
+  triggerTone = "solid",
   triggerAriaLabel,
   triggerFull,
 }: FormModalProps) {
@@ -90,7 +92,10 @@ export function FormModal({
         <button
           onClick={openModal}
           className={cn(
-            "inline-flex items-center justify-center gap-1.5 min-h-9 rounded-full bg-primary-soft text-primary font-semibold text-sm hover:bg-primary/15 cursor-pointer",
+            "inline-flex items-center justify-center gap-1.5 min-h-9 rounded-full font-semibold text-sm cursor-pointer transition-colors active:scale-[0.97]",
+            triggerTone === "ghost"
+              ? "border border-black/10 text-ink hover:bg-black/5"
+              : "bg-primary-soft text-primary hover:bg-primary/15",
             triggerFull ? "w-full" : "flex-1",
           )}
         >

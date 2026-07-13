@@ -101,6 +101,27 @@ create table if not exists public.expenses (
   created_at  timestamptz not null default now()
 );
 
+-- Cuentas de ahorro (ej. Banco, Efectivo, Alcancía)
+create table if not exists public.savings_accounts (
+  id         uuid primary key default gen_random_uuid(),
+  user_id    uuid not null references auth.users (id) on delete cascade,
+  name       text not null,
+  icon       text,
+  created_at timestamptz not null default now()
+);
+
+-- Movimientos de ahorro (depósitos y retiros); el saldo se deriva de aquí.
+create table if not exists public.savings_movements (
+  id         uuid primary key default gen_random_uuid(),
+  account_id uuid not null references public.savings_accounts (id) on delete cascade,
+  user_id    uuid not null references auth.users (id) on delete cascade,
+  kind       text not null check (kind in ('deposito', 'retiro')),
+  amount     numeric(12, 2) not null,
+  date       date not null,
+  note       text,
+  created_at timestamptz not null default now()
+);
+
 -- ----------------------------------------------------------------------------
 -- Índices
 -- ----------------------------------------------------------------------------
@@ -112,6 +133,9 @@ create index if not exists idx_debts_user on public.debts (user_id, created_at d
 create index if not exists idx_installments_user_due on public.debt_installments (user_id, due_date);
 create index if not exists idx_installments_debt on public.debt_installments (debt_id, seq);
 create index if not exists idx_expenses_user_date on public.expenses (user_id, date desc);
+create index if not exists idx_savings_accounts_user on public.savings_accounts (user_id, created_at);
+create index if not exists idx_savings_movements_account on public.savings_movements (account_id, date desc);
+create index if not exists idx_savings_movements_user on public.savings_movements (user_id, date desc);
 
 -- ----------------------------------------------------------------------------
 -- Row Level Security: cada usuario solo ve/edita sus propias filas
@@ -124,13 +148,16 @@ alter table public.goals                     enable row level security;
 alter table public.debts                     enable row level security;
 alter table public.debt_installments        enable row level security;
 alter table public.expenses                  enable row level security;
+alter table public.savings_accounts          enable row level security;
+alter table public.savings_movements         enable row level security;
 
 do $$
 declare
   t text;
   tables text[] := array[
     'salary_settings','salaries','work_calendar_exceptions','budget_categories',
-    'goals','debts','debt_installments','expenses'
+    'goals','debts','debt_installments','expenses',
+    'savings_accounts','savings_movements'
   ];
 begin
   foreach t in array tables loop

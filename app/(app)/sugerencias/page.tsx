@@ -5,7 +5,6 @@ import { GlassCard } from "@/components/ui/GlassCard";
 import { Icon, type IconName } from "@/components/ui/Icon";
 import { cn } from "@/lib/cn";
 import type { Alert } from "@/lib/summary";
-import { DebugError } from "@/components/DebugError";
 
 export const metadata = { title: "Consejos · Finanzas" };
 
@@ -28,14 +27,6 @@ const alertStyle: Record<
 };
 
 export default async function SugerenciasPage() {
-  try {
-    return await SugerenciasContent();
-  } catch (error) {
-    return <DebugError error={error} />;
-  }
-}
-
-async function SugerenciasContent() {
   const s = await getFinanceSummary();
 
   return (
