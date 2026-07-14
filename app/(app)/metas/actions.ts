@@ -64,6 +64,17 @@ export async function addProgress(formData: FormData): Promise<ActionResult> {
     return { ok: false, error: "Ingresa un monto." };
   }
   const supabase = await createClient();
+  const { data: linkedAccount } = await supabase
+    .from("savings_accounts")
+    .select("id")
+    .eq("goal_id", id)
+    .maybeSingle();
+  if (linkedAccount) {
+    return {
+      ok: false,
+      error: "Esta meta está vinculada a una cuenta — aporta desde Balance.",
+    };
+  }
   const { data: goal } = await supabase
     .from("goals")
     .select("current_amount")

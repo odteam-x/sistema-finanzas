@@ -10,6 +10,7 @@ export interface Salary {
   kind: SalaryKind;
   note: string | null;
   account_id: string | null;
+  tag_id: string | null;
   created_at: string;
 }
 
@@ -89,7 +90,10 @@ export interface Expense {
   id: string;
   user_id: string;
   date: string; // YYYY-MM-DD
+  /** @deprecated categoría de presupuesto (por día trabajado) — los gastos
+   *  nuevos usan `tag_id` (categoría general), se conserva por datos viejos. */
   category_id: string | null;
+  tag_id: string | null;
   amount: number;
   note: string | null;
   account_id: string | null;
@@ -104,6 +108,9 @@ export interface SavingsAccount {
   name: string;
   type: AccountType;
   icon: string | null;
+  /** Meta vinculada: si está definido, el saldo derivado de esta cuenta ES
+   *  el progreso de esa meta (en vez de Goal.current_amount manual). */
+  goal_id: string | null;
   created_at: string;
 }
 
@@ -129,7 +136,9 @@ export interface Subscription {
   amount: number;
   frequency: SubscriptionFrequency;
   next_charge_date: string; // YYYY-MM-DD
+  /** @deprecated ver Expense.category_id — se conserva por datos viejos. */
   category_id: string | null;
+  tag_id: string | null;
   account_id: string | null;
   active: boolean;
   created_at: string;
@@ -141,4 +150,28 @@ export interface FinEvent {
   type: FinEventType;
   label: string;
   amount?: number;
+}
+
+/** Etiqueta general (categoría de gasto real/ingreso/suscripción),
+ *  independiente de las líneas de presupuesto por día trabajado. */
+export interface Tag {
+  id: string;
+  user_id: string;
+  name: string;
+  color: string;
+  monthly_limit: number | null;
+  created_at: string;
+}
+
+/** Override manual de días trabajados para una quincena puntual (si el
+ *  usuario no quiere depender del conteo automático del calendario). */
+export interface BudgetPeriodOverride {
+  user_id: string;
+  period_key: string; // Period.key de lib/periods.ts, ej. "2026-07-Q2"
+  workdays: number;
+}
+
+export interface UserProfileRow {
+  user_id: string;
+  display_name: string | null;
 }

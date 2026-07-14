@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { Modal } from "@/components/ui/Modal";
 import { Icon } from "@/components/ui/Icon";
-import { Input } from "@/components/ui/Field";
 import { cn } from "@/lib/cn";
 import {
   readTheme,
@@ -12,7 +11,6 @@ import {
   type ThemePref,
   type ThemeMode,
 } from "@/lib/theme";
-import { readProfile, writeProfile } from "@/lib/profile";
 
 interface PersonalizeModalProps {
   open: boolean;
@@ -20,11 +18,10 @@ interface PersonalizeModalProps {
 }
 
 export function PersonalizeModal({ open, onClose }: PersonalizeModalProps) {
-  // Init perezoso: en el servidor no hay localStorage (readTheme/readProfile
-  // ya lo manejan devolviendo el default). El modal arranca cerrado, así que
-  // no hay riesgo de mismatch de hidratación con estos valores.
+  // Init perezoso: en el servidor no hay localStorage (readTheme ya lo
+  // maneja devolviendo el default). El modal arranca cerrado, así que no
+  // hay riesgo de mismatch de hidratación con este valor.
   const [pref, setPref] = useState<ThemePref>(readTheme);
-  const [name, setName] = useState<string>(() => readProfile().displayName);
 
   function update(next: Partial<ThemePref>) {
     const merged = { ...pref, ...next };
@@ -32,30 +29,11 @@ export function PersonalizeModal({ open, onClose }: PersonalizeModalProps) {
     writeTheme(merged);
   }
 
-  function updateName(value: string) {
-    setName(value);
-    writeProfile({ displayName: value });
-  }
-
   return (
     <Modal open={open} onClose={onClose} title="Personalizar" compact>
       <p className="text-sm text-muted -mt-1 mb-4">
-        Elige un color y el modo de la app. Se guarda en este dispositivo.
-      </p>
-
-      <label htmlFor="display-name" className="text-xs font-bold text-ink mb-2 block">
-        Tu nombre
-      </label>
-      <Input
-        id="display-name"
-        value={name}
-        onChange={(e) => updateName(e.target.value)}
-        placeholder="¿Cómo te llamas?"
-        maxLength={40}
-        className="mb-1.5"
-      />
-      <p className="text-xs text-muted mb-5">
-        El asistente IA lo usará para dirigirse a ti cuando esté activo.
+        Elige un color y el modo de la app. Se guarda en este dispositivo. Tu
+        nombre se edita desde Configuración.
       </p>
 
       <p className="text-xs font-bold text-ink mb-2">Color</p>

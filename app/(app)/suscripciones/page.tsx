@@ -1,4 +1,4 @@
-import { getBudgetCategories, getSavingsAccounts, getSubscriptions } from "@/lib/data";
+import { getSavingsAccounts, getSubscriptions, getTags } from "@/lib/data";
 import { runSubscriptionCatchUp } from "@/lib/subscriptions";
 import { formatDOP, formatDateShort, todayISO } from "@/lib/format";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -11,6 +11,7 @@ import { Field, Input, Select, MoneyInput } from "@/components/ui/Field";
 import { FormModal } from "@/components/ui/FormModal";
 import { DeleteButton } from "@/components/ui/DeleteButton";
 import { MoneyValue } from "@/components/ui/MoneyValue";
+import { RecurringCycle } from "@/components/illustrations";
 import { addSubscription, deleteSubscription, updateSubscription } from "./actions";
 
 export const metadata = { title: "Suscripciones · Bolsillo Seguro" };
@@ -19,9 +20,9 @@ export default async function SuscripcionesPage() {
   await runSubscriptionCatchUp();
 
   const today = todayISO();
-  const [subs, categories, accounts] = await Promise.all([
+  const [subs, tags, accounts] = await Promise.all([
     getSubscriptions(),
-    getBudgetCategories(),
+    getTags(),
     getSavingsAccounts(),
   ]);
 
@@ -64,13 +65,13 @@ export default async function SuscripcionesPage() {
                 required
               />
             </Field>
-            {categories.length > 0 && (
-              <Field label="Categoría" htmlFor="category_id" hint="Opcional.">
-                <Select id="category_id" name="category_id" defaultValue="">
+            {tags.length > 0 && (
+              <Field label="Categoría" htmlFor="tag_id" hint="Opcional.">
+                <Select id="tag_id" name="tag_id" defaultValue="">
                   <option value="">General</option>
-                  {categories.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
+                  {tags.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.name}
                     </option>
                   ))}
                 </Select>
@@ -107,6 +108,7 @@ export default async function SuscripcionesPage() {
           icon="repeat"
           title="Sin suscripciones"
           message="Registra tus cobros recurrentes (streaming, gimnasio…) y te generamos el gasto automáticamente cuando llegue la fecha."
+          illustration={<RecurringCycle size={104} />}
         />
       ) : (
         <ul className="flex flex-col gap-2">
@@ -156,13 +158,13 @@ export default async function SuscripcionesPage() {
                       required
                     />
                   </Field>
-                  {categories.length > 0 && (
+                  {tags.length > 0 && (
                     <Field label="Categoría" htmlFor={`c-${s.id}`}>
-                      <Select id={`c-${s.id}`} name="category_id" defaultValue={s.category_id ?? ""}>
+                      <Select id={`c-${s.id}`} name="tag_id" defaultValue={s.tag_id ?? ""}>
                         <option value="">General</option>
-                        {categories.map((c) => (
-                          <option key={c.id} value={c.id}>
-                            {c.name}
+                        {tags.map((t) => (
+                          <option key={t.id} value={t.id}>
+                            {t.name}
                           </option>
                         ))}
                       </Select>

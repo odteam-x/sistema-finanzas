@@ -1,4 +1,4 @@
-import { getGoals } from "@/lib/data";
+import { getGoals, getSavingsAccounts, getSavingsMovements } from "@/lib/data";
 import { formatDOP, formatDateShort, clampPct, todayISO, daysBetween } from "@/lib/format";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { GlassCard } from "@/components/ui/GlassCard";
@@ -10,16 +10,34 @@ import { FormModal } from "@/components/ui/FormModal";
 import { DeleteButton } from "@/components/ui/DeleteButton";
 import { MoneyValue } from "@/components/ui/MoneyValue";
 import { GoalFlag } from "@/components/illustrations";
+import { addMovement } from "../balance/actions";
 import { addGoal, addProgress, deleteGoal, updateGoal } from "./actions";
 
 export const metadata = { title: "Metas · Bolsillo Seguro" };
 
 export default async function MetasPage() {
-  const goals = await getGoals();
+  const [goals, accounts, movements] = await Promise.all([
+    getGoals(),
+    getSavingsAccounts(),
+    getSavingsMovements(),
+  ]);
   const today = todayISO();
 
+  const balanceOfAccount = (accountId: string) =>
+    movements
+      .filter((m) => m.account_id === accountId)
+      .reduce((s, m) => s + (m.kind === "deposito" ? 1 : -1) * Number(m.amount), 0);
+
+  const currentAmountOf = (goalId: string, fallback: number) => {
+    const linked = accounts.find((a) => a.goal_id === goalId);
+    return linked ? balanceOfAccount(linked.id) : fallback;
+  };
+
   const totalTarget = goals.reduce((s, g) => s + Number(g.target_amount), 0);
-  const totalSaved = goals.reduce((s, g) => s + Number(g.current_amount), 0);
+  const totalSaved = goals.reduce(
+    (s, g) => s + currentAmountOf(g.id, Number(g.current_amount)),
+    0,
+  );
 
   return (
     <>
@@ -82,8 +100,10 @@ export default async function MetasPage() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {goals.map((g) => {
-            const pct = clampPct(Number(g.current_amount), Number(g.target_amount));
-            const done = Number(g.current_amount) >= Number(g.target_amount);
+            const linkedAccount = accounts.find((a) => a.goal_id === g.id);
+            const currentAmount = currentAmountOf(g.id, Number(g.current_amount));
+            const pct = clampPct(currentAmount, Number(g.target_amount));
+            const done = currentAmount >= Number(g.target_amount);
             const daysLeft = g.deadline ? daysBetween(today, g.deadline) : null;
             return (
               <GlassCard key={g.id} className="flex flex-col gap-3 min-w-0">
@@ -101,6 +121,11 @@ export default async function MetasPage() {
                               : ` · ${daysLeft}d`)}
                       </p>
                     )}
+                    {linkedAccount && (
+                      <p className="text-xs text-muted mt-0.5">
+                        Vinculada a {linkedAccount.name}
+                      </p>
+                    )}
                   </div>
                   {done && <Badge tone="success">Lograda</Badge>}
                 </div>
@@ -108,7 +133,7 @@ export default async function MetasPage() {
                 <div>
                   <div className="flex items-end justify-between mb-1.5">
                     <span className="text-sm font-bold text-ink tabular">
-                      {formatDOP(Number(g.current_amount), false)}
+                      {formatDOP(currentAmount, false)}
                     </span>
                     <span className="text-xs text-muted tabular">
                       de {formatDOP(Number(g.target_amount), false)}
@@ -121,24 +146,64 @@ export default async function MetasPage() {
                 </div>
 
                 <div className="flex items-center gap-1 mt-auto">
-                  <FormModal
-                    title={`Aportar a “${g.name}”`}
-                    action={addProgress}
-                    submitLabel="Aportar"
-                    trigger="pill"
-                    triggerIcon="plus"
-                    triggerLabel="Aportar"
-                  >
-                    <input type="hidden" name="id" value={g.id} />
-                    <Field
-                      label="Monto a aportar"
-                      htmlFor={`add-${g.id}`}
-                      required
-                      hint="Usa un monto negativo para corregir (retirar)."
+                  {linkedAccount ? (
+                    <>
+                      <FormModal
+                        title={`Depositar en “${linkedAccount.name}”`}
+                        action={addMovement}
+                        submitLabel="Depositar"
+                        trigger="pill"
+                        triggerIcon="arrowDownLeft"
+                        triggerLabel="Depositar"
+                      >
+                        <input type="hidden" name="account_id" value={linkedAccount.id} />
+                        <input type="hidden" name="kind" value="deposito" />
+                        <Field label="Monto" htmlFor={`gdep-${g.id}`} required>
+                          <MoneyInput id={`gdep-${g.id}`} name="amount" required />
+                        </Field>
+                        <Field label="Fecha" htmlFor={`gdepd-${g.id}`} required>
+                          <Input id={`gdepd-${g.id}`} name="date" type="date" defaultValue={today} required />
+                        </Field>
+                      </FormModal>
+                      <FormModal
+                        title={`Retirar de “${linkedAccount.name}”`}
+                        action={addMovement}
+                        submitLabel="Retirar"
+                        trigger="pill"
+                        triggerTone="ghost"
+                        triggerIcon="arrowUpRight"
+                        triggerLabel="Retirar"
+                      >
+                        <input type="hidden" name="account_id" value={linkedAccount.id} />
+                        <input type="hidden" name="kind" value="retiro" />
+                        <Field label="Monto" htmlFor={`gret-${g.id}`} required>
+                          <MoneyInput id={`gret-${g.id}`} name="amount" required />
+                        </Field>
+                        <Field label="Fecha" htmlFor={`gretd-${g.id}`} required>
+                          <Input id={`gretd-${g.id}`} name="date" type="date" defaultValue={today} required />
+                        </Field>
+                      </FormModal>
+                    </>
+                  ) : (
+                    <FormModal
+                      title={`Aportar a “${g.name}”`}
+                      action={addProgress}
+                      submitLabel="Aportar"
+                      trigger="pill"
+                      triggerIcon="plus"
+                      triggerLabel="Aportar"
                     >
-                      <MoneyInput id={`add-${g.id}`} name="amount" required />
-                    </Field>
-                  </FormModal>
+                      <input type="hidden" name="id" value={g.id} />
+                      <Field
+                        label="Monto a aportar"
+                        htmlFor={`add-${g.id}`}
+                        required
+                        hint="Usa un monto negativo para corregir (retirar)."
+                      >
+                        <MoneyInput id={`add-${g.id}`} name="amount" required />
+                      </Field>
+                    </FormModal>
+                  )}
 
                   <FormModal
                     title="Editar meta"

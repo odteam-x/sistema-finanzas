@@ -142,8 +142,13 @@ export default async function CalendarioPage({
       </GlassCard>
 
       {/* Conteos */}
-      <div className="grid grid-cols-3 gap-3 mb-4">
-        <StatTile label="Días trabajados (mes)" value={String(workedMonth)} icon="calendar" />
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
+        <StatTile
+          className="col-span-2 sm:col-span-1"
+          label="Días trabajados (mes)"
+          value={String(workedMonth)}
+          icon="calendar"
+        />
         <StatTile label="1ª quincena" value={String(workedQ1)} tone="neutral" />
         <StatTile label="2ª quincena" value={String(workedQ2)} tone="neutral" />
       </div>

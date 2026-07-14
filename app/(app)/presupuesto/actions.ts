@@ -8,7 +8,7 @@ import { parseAmount, type ActionResult } from "@/lib/actions-shared";
 function revalidateAll() {
   revalidatePath("/presupuesto");
   revalidatePath("/dashboard");
-  revalidatePath("/cuentas");
+  revalidatePath("/balance");
 }
 
 /** El límite mensual es opcional: un campo vacío guarda NULL (sin límite). */
@@ -74,7 +74,7 @@ export async function addExpense(formData: FormData): Promise<ActionResult> {
   const user = await requireUser();
   const amount = parseAmount(formData.get("amount"));
   const date = String(formData.get("date") ?? "");
-  const category_id = String(formData.get("category_id") ?? "") || null;
+  const tag_id = String(formData.get("tag_id") ?? "") || null;
   const note = String(formData.get("note") ?? "").trim() || null;
   const account_id = String(formData.get("account_id") ?? "") || null;
   if (!Number.isFinite(amount) || amount <= 0) {
@@ -86,7 +86,7 @@ export async function addExpense(formData: FormData): Promise<ActionResult> {
     user_id: user.id,
     amount,
     date,
-    category_id,
+    tag_id,
     note,
     account_id,
   });
@@ -113,6 +113,38 @@ export async function deleteExpense(id: string): Promise<ActionResult> {
   await requireUser();
   const supabase = await createClient();
   const { error } = await supabase.from("expenses").delete().eq("id", id);
+  if (error) return { ok: false };
+  revalidateAll();
+  return { ok: true };
+}
+
+/** Fija manualmente los días trabajados de una quincena puntual, en vez de
+ *  usar el conteo automático del calendario. */
+export async function setPeriodOverride(formData: FormData): Promise<ActionResult> {
+  const user = await requireUser();
+  const period_key = String(formData.get("period_key") ?? "");
+  const workdays = Number(formData.get("workdays"));
+  if (!period_key) return { ok: false };
+  if (!Number.isFinite(workdays) || workdays < 0) {
+    return { ok: false, error: "Ingresa un número de días válido." };
+  }
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("budget_period_overrides")
+    .upsert({ user_id: user.id, period_key, workdays }, { onConflict: "user_id,period_key" });
+  if (error) return { ok: false, error: "No se pudo guardar." };
+  revalidateAll();
+  return { ok: true };
+}
+
+export async function clearPeriodOverride(periodKey: string): Promise<ActionResult> {
+  const user = await requireUser();
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("budget_period_overrides")
+    .delete()
+    .eq("user_id", user.id)
+    .eq("period_key", periodKey);
   if (error) return { ok: false };
   revalidateAll();
   return { ok: true };

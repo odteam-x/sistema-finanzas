@@ -1,9 +1,18 @@
-import { getBudgetCategories, getExpenses } from "@/lib/data";
+import Link from "next/link";
+import { getExpenses, getTags } from "@/lib/data";
 import { formatDOP, formatMonthShort, todayISO, toISODate } from "@/lib/format";
+import { cn } from "@/lib/cn";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { StatTile } from "@/components/ui/StatTile";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { Icon } from "@/components/ui/Icon";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/DropdownMenu";
 import { BarCompare, type Bar } from "@/components/charts/BarCompare";
 import { DonutChart } from "@/components/charts/DonutChart";
 
@@ -13,21 +22,34 @@ function monthKey(year: number, month: number): string {
   return `${year}-${String(month + 1).padStart(2, "0")}`;
 }
 
-export default async function ReportesPage() {
+const MONTH_OPTIONS = [3, 6, 12];
+
+export default async function ReportesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ months?: string; tag?: string }>;
+}) {
+  const sp = await searchParams;
+  const monthsCount = MONTH_OPTIONS.includes(Number(sp.months)) ? Number(sp.months) : 6;
+  const tagFilter = sp.tag || "";
+
   const today = todayISO();
   const [ty, tm] = today.split("-").map(Number);
 
-  const months = Array.from({ length: 6 }, (_, i) => {
-    const d = new Date(ty, tm - 1 - (5 - i), 1);
+  const months = Array.from({ length: monthsCount }, (_, i) => {
+    const d = new Date(ty, tm - 1 - (monthsCount - 1 - i), 1);
     return { year: d.getFullYear(), month: d.getMonth() };
   });
 
   const fromISO = toISODate(new Date(months[0].year, months[0].month, 1, 12));
 
-  const [expenses, categories] = await Promise.all([
+  const [allExpenses, tags] = await Promise.all([
     getExpenses(fromISO, today),
-    getBudgetCategories(),
+    getTags(),
   ]);
+
+  const expenses = tagFilter ? allExpenses.filter((e) => e.tag_id === tagFilter) : allExpenses;
+  const activeTagName = tagFilter ? tags.find((t) => t.id === tagFilter)?.name : null;
 
   const totalsByMonth = new Map<string, number>();
   for (const m of months) totalsByMonth.set(monthKey(m.year, m.month), 0);
@@ -47,7 +69,7 @@ export default async function ReportesPage() {
   const current = months[months.length - 1];
   const previous = months[months.length - 2];
   const currentTotal = totalsByMonth.get(monthKey(current.year, current.month)) ?? 0;
-  const previousTotal = totalsByMonth.get(monthKey(previous.year, previous.month)) ?? 0;
+  const previousTotal = previous ? (totalsByMonth.get(monthKey(previous.year, previous.month)) ?? 0) : 0;
   const change =
     previousTotal > 0
       ? ((currentTotal - previousTotal) / previousTotal) * 100
@@ -60,17 +82,62 @@ export default async function ReportesPage() {
   );
   const byCategory = new Map<string, number>();
   for (const e of currentMonthExpenses) {
-    const name =
-      (e.category_id && categories.find((c) => c.id === e.category_id)?.name) || "General";
+    const name = (e.tag_id && tags.find((t) => t.id === e.tag_id)?.name) || "General";
     byCategory.set(name, (byCategory.get(name) ?? 0) + Number(e.amount));
   }
   const donutData = Array.from(byCategory, ([name, value]) => ({ name, value }));
   const topCategory =
     donutData.length > 0 ? donutData.reduce((a, b) => (b.value > a.value ? b : a)) : null;
 
+  const hrefFor = (opts: { months?: number; tag?: string }) => {
+    const params = new URLSearchParams();
+    params.set("months", String(opts.months ?? monthsCount));
+    if (opts.tag) params.set("tag", opts.tag);
+    return `/reportes?${params.toString()}`;
+  };
+
   return (
     <>
-      <PageHeader title="Reportes" subtitle="Comparativo de los últimos 6 meses" />
+      <PageHeader
+        title="Reportes"
+        subtitle={activeTagName ? `Filtrado por “${activeTagName}”` : `Comparativo de los últimos ${monthsCount} meses`}
+      />
+
+      <div className="flex items-center gap-2 mb-4">
+        <div className="glass inline-flex gap-1 rounded-2xl p-1">
+          {MONTH_OPTIONS.map((m) => (
+            <Link
+              key={m}
+              href={hrefFor({ months: m, tag: tagFilter })}
+              className={cn(
+                "rounded-xl px-3 py-1.5 text-sm font-semibold transition-colors",
+                m === monthsCount ? "bg-primary text-white" : "text-muted",
+              )}
+            >
+              {m}M
+            </Link>
+          ))}
+        </div>
+
+        {tags.length > 0 && (
+          <DropdownMenu>
+            <DropdownMenuTrigger className="glass inline-flex items-center gap-1.5 rounded-2xl px-3 py-1.5 text-sm font-semibold text-ink cursor-pointer">
+              <Icon name="chevronDown" size={14} />
+              {activeTagName ?? "Todas las etiquetas"}
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start">
+              <DropdownMenuItem asChild>
+                <Link href={hrefFor({ months: monthsCount })}>Todas las etiquetas</Link>
+              </DropdownMenuItem>
+              {tags.map((t) => (
+                <DropdownMenuItem key={t.id} asChild>
+                  <Link href={hrefFor({ months: monthsCount, tag: t.id })}>{t.name}</Link>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+      </div>
 
       {expenses.length === 0 ? (
         <EmptyState

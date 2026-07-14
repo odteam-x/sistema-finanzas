@@ -8,9 +8,12 @@ import {
   getExpenses,
   getGoals,
   getInstallments,
+  getPeriodOverrides,
   getSalaries,
   getSalarySettings,
+  getSavingsAccounts,
   getSavingsMovements,
+  getTags,
 } from "./data";
 import { countWorkdays, exceptionsMap } from "./calendar";
 import { quincenaForDate, nextPayDate, type Period } from "./periods";
@@ -62,6 +65,10 @@ export async function getFinanceSummary(): Promise<FinanceSummary> {
   const monthStart = toISODate(new Date(q.year, q.month, 1, 12));
   const monthEnd = toISODate(new Date(q.year, q.month + 1, 0, 12));
 
+  // Ventana de 3 meses hacia atrás (incluye el mes actual) para comparar el
+  // gasto por etiqueta de este mes contra su promedio reciente.
+  const anomalyStart = toISODate(new Date(q.year, q.month - 2, 1, 12));
+
   const [
     settings,
     salaries,
@@ -71,7 +78,11 @@ export async function getFinanceSummary(): Promise<FinanceSummary> {
     debts,
     installments,
     goals,
+    savingsAccounts,
     savingsMovements,
+    tags,
+    periodOverrides,
+    trailingExpenses,
   ] = await Promise.all([
     getSalarySettings(),
     getSalaries(),
@@ -81,8 +92,17 @@ export async function getFinanceSummary(): Promise<FinanceSummary> {
     getDebts(),
     getInstallments(),
     getGoals(),
+    getSavingsAccounts(),
     getSavingsMovements(),
+    getTags(),
+    getPeriodOverrides(),
+    getExpenses(anomalyStart, monthEnd),
   ]);
+
+  const balanceOfAccount = (accountId: string) =>
+    savingsMovements
+      .filter((m) => m.account_id === accountId)
+      .reduce((s, m) => s + (m.kind === "deposito" ? 1 : -1) * Number(m.amount), 0);
 
   const savingsTotal = savingsMovements.reduce(
     (s, m) => s + (m.kind === "deposito" ? 1 : -1) * Number(m.amount),
@@ -104,7 +124,8 @@ export async function getFinanceSummary(): Promise<FinanceSummary> {
 
   // Presupuesto
   const exMap = exceptionsMap(exceptions);
-  const workedQuincena = countWorkdays(q.start, q.end, exMap);
+  const override = periodOverrides.find((o) => o.period_key === q.key);
+  const workedQuincena = override ? override.workdays : countWorkdays(q.start, q.end, exMap);
   const activeCats = categories.filter((c) => c.active);
   const perDay = activeCats.reduce((s, c) => s + Number(c.amount_per_workday), 0);
   const estQuincena = perDay * workedQuincena;
@@ -117,12 +138,51 @@ export async function getFinanceSummary(): Promise<FinanceSummary> {
   const realByCategory: NamedValue[] = (() => {
     const map = new Map<string, number>();
     for (const e of expenses) {
-      const name =
-        (e.category_id && categories.find((c) => c.id === e.category_id)?.name) ||
-        "General";
+      const name = (e.tag_id && tags.find((t) => t.id === e.tag_id)?.name) || "General";
       map.set(name, (map.get(name) ?? 0) + Number(e.amount));
     }
     return Array.from(map, ([name, value]) => ({ name, value }));
+  })();
+
+  // Gastos inusuales: gasto de este mes por etiqueta vs. el promedio de los
+  // meses anteriores con datos. Sin backfill de category_id → tag_id (no
+  // son 1 a 1), así que hasta que se acumule historial etiquetado esto
+  // simplemente no encuentra nada que comparar — no genera falsos positivos.
+  const unusualTags: { name: string; pct: number }[] = (() => {
+    const currentMonthKey = today.slice(0, 7);
+    const byMonthTag = new Map<string, number>();
+    for (const e of trailingExpenses) {
+      if (!e.tag_id) continue;
+      const key = `${e.date.slice(0, 7)}|${e.tag_id}`;
+      byMonthTag.set(key, (byMonthTag.get(key) ?? 0) + Number(e.amount));
+    }
+    const priorMonthKeys = new Set<string>();
+    for (const key of byMonthTag.keys()) {
+      const mk = key.split("|")[0];
+      if (mk !== currentMonthKey) priorMonthKeys.add(mk);
+    }
+    if (priorMonthKeys.size === 0) return [];
+
+    const results: { name: string; pct: number }[] = [];
+    for (const tag of tags) {
+      const current = byMonthTag.get(`${currentMonthKey}|${tag.id}`) ?? 0;
+      if (current <= 0) continue;
+      let priorTotal = 0;
+      let priorCount = 0;
+      for (const mk of priorMonthKeys) {
+        const v = byMonthTag.get(`${mk}|${tag.id}`);
+        if (v != null) {
+          priorTotal += v;
+          priorCount++;
+        }
+      }
+      if (priorCount === 0) continue;
+      const avg = priorTotal / priorCount;
+      if (avg > 0 && current > avg * 1.5) {
+        results.push({ name: tag.name, pct: Math.round(((current - avg) / avg) * 100) });
+      }
+    }
+    return results;
   })();
 
   // Deudas
@@ -158,8 +218,16 @@ export async function getFinanceSummary(): Promise<FinanceSummary> {
   // Balance real: usa el gasto REAL registrado (no el presupuesto estimado).
   const saldoReal = ingresoQuincena - realQuincena - cuotasPeriodo;
 
-  const totalSaved = goals.reduce((s, g) => s + Number(g.current_amount), 0);
-  const totalTarget = goals.reduce((s, g) => s + Number(g.target_amount), 0);
+  // Metas con una cuenta vinculada derivan su progreso del saldo real de
+  // esa cuenta en vez del current_amount manual (ver balance/page.tsx) — se
+  // parcha aquí una sola vez para que cualquier consumidor de s.goals
+  // (Dashboard, etc.) ya reciba el monto correcto sin repetir la lógica.
+  const goalsWithDerived: Goal[] = goals.map((g) => {
+    const linked = savingsAccounts.find((a) => a.goal_id === g.id);
+    return linked ? { ...g, current_amount: balanceOfAccount(linked.id) } : g;
+  });
+  const totalSaved = goalsWithDerived.reduce((s, g) => s + Number(g.current_amount), 0);
+  const totalTarget = goalsWithDerived.reduce((s, g) => s + Number(g.target_amount), 0);
 
   // ---- Alertas derivadas de los datos ----
   const alerts: Alert[] = [];
@@ -210,6 +278,13 @@ export async function getFinanceSummary(): Promise<FinanceSummary> {
       message: "Crear una meta de ahorro te ayuda a mantener el rumbo.",
     });
   }
+  for (const t of unusualTags) {
+    alerts.push({
+      tone: "warning",
+      title: "Gasto inusual",
+      message: `Este mes llevas ${t.pct}% más de lo usual en “${t.name}”.`,
+    });
+  }
   if (estQuincena > 0 && realQuincena <= estQuincena && ingresoQuincena > 0 && saldoEstimado >= 0) {
     alerts.push({
       tone: "success",
@@ -236,7 +311,7 @@ export async function getFinanceSummary(): Promise<FinanceSummary> {
     daysToDue: next ? daysBetween(today, next.date) : null,
     nextDueName: next?.name ?? null,
     outstandingDebt,
-    goals,
+    goals: goalsWithDerived,
     totalSaved,
     totalTarget,
     savingsTotal,

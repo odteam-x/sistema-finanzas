@@ -219,6 +219,54 @@ export function GoalFlag({ size = 120, className }: IllProps) {
   );
 }
 
+/** Dos flechas en ciclo alrededor de una moneda — para el estado vacío de
+ *  Suscripciones (cobros recurrentes). Gira suavemente, idle. */
+export function RecurringCycle({ size = 120, className }: IllProps) {
+  const rm = useReducedMotion();
+  const mounted = useMounted();
+  const animate = mounted && !rm;
+
+  return (
+    <svg
+      viewBox="0 0 120 120"
+      width={size}
+      height={size}
+      className={className}
+      role="img"
+      aria-label="Cobros recurrentes"
+    >
+      <motion.g
+        animate={animate ? { rotate: 360 } : undefined}
+        transition={animate ? { duration: 14, repeat: Infinity, ease: "linear" } : undefined}
+        style={{ transformOrigin: "60px 60px" }}
+      >
+        <path
+          d="M60 22 A38 38 0 0 1 96 58"
+          stroke="var(--color-accent)"
+          strokeWidth="7"
+          strokeLinecap="round"
+          fill="none"
+        />
+        <path d="M96 58 l9 -4 l1 10 Z" fill="var(--color-accent)" />
+        <path
+          d="M60 98 A38 38 0 0 1 24 62"
+          stroke="var(--color-primary)"
+          strokeWidth="7"
+          strokeLinecap="round"
+          fill="none"
+        />
+        <path d="M24 62 l-9 4 l-1 -10 Z" fill="var(--color-primary)" />
+      </motion.g>
+
+      <circle cx="60" cy="60" r="22" fill="var(--color-primary-soft)" />
+      <circle cx="60" cy="60" r="22" fill="none" stroke="var(--color-primary)" strokeWidth="1.5" opacity="0.3" />
+      <text x="60" y="67" textAnchor="middle" fontSize="18" fill="var(--color-primary)" fontWeight="800">
+        $
+      </text>
+    </svg>
+  );
+}
+
 /** Recibo con check — para el estado vacío de Deudas (nada pendiente). */
 export function ReceiptCheck({ size = 120, className }: IllProps) {
   const rm = useReducedMotion();

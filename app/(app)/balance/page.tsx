@@ -1,4 +1,4 @@
-import { getSavingsAccounts, getSavingsMovements } from "@/lib/data";
+import { getGoals, getSavingsAccounts, getSavingsMovements } from "@/lib/data";
 import { formatDOP, formatDateShort, todayISO } from "@/lib/format";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { GlassCard } from "@/components/ui/GlassCard";
@@ -21,7 +21,7 @@ import {
   updateAccount,
 } from "./actions";
 
-export const metadata = { title: "Cuentas · Bolsillo Seguro" };
+export const metadata = { title: "Balance · Bolsillo Seguro" };
 
 const ACCOUNT_TYPES: { value: AccountType; label: string; icon: IconName }[] = [
   { value: "ahorro", label: "Ahorro / Alcancía", icon: "piggy" },
@@ -48,11 +48,40 @@ function TypeField({ defaultValue }: { defaultValue?: AccountType }) {
   );
 }
 
-export default async function CuentasPage() {
+function GoalField({
+  goals,
+  idPrefix,
+  defaultValue,
+}: {
+  goals: { id: string; name: string }[];
+  idPrefix: string;
+  defaultValue?: string | null;
+}) {
+  if (goals.length === 0) return null;
+  return (
+    <Field
+      label="Vincular a una meta"
+      htmlFor={`${idPrefix}-goal`}
+      hint="Opcional. El saldo de esta cuenta será el progreso de esa meta."
+    >
+      <Select id={`${idPrefix}-goal`} name="goal_id" defaultValue={defaultValue ?? ""}>
+        <option value="">Sin vincular</option>
+        {goals.map((g) => (
+          <option key={g.id} value={g.id}>
+            {g.name}
+          </option>
+        ))}
+      </Select>
+    </Field>
+  );
+}
+
+export default async function BalancePage() {
   const today = todayISO();
-  const [accounts, movements] = await Promise.all([
+  const [accounts, movements, goals] = await Promise.all([
     getSavingsAccounts(),
     getSavingsMovements(),
+    getGoals(),
   ]);
 
   const balanceOf = (accountId: string) =>
@@ -68,7 +97,7 @@ export default async function CuentasPage() {
   return (
     <>
       <PageHeader
-        title="Cuentas"
+        title="Balance"
         subtitle="Ahorro, banco, efectivo y tarjetas"
         action={
           <FormModal
@@ -84,6 +113,10 @@ export default async function CuentasPage() {
             <Field label="Saldo inicial" htmlFor="initial_amount" hint="Opcional.">
               <MoneyInput id="initial_amount" name="initial_amount" />
             </Field>
+            <GoalField
+              goals={goals.filter((g) => !accounts.some((acc) => acc.goal_id === g.id))}
+              idPrefix="new"
+            />
           </FormModal>
         }
       />
@@ -131,6 +164,8 @@ export default async function CuentasPage() {
                       />
                       <p className="text-xs text-muted">
                         {count} {count === 1 ? "movimiento" : "movimientos"}
+                        {a.goal_id &&
+                          ` · Meta: ${goals.find((g) => g.id === a.goal_id)?.name ?? ""}`}
                       </p>
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
@@ -147,6 +182,13 @@ export default async function CuentasPage() {
                           <Input id={`an-${a.id}`} name="name" defaultValue={a.name} required />
                         </Field>
                         <TypeField defaultValue={a.type} />
+                        <GoalField
+                          goals={goals.filter(
+                            (g) => g.id === a.goal_id || !accounts.some((acc) => acc.goal_id === g.id),
+                          )}
+                          idPrefix={`edit-${a.id}`}
+                          defaultValue={a.goal_id}
+                        />
                       </FormModal>
                       <DeleteButton
                         action={deleteAccount.bind(null, a.id)}

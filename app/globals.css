@@ -50,6 +50,13 @@
   --glass-bg-sheet: rgba(252, 250, 246, 0.97);
   --glass-bg-nav: rgba(255, 255, 255, 0.78);
   --glass-border: rgba(20, 30, 24, 0.06);
+
+  /* Inputs (Field.tsx): superficie propia, distinta de las tarjetas —
+     así un input dentro de una tarjeta oscura se ve "elevado" y nunca
+     queda claro fijo sin importar el modo. */
+  --input-bg: #ffffff;
+  --input-bg-focus: #ffffff;
+  --input-border: rgba(20, 30, 24, 0.14);
   --glass-border-strong: rgba(20, 30, 24, 0.08);
   --glass-shadow: rgba(31, 42, 35, 0.14);
 }
@@ -119,6 +126,12 @@
   --glass-border: rgba(255, 255, 255, 0.08);
   --glass-border-strong: rgba(255, 255, 255, 0.1);
   --glass-shadow: rgba(0, 0, 0, 0.5);
+
+  /* Inputs: más claros que la tarjeta que los contiene, para leerse como
+     "elevados" en vez de fundirse con el fondo oscuro. */
+  --input-bg: #26332d;
+  --input-bg-focus: #2c3b34;
+  --input-border: rgba(255, 255, 255, 0.14);
 }
 
 /* primary-soft y fondo por tema en oscuro (fondos pastel no sirven sobre

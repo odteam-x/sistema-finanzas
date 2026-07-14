@@ -150,6 +150,42 @@ create table if not exists public.subscriptions (
   created_at       timestamptz not null default now()
 );
 
+-- Etiquetas generales (categorías de gasto real, ingresos y suscripciones,
+-- independientes de las líneas de presupuesto por día trabajado).
+create table if not exists public.tags (
+  id            uuid primary key default gen_random_uuid(),
+  user_id       uuid not null references auth.users (id) on delete cascade,
+  name          text not null,
+  color         text not null default 'primary',
+  monthly_limit numeric(12, 2),
+  created_at    timestamptz not null default now()
+);
+
+alter table public.salaries
+  add column if not exists tag_id uuid references public.tags (id) on delete set null;
+alter table public.expenses
+  add column if not exists tag_id uuid references public.tags (id) on delete set null;
+alter table public.subscriptions
+  add column if not exists tag_id uuid references public.tags (id) on delete set null;
+
+-- Override manual de días trabajados por quincena.
+create table if not exists public.budget_period_overrides (
+  user_id    uuid not null references auth.users (id) on delete cascade,
+  period_key text not null,
+  workdays   int not null,
+  primary key (user_id, period_key)
+);
+
+-- Vínculo ahorro↔meta: el saldo derivado de la cuenta es el progreso de la meta.
+alter table public.savings_accounts
+  add column if not exists goal_id uuid references public.goals (id) on delete set null;
+
+-- Perfil de usuario (nombre para mostrar) — antes solo en localStorage.
+create table if not exists public.user_profile (
+  user_id      uuid primary key references auth.users (id) on delete cascade,
+  display_name text
+);
+
 -- ----------------------------------------------------------------------------
 -- Índices
 -- ----------------------------------------------------------------------------
@@ -167,6 +203,12 @@ create index if not exists idx_savings_movements_user on public.savings_movement
 create index if not exists idx_salaries_account on public.salaries (account_id);
 create index if not exists idx_expenses_account on public.expenses (account_id);
 create index if not exists idx_subscriptions_user_next on public.subscriptions (user_id, next_charge_date);
+create index if not exists idx_tags_user on public.tags (user_id, name);
+create index if not exists idx_salaries_tag on public.salaries (tag_id);
+create index if not exists idx_expenses_tag on public.expenses (tag_id);
+create index if not exists idx_subscriptions_tag on public.subscriptions (tag_id);
+create index if not exists idx_savings_accounts_goal on public.savings_accounts (goal_id);
+create index if not exists idx_period_overrides_user on public.budget_period_overrides (user_id);
 
 -- ----------------------------------------------------------------------------
 -- Row Level Security: cada usuario solo ve/edita sus propias filas
@@ -182,6 +224,9 @@ alter table public.expenses                  enable row level security;
 alter table public.savings_accounts          enable row level security;
 alter table public.savings_movements         enable row level security;
 alter table public.subscriptions             enable row level security;
+alter table public.tags                      enable row level security;
+alter table public.budget_period_overrides   enable row level security;
+alter table public.user_profile              enable row level security;
 
 do $$
 declare
@@ -189,7 +234,8 @@ declare
   tables text[] := array[
     'salary_settings','salaries','work_calendar_exceptions','budget_categories',
     'goals','debts','debt_installments','expenses',
-    'savings_accounts','savings_movements','subscriptions'
+    'savings_accounts','savings_movements','subscriptions',
+    'tags','budget_period_overrides','user_profile'
   ];
 begin
   foreach t in array tables loop

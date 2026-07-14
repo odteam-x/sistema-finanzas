@@ -50,7 +50,7 @@ export function StatTile({
       )}
     >
       <div className="flex items-start justify-between gap-2">
-        <p className="text-xs font-medium text-muted leading-tight">{label}</p>
+        <p className="min-w-0 flex-1 text-xs font-medium text-muted leading-tight">{label}</p>
         {icon && <IconBubble icon={icon} tone={toneToBubble[tone]} size="sm" />}
       </div>
       <p className="mt-1.5 text-money-sm font-extrabold tracking-tight text-ink tabular">

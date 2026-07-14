@@ -1,4 +1,5 @@
-import { getSalaries, getSalarySettings, getSavingsAccounts } from "@/lib/data";
+import Link from "next/link";
+import { getSalaries, getSalarySettings, getSavingsAccounts, getTags } from "@/lib/data";
 import {
   formatDOP,
   formatDateLong,
@@ -17,17 +18,32 @@ import { FormModal } from "@/components/ui/FormModal";
 import { DeleteButton } from "@/components/ui/DeleteButton";
 import { IconBubble } from "@/components/ui/IconBubble";
 import { Icon } from "@/components/ui/Icon";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/DropdownMenu";
 import { MoneyValue } from "@/components/ui/MoneyValue";
+import { CoinStack } from "@/components/illustrations";
 import { addSalary, deleteSalary, saveSalarySettings } from "./actions";
 
 export const metadata = { title: "Ingresos · Bolsillo Seguro" };
 
-export default async function IngresosPage() {
-  const [settings, salaries, accounts] = await Promise.all([
+export default async function IngresosPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ tag?: string }>;
+}) {
+  const sp = await searchParams;
+  const tagFilter = sp.tag || "";
+  const [settings, salaries, accounts, tags] = await Promise.all([
     getSalarySettings(),
     getSalaries(),
     getSavingsAccounts(),
+    getTags(),
   ]);
+  const visibleSalaries = tagFilter ? salaries.filter((s) => s.tag_id === tagFilter) : salaries;
 
   const today = todayISO();
   const thisMonth = today.slice(0, 7);
@@ -72,6 +88,18 @@ export default async function IngresosPage() {
             <Field label="Nota" htmlFor="note">
               <Input id="note" name="note" placeholder="Opcional" />
             </Field>
+            {tags.length > 0 && (
+              <Field label="Tag" htmlFor="tag_id" hint="Opcional.">
+                <Select id="tag_id" name="tag_id" defaultValue="">
+                  <option value="">Sin tag</option>
+                  {tags.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.name}
+                    </option>
+                  ))}
+                </Select>
+              </Field>
+            )}
             {accounts.length > 0 && (
               <Field label="Cuenta" htmlFor="account_id" hint="Opcional: suma el monto al saldo de esa cuenta.">
                 <Select id="account_id" name="account_id" defaultValue="">
@@ -179,16 +207,37 @@ export default async function IngresosPage() {
       </GlassCard>
 
       {/* Historial */}
-      <h2 className="text-sm font-bold text-ink px-1 mb-2">Historial de pagos</h2>
-      {salaries.length === 0 ? (
+      <div className="flex items-center justify-between px-1 mb-2">
+        <h2 className="text-sm font-bold text-ink">Historial de pagos</h2>
+        {tags.length > 0 && salaries.length > 0 && (
+          <DropdownMenu>
+            <DropdownMenuTrigger className="glass inline-flex items-center gap-1.5 rounded-2xl px-3 py-1.5 text-xs font-semibold text-ink cursor-pointer">
+              <Icon name="chevronDown" size={12} />
+              {tagFilter ? (tags.find((t) => t.id === tagFilter)?.name ?? "Filtrar") : "Todos"}
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem asChild>
+                <Link href="/ingresos">Todos</Link>
+              </DropdownMenuItem>
+              {tags.map((t) => (
+                <DropdownMenuItem key={t.id} asChild>
+                  <Link href={`/ingresos?tag=${t.id}`}>{t.name}</Link>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+      </div>
+      {visibleSalaries.length === 0 ? (
         <EmptyState
           icon="wallet"
           title="Sin pagos registrados"
           message="Registra tu primer pago con el botón “Nuevo”."
+          illustration={<CoinStack size={100} />}
         />
       ) : (
         <ul className="flex flex-col gap-2">
-          {salaries.map((s) => (
+          {visibleSalaries.map((s) => (
             <li key={s.id}>
               <GlassCard className="flex items-center gap-3 py-3">
                 <IconBubble icon={s.kind === "extra" ? "trendUp" : "wallet"} tone="neutral" />

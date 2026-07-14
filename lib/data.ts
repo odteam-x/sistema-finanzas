@@ -3,6 +3,7 @@
 import { createClient } from "./supabase/server";
 import type {
   BudgetCategory,
+  BudgetPeriodOverride,
   Debt,
   DebtInstallment,
   Expense,
@@ -12,6 +13,8 @@ import type {
   SavingsAccount,
   SavingsMovement,
   Subscription,
+  Tag,
+  UserProfileRow,
   WorkException,
 } from "./types";
 
@@ -128,4 +131,22 @@ export async function getSubscriptions(): Promise<Subscription[]> {
     .select("*")
     .order("next_charge_date", { ascending: true });
   return data ?? [];
+}
+
+export async function getTags(): Promise<Tag[]> {
+  const supabase = await createClient();
+  const { data } = await supabase.from("tags").select("*").order("name", { ascending: true });
+  return data ?? [];
+}
+
+export async function getPeriodOverrides(): Promise<BudgetPeriodOverride[]> {
+  const supabase = await createClient();
+  const { data } = await supabase.from("budget_period_overrides").select("*");
+  return data ?? [];
+}
+
+export async function getUserProfile(): Promise<UserProfileRow | null> {
+  const supabase = await createClient();
+  const { data } = await supabase.from("user_profile").select("*").maybeSingle();
+  return data ?? null;
 }

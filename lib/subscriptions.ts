@@ -51,7 +51,7 @@ export async function runSubscriptionCatchUp(): Promise<void> {
       await supabase.from("expenses").insert({
         user_id: user.id,
         date: cursor,
-        category_id: sub.category_id,
+        tag_id: sub.tag_id,
         amount: sub.amount,
         note: `Suscripción: ${sub.name}`,
         account_id: sub.account_id,

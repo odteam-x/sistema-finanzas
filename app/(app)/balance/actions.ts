@@ -21,10 +21,11 @@ function parseAccountType(value: FormDataEntryValue | null): AccountType {
 }
 
 function revalidateAll() {
-  revalidatePath("/cuentas");
+  revalidatePath("/balance");
   revalidatePath("/ingresos");
   revalidatePath("/presupuesto");
   revalidatePath("/dashboard");
+  revalidatePath("/metas");
 }
 
 export async function addAccount(formData: FormData): Promise<ActionResult> {
@@ -32,12 +33,13 @@ export async function addAccount(formData: FormData): Promise<ActionResult> {
   const name = String(formData.get("name") ?? "").trim();
   const type = parseAccountType(formData.get("type"));
   const initial = parseAmount(formData.get("initial_amount"));
+  const goal_id = String(formData.get("goal_id") ?? "") || null;
   if (!name) return { ok: false, error: "Escribe un nombre para la cuenta." };
 
   const supabase = await createClient();
   const { data: account, error } = await supabase
     .from("savings_accounts")
-    .insert({ user_id: user.id, name, type })
+    .insert({ user_id: user.id, name, type, goal_id })
     .select("id")
     .single();
   if (error || !account) return { ok: false, error: "No se pudo crear la cuenta." };
@@ -62,12 +64,13 @@ export async function updateAccount(formData: FormData): Promise<ActionResult> {
   const id = String(formData.get("id") ?? "");
   const name = String(formData.get("name") ?? "").trim();
   const type = parseAccountType(formData.get("type"));
+  const goal_id = String(formData.get("goal_id") ?? "") || null;
   if (!id) return { ok: false };
   if (!name) return { ok: false, error: "Escribe un nombre." };
   const supabase = await createClient();
   const { error } = await supabase
     .from("savings_accounts")
-    .update({ name, type })
+    .update({ name, type, goal_id })
     .eq("id", id);
   if (error) return { ok: false, error: "No se pudo actualizar." };
   revalidateAll();

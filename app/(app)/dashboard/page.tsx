@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getFinanceSummary } from "@/lib/summary";
+import { getUserProfile } from "@/lib/data";
 import { runSubscriptionCatchUp } from "@/lib/subscriptions";
 import { formatDOP, formatDateShort, clampPct } from "@/lib/format";
 import { GreetingHero } from "@/components/ui/GreetingHero";
@@ -34,7 +35,7 @@ function dueSub(days: number | null): string {
 
 export default async function DashboardPage() {
   await runSubscriptionCatchUp();
-  const s = await getFinanceSummary();
+  const [s, profile] = await Promise.all([getFinanceSummary(), getUserProfile()]);
 
   const donutData =
     s.realQuincena > 0 ? s.realByCategory : s.estByCategory;
@@ -45,7 +46,7 @@ export default async function DashboardPage() {
 
   return (
     <>
-      <GreetingHero subtitle={`Quincena ${s.quincena.label}`} />
+      <GreetingHero subtitle={`Quincena ${s.quincena.label}`} displayName={profile?.display_name ?? undefined} />
       <QuickActions />
 
       <BalanceHero

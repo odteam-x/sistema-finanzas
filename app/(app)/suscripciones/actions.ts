@@ -22,7 +22,7 @@ export async function addSubscription(formData: FormData): Promise<ActionResult>
   const amount = parseAmount(formData.get("amount"));
   const frequency = parseFrequency(formData.get("frequency"));
   const next_charge_date = String(formData.get("next_charge_date") ?? "");
-  const category_id = String(formData.get("category_id") ?? "") || null;
+  const tag_id = String(formData.get("tag_id") ?? "") || null;
   const account_id = String(formData.get("account_id") ?? "") || null;
 
   if (!name) return { ok: false, error: "Escribe un nombre." };
@@ -38,7 +38,7 @@ export async function addSubscription(formData: FormData): Promise<ActionResult>
     amount,
     frequency,
     next_charge_date,
-    category_id,
+    tag_id,
     account_id,
   });
   if (error) return { ok: false, error: "No se pudo agregar la suscripción." };
@@ -54,7 +54,7 @@ export async function updateSubscription(formData: FormData): Promise<ActionResu
   const amount = parseAmount(formData.get("amount"));
   const frequency = parseFrequency(formData.get("frequency"));
   const next_charge_date = String(formData.get("next_charge_date") ?? "");
-  const category_id = String(formData.get("category_id") ?? "") || null;
+  const tag_id = String(formData.get("tag_id") ?? "") || null;
   const account_id = String(formData.get("account_id") ?? "") || null;
 
   if (!id) return { ok: false };
@@ -67,7 +67,7 @@ export async function updateSubscription(formData: FormData): Promise<ActionResu
   const supabase = await createClient();
   const { error } = await supabase
     .from("subscriptions")
-    .update({ name, amount, frequency, next_charge_date, category_id, account_id })
+    .update({ name, amount, frequency, next_charge_date, tag_id, account_id })
     .eq("id", id);
   if (error) return { ok: false, error: "No se pudo actualizar." };
 
