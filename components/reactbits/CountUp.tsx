@@ -25,10 +25,13 @@ export function CountUp({
   const inView = useInView(ref, { once: true, margin: "-8% 0px" });
   const rm = useReducedMotion();
   const fmt = useRef(format);
-  fmt.current = format;
 
   const [display, setDisplay] = useState(() => format(from));
   const started = useRef(false);
+
+  useEffect(() => {
+    fmt.current = format;
+  });
 
   useEffect(() => {
     if (started.current) return;

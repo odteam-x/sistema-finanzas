@@ -34,7 +34,9 @@ export type IconName =
   | "sun"
   | "moon"
   | "palette"
-  | "bank";
+  | "bank"
+  | "repeat"
+  | "chart";
 
 const paths: Record<IconName, React.ReactNode> = {
   dashboard: (
@@ -198,6 +200,22 @@ const paths: Record<IconName, React.ReactNode> = {
     <>
       <path d="M3 21h18M4 21V10M20 21V10M2 10l10-6 10 6" />
       <path d="M7 10v11M12 10v11M17 10v11" />
+    </>
+  ),
+  repeat: (
+    <>
+      <path d="M17 2.5 21 6.5l-4 4" />
+      <path d="M3 12v-2a4 4 0 0 1 4-4h14" />
+      <path d="M7 21.5 3 17.5l4-4" />
+      <path d="M21 12v2a4 4 0 0 1-4 4H3" />
+    </>
+  ),
+  chart: (
+    <>
+      <path d="M3 21h18" />
+      <rect x="6" y="12" width="3.5" height="9" rx="1" />
+      <rect x="12.25" y="7" width="3.5" height="14" rx="1" />
+      <rect x="18.5" y="3" width="3.5" height="18" rx="1" />
     </>
   ),
 };

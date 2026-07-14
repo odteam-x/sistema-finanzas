@@ -11,6 +11,7 @@ import type {
   SalarySettings,
   SavingsAccount,
   SavingsMovement,
+  Subscription,
   WorkException,
 } from "./types";
 
@@ -117,5 +118,14 @@ export async function getSavingsMovements(): Promise<SavingsMovement[]> {
     .select("*")
     .order("date", { ascending: false })
     .order("created_at", { ascending: false });
+  return data ?? [];
+}
+
+export async function getSubscriptions(): Promise<Subscription[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("subscriptions")
+    .select("*")
+    .order("next_charge_date", { ascending: true });
   return data ?? [];
 }

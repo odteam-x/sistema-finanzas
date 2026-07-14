@@ -89,7 +89,7 @@ export default async function IngresosPage() {
       />
 
       {/* Recibido este mes */}
-      <div className="bg-gradient-brand rounded-[var(--radius-glass)] p-4 sm:p-5 mb-3 flex items-center justify-between gap-3 shadow-lg shadow-black/10">
+      <div className="bg-gradient-brand rounded-[var(--radius-glass)] p-4 sm:p-5 mb-3 flex items-center justify-between gap-3 overflow-hidden shadow-lg shadow-black/10">
         <div className="min-w-0">
           <p className="text-sm font-medium text-white/80">Recibido este mes</p>
           <MoneyValue value={monthTotal} className="block text-money-lg font-extrabold text-white mt-1" />

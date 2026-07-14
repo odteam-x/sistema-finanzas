@@ -41,7 +41,8 @@ export function DonutChart({ data, centerLabel = "Total" }: DonutChartProps) {
   const cy = size / 2;
   const circ = 2 * Math.PI * r;
 
-  let offset = 0;
+  const lens = slices.map((s) => (s.value / total) * circ);
+  const offsets = lens.map((_, i) => lens.slice(0, i).reduce((a, b) => a + b, 0));
 
   return (
     <div className="flex flex-col sm:flex-row items-center gap-5">
@@ -56,26 +57,21 @@ export function DonutChart({ data, centerLabel = "Total" }: DonutChartProps) {
         className="shrink-0"
       >
         <circle cx={cx} cy={cy} r={r} fill="none" stroke="rgba(0,0,0,0.06)" strokeWidth={stroke} />
-        {slices.map((s, i) => {
-          const len = (s.value / total) * circ;
-          const el = (
-            <circle
-              key={i}
-              cx={cx}
-              cy={cy}
-              r={r}
-              fill="none"
-              stroke={COLORS[i % COLORS.length]}
-              strokeWidth={stroke}
-              strokeDasharray={`${len} ${circ - len}`}
-              strokeDashoffset={-offset}
-              strokeLinecap="butt"
-              transform={`rotate(-90 ${cx} ${cy})`}
-            />
-          );
-          offset += len;
-          return el;
-        })}
+        {slices.map((_, i) => (
+          <circle
+            key={i}
+            cx={cx}
+            cy={cy}
+            r={r}
+            fill="none"
+            stroke={COLORS[i % COLORS.length]}
+            strokeWidth={stroke}
+            strokeDasharray={`${lens[i]} ${circ - lens[i]}`}
+            strokeDashoffset={-offsets[i]}
+            strokeLinecap="butt"
+            transform={`rotate(-90 ${cx} ${cy})`}
+          />
+        ))}
         <text
           x={cx}
           y={cy - 6}

@@ -136,6 +136,20 @@ alter table public.salaries
 alter table public.expenses
   add column if not exists account_id uuid references public.savings_accounts (id) on delete set null;
 
+-- Suscripciones recurrentes (streaming, gimnasio, etc.)
+create table if not exists public.subscriptions (
+  id               uuid primary key default gen_random_uuid(),
+  user_id          uuid not null references auth.users (id) on delete cascade,
+  name             text not null,
+  amount           numeric(12, 2) not null,
+  frequency        text not null default 'mensual' check (frequency in ('mensual', 'anual')),
+  next_charge_date date not null,
+  category_id      uuid references public.budget_categories (id) on delete set null,
+  account_id       uuid references public.savings_accounts (id) on delete set null,
+  active           boolean not null default true,
+  created_at       timestamptz not null default now()
+);
+
 -- ----------------------------------------------------------------------------
 -- Índices
 -- ----------------------------------------------------------------------------
@@ -152,6 +166,7 @@ create index if not exists idx_savings_movements_account on public.savings_movem
 create index if not exists idx_savings_movements_user on public.savings_movements (user_id, date desc);
 create index if not exists idx_salaries_account on public.salaries (account_id);
 create index if not exists idx_expenses_account on public.expenses (account_id);
+create index if not exists idx_subscriptions_user_next on public.subscriptions (user_id, next_charge_date);
 
 -- ----------------------------------------------------------------------------
 -- Row Level Security: cada usuario solo ve/edita sus propias filas
@@ -166,6 +181,7 @@ alter table public.debt_installments        enable row level security;
 alter table public.expenses                  enable row level security;
 alter table public.savings_accounts          enable row level security;
 alter table public.savings_movements         enable row level security;
+alter table public.subscriptions             enable row level security;
 
 do $$
 declare
@@ -173,7 +189,7 @@ declare
   tables text[] := array[
     'salary_settings','salaries','work_calendar_exceptions','budget_categories',
     'goals','debts','debt_installments','expenses',
-    'savings_accounts','savings_movements'
+    'savings_accounts','savings_movements','subscriptions'
   ];
 begin
   foreach t in array tables loop

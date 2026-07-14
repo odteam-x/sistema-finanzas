@@ -112,6 +112,18 @@ export function formatMonth(year: number, month: number): string {
   return monthFmt().format(new Date(year, month, 1, 12));
 }
 
+let _monthShortFmt: Intl.DateTimeFormat | null = null;
+function monthShortFmt(): Intl.DateTimeFormat {
+  return (_monthShortFmt ??= safeIntl(
+    (locale) => new Intl.DateTimeFormat(locale, { month: "short" }),
+  ));
+}
+
+/** "jul" (a partir de año/mes 0-index) */
+export function formatMonthShort(year: number, month: number): string {
+  return monthShortFmt().format(new Date(year, month, 1, 12));
+}
+
 export function formatWeekday(iso: string): string {
   return weekdayFmt().format(parseISODate(iso));
 }

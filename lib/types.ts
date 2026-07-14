@@ -119,3 +119,26 @@ export interface SavingsMovement {
   note: string | null;
   created_at: string;
 }
+
+export type SubscriptionFrequency = "mensual" | "anual";
+
+export interface Subscription {
+  id: string;
+  user_id: string;
+  name: string;
+  amount: number;
+  frequency: SubscriptionFrequency;
+  next_charge_date: string; // YYYY-MM-DD
+  category_id: string | null;
+  account_id: string | null;
+  active: boolean;
+  created_at: string;
+}
+
+export type FinEventType = "pago" | "deuda" | "suscripcion" | "feriado";
+
+export interface FinEvent {
+  type: FinEventType;
+  label: string;
+  amount?: number;
+}

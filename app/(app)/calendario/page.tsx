@@ -1,15 +1,21 @@
 import Link from "next/link";
-import { getExceptions } from "@/lib/data";
+import {
+  getDebts,
+  getExceptions,
+  getInstallments,
+  getSalarySettings,
+  getSubscriptions,
+} from "@/lib/data";
 import { toISODate, formatMonth, todayISO } from "@/lib/format";
 import { countWorkdays, exceptionsMap } from "@/lib/calendar";
-import { monthPeriods } from "@/lib/periods";
+import { monthPeriods, paydaysInMonth } from "@/lib/periods";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { StatTile } from "@/components/ui/StatTile";
 import { Icon } from "@/components/ui/Icon";
 import { CalendarView } from "./CalendarView";
 import { LoadHolidaysButton } from "./LoadHolidaysButton";
-import type { ExceptionKind } from "@/lib/types";
+import type { ExceptionKind, FinEvent } from "@/lib/types";
 
 export const metadata = { title: "Calendario · Bolsillo Seguro" };
 
@@ -26,13 +32,58 @@ export default async function CalendarioPage({
   const monthStart = toISODate(new Date(year, month, 1, 12));
   const monthEnd = toISODate(new Date(year, month + 1, 0, 12));
 
-  const exceptions = await getExceptions(monthStart, monthEnd);
+  const [exceptions, settings, debts, installments, subscriptions] = await Promise.all([
+    getExceptions(monthStart, monthEnd),
+    getSalarySettings(),
+    getDebts(),
+    getInstallments(),
+    getSubscriptions(),
+  ]);
   const exMap = exceptionsMap(exceptions);
 
   // Record para la vista (kind + label)
   const exRecord: Record<string, { kind: ExceptionKind; label: string | null }> =
     {};
   for (const e of exceptions) exRecord[e.date] = { kind: e.kind, label: e.label };
+
+  // Eventos financieros del mes visible (pagos, deudas, suscripciones)
+  const events: Record<string, FinEvent[]> = {};
+  function pushEvent(date: string, event: FinEvent) {
+    if (date < monthStart || date > monthEnd) return;
+    (events[date] ??= []).push(event);
+  }
+
+  for (const day of paydaysInMonth(year, month, settings.pay_day_1, settings.pay_day_2)) {
+    pushEvent(day, {
+      type: "pago",
+      label: "Día de pago",
+      amount: settings.default_amount > 0 ? settings.default_amount : undefined,
+    });
+  }
+
+  for (const d of debts) {
+    if (d.payment_type === "unico" && d.due_date && d.status !== "pagada") {
+      pushEvent(d.due_date, { type: "deuda", label: d.name, amount: Number(d.total_amount) });
+    }
+  }
+  for (const i of installments) {
+    if (i.paid) continue;
+    const debt = debts.find((d) => d.id === i.debt_id);
+    pushEvent(i.due_date, {
+      type: "deuda",
+      label: debt?.name ?? "Cuota",
+      amount: Number(i.amount),
+    });
+  }
+
+  for (const s of subscriptions) {
+    if (!s.active) continue;
+    pushEvent(s.next_charge_date, {
+      type: "suscripcion",
+      label: s.name,
+      amount: Number(s.amount),
+    });
+  }
 
   // Conteos
   const workedMonth = countWorkdays(monthStart, monthEnd, exMap);
@@ -81,6 +132,7 @@ export default async function CalendarioPage({
           year={year}
           month={month}
           exceptions={exRecord}
+          events={events}
           today={todayISO()}
         />
 

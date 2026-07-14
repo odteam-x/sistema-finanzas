@@ -16,6 +16,8 @@ export const NAV_ROUTES: NavRoute[] = [
   { href: "/cuentas", label: "Cuentas", shortLabel: "Cuentas", icon: "wallet", primary: false },
   { href: "/metas", label: "Metas", shortLabel: "Metas", icon: "goal", primary: false },
   { href: "/deudas", label: "Deudas", shortLabel: "Deudas", icon: "debt", primary: false },
+  { href: "/suscripciones", label: "Suscripciones", shortLabel: "Suscrip.", icon: "repeat", primary: false },
+  { href: "/reportes", label: "Reportes", shortLabel: "Reportes", icon: "chart", primary: false },
   { href: "/sugerencias", label: "Consejos", shortLabel: "Consejos", icon: "bulb", primary: false },
 ];
 

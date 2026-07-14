@@ -45,7 +45,7 @@ export function StatTile({
     <div
       className={cn(
         toneBg[tone],
-        "rounded-[var(--radius-glass-sm)] p-3.5 sm:p-4 min-w-0",
+        "rounded-[var(--radius-glass-sm)] p-3.5 sm:p-4 min-w-0 overflow-hidden",
         className,
       )}
     >

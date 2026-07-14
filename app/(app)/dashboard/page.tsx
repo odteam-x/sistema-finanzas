@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getFinanceSummary } from "@/lib/summary";
+import { runSubscriptionCatchUp } from "@/lib/subscriptions";
 import { formatDOP, formatDateShort, clampPct } from "@/lib/format";
 import { GreetingHero } from "@/components/ui/GreetingHero";
 import { QuickActions } from "@/components/ui/QuickActions";
@@ -32,6 +33,7 @@ function dueSub(days: number | null): string {
 }
 
 export default async function DashboardPage() {
+  await runSubscriptionCatchUp();
   const s = await getFinanceSummary();
 
   const donutData =
@@ -86,6 +88,14 @@ export default async function DashboardPage() {
           value={<MoneyValue value={s.outstandingDebt} decimals={false} />}
           icon="debt"
           tone={s.outstandingDebt > 0 ? "danger" : "neutral"}
+        />
+        <StatTile
+          className="col-span-2"
+          label="Patrimonio neto"
+          value={<MoneyValue value={s.netWorth} decimals={false} />}
+          sub="Es lo que tendrías si vendieras todo lo que posees y pagaras todas tus deudas hoy."
+          icon="bank"
+          tone={s.netWorth >= 0 ? "primary" : "danger"}
         />
       </div>
 

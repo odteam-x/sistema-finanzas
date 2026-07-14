@@ -50,6 +50,7 @@ export interface FinanceSummary {
   totalSaved: number;
   totalTarget: number;
   savingsTotal: number;
+  netWorth: number;
   estByCategory: NamedValue[];
   realByCategory: NamedValue[];
   alerts: Alert[];
@@ -239,6 +240,7 @@ export async function getFinanceSummary(): Promise<FinanceSummary> {
     totalSaved,
     totalTarget,
     savingsTotal,
+    netWorth: savingsTotal - outstandingDebt,
     estByCategory,
     realByCategory,
     alerts,

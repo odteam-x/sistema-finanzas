@@ -91,3 +91,13 @@ export function nextPayDate(
   const next = candidates.find((d) => d.getTime() >= today.getTime());
   return toISODate(next ?? candidates[0]);
 }
+
+/**
+ * Fechas de pago (payDay1/payDay2) dentro de un mes dado, como ISO.
+ * payDay2 = 31 se interpreta como "último día del mes" (mismo clamp que nextPayDate).
+ */
+export function paydaysInMonth(year: number, month: number, payDay1: number, payDay2: number): string[] {
+  const lastDay = new Date(year, month + 1, 0).getDate();
+  const days = Array.from(new Set([Math.min(payDay1, lastDay), Math.min(payDay2, lastDay)]));
+  return days.sort((a, b) => a - b).map((day) => toISODate(new Date(year, month, day, 12)));
+}

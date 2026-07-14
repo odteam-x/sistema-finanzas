@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 
 interface IllProps {
@@ -8,11 +8,20 @@ interface IllProps {
   className?: string;
 }
 
-/** Evita mismatch de hidratación: las animaciones inician tras montar. */
+function subscribeNoop() {
+  return () => {};
+}
+
+/** Evita mismatch de hidratación: las animaciones inician tras montar.
+ *  useSyncExternalStore con snapshot de servidor `false` y de cliente
+ *  `true` evita el patrón setState-dentro-de-effect (un solo render extra
+ *  tras hidratar, sin doble commit). */
 function useMounted() {
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
-  return mounted;
+  return useSyncExternalStore(
+    subscribeNoop,
+    () => true,
+    () => false,
+  );
 }
 
 /** Alcancía con una moneda que cae (animación suave, idle). Colores de

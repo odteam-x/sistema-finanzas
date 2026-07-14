@@ -122,14 +122,14 @@ export function BottomTabBar({ email }: { email: string | null }) {
         )}
       </AnimatePresence>
 
-      {/* Tab bar */}
+      {/* Tab bar: píldora flotante, no pegada al borde */}
       <motion.nav
-        className="lg:hidden fixed bottom-0 inset-x-0 z-[80] glass-nav border-t safe-bottom"
+        className="lg:hidden fixed bottom-[max(0.75rem,env(safe-area-inset-bottom))] left-3 right-3 z-[80] glass-nav border rounded-full overflow-hidden shadow-lg shadow-black/15"
         style={{ willChange: "transform" }}
         animate={{ y: hidden && !moreOpen ? 100 : 0 }}
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
       >
-        <ul className="grid grid-cols-5">
+        <ul className="grid grid-cols-5 px-2">
           {PRIMARY_ROUTES.map((r) => {
             const active = pathname === r.href;
             return (

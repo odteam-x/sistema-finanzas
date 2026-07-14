@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import Image from "next/image";
 import { readProfile } from "@/lib/profile";
 
@@ -16,24 +16,24 @@ function timeGreeting(): string {
   return "Buenas noches";
 }
 
+function subscribeNoop() {
+  return () => {};
+}
+
 /** Encabezado del Resumen: saludo personalizado con el nombre guardado en
- *  Personalizar. Primer render: saludo neutral (sin depender de la hora,
- *  para no arriesgar un mismatch de hidratación); tras montar, sube de
- *  nivel a un saludo por hora del día — mismo patrón "neutral → real
- *  después de montar" que ya usa CountUp para las animaciones. */
+ *  Personalizar. Primer render (servidor y cliente antes de hidratar):
+ *  saludo neutral "Hola" (no depende de la hora, evita mismatch); tras
+ *  montar, useSyncExternalStore sube de nivel a un saludo por hora del
+ *  día en un solo render extra, sin el patrón setState-dentro-de-effect. */
 export function GreetingHero({ subtitle, action }: GreetingHeroProps) {
-  const [greeting, setGreeting] = useState("Hola");
+  const greeting = useSyncExternalStore(subscribeNoop, timeGreeting, () => "Hola");
   // Init perezoso (seguro: en el servidor no hay localStorage, readProfile
   // devuelve el default; el nombre no depende de la hora, así que no hay
   // riesgo de mismatch de hidratación aquí — mismo patrón que ThemeButton).
   const [name] = useState<string>(() => readProfile().displayName);
 
-  useEffect(() => {
-    setGreeting(timeGreeting());
-  }, []);
-
   return (
-    <header className="flex items-end justify-between gap-3 mb-5">
+    <header className="flex items-center justify-between gap-3 mb-5">
       <div className="flex items-center gap-2.5 min-w-0">
         <Image
           src="/icons/icon-192.png"

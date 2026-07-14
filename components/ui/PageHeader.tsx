@@ -8,7 +8,7 @@ interface PageHeaderProps {
 
 export function PageHeader({ title, subtitle, action }: PageHeaderProps) {
   return (
-    <header className="flex items-end justify-between gap-3 mb-5">
+    <header className="flex items-center justify-between gap-3 mb-5">
       <div className="flex items-center gap-2.5 min-w-0">
         <Image
           src="/icons/icon-192.png"
