@@ -7,6 +7,7 @@ import { GlassCard } from "@/components/ui/GlassCard";
 import { StatTile } from "@/components/ui/StatTile";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Icon } from "@/components/ui/Icon";
+import { Illustration } from "@/components/ui/Illustration";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -144,6 +145,7 @@ export default async function ReportesPage({
           icon="chart"
           title="Sin datos suficientes"
           message="Registra gastos en Presupuesto para ver reportes comparativos de tus últimos meses."
+          illustration={<Illustration name="data-reports" width={190} />}
         />
       ) : (
         <>

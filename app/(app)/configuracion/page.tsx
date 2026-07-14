@@ -8,6 +8,7 @@ import { Field, Input, MoneyInput } from "@/components/ui/Field";
 import { FormModal } from "@/components/ui/FormModal";
 import { DeleteButton } from "@/components/ui/DeleteButton";
 import { IconBubble } from "@/components/ui/IconBubble";
+import { Illustration } from "@/components/ui/Illustration";
 import { DisplayNameForm } from "./DisplayNameForm";
 import { ExportCsvForm } from "./ExportCsvForm";
 import { addTag, deleteTag, updateTag } from "./actions";
@@ -72,6 +73,7 @@ export default async function ConfiguracionPage() {
           icon="budget"
           title="Sin etiquetas todavía"
           message="Crea etiquetas generales (Comida, Transporte, Ocio…) para categorizar tus ingresos y gastos, sin depender de las líneas del presupuesto."
+          illustration={<Illustration name="preferences" width={190} />}
         />
       ) : (
         <ul className="flex flex-col gap-2">

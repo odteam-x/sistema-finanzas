@@ -5,7 +5,7 @@ interface EmptyStateProps {
   title: string;
   message: string;
   action?: React.ReactNode;
-  /** Ilustración animada opcional (ver components/illustrations.tsx) — si se
+  /** Ilustración opcional (ver components/ui/Illustration.tsx) — si se
    *  da, reemplaza el círculo de ícono por defecto. */
   illustration?: React.ReactNode;
 }

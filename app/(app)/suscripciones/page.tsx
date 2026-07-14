@@ -11,7 +11,7 @@ import { Field, Input, Select, MoneyInput } from "@/components/ui/Field";
 import { FormModal } from "@/components/ui/FormModal";
 import { DeleteButton } from "@/components/ui/DeleteButton";
 import { MoneyValue } from "@/components/ui/MoneyValue";
-import { RecurringCycle } from "@/components/illustrations";
+import { Illustration } from "@/components/ui/Illustration";
 import { addSubscription, deleteSubscription, updateSubscription } from "./actions";
 
 export const metadata = { title: "Suscripciones · Bolsillo Seguro" };
@@ -108,7 +108,7 @@ export default async function SuscripcionesPage() {
           icon="repeat"
           title="Sin suscripciones"
           message="Registra tus cobros recurrentes (streaming, gimnasio…) y te generamos el gasto automáticamente cuando llegue la fecha."
-          illustration={<RecurringCycle size={104} />}
+          illustration={<Illustration name="subscriptions" width={190} />}
         />
       ) : (
         <ul className="flex flex-col gap-2">

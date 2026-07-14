@@ -11,7 +11,7 @@ import { Icon, type IconName } from "@/components/ui/Icon";
 import { MoneyValue } from "@/components/ui/MoneyValue";
 import { IconBubble } from "@/components/ui/IconBubble";
 import { PeekCarousel } from "@/components/ui/PeekCarousel";
-import { PiggyBank } from "@/components/illustrations";
+import { Illustration } from "@/components/ui/Illustration";
 import type { AccountType } from "@/lib/types";
 import {
   addAccount,
@@ -141,7 +141,7 @@ export default async function BalancePage() {
           icon="piggy"
           title="Sin cuentas todavía"
           message="Crea tu primera cuenta (banco, efectivo, ahorro…) y registra depósitos y retiros."
-          illustration={<PiggyBank size={104} />}
+          illustration={<Illustration name="savings" width={190} />}
         />
       ) : (
         <PeekCarousel>

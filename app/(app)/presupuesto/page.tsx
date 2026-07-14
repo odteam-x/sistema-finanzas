@@ -28,7 +28,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/DropdownMenu";
 import { BudgetRing } from "@/components/charts/BudgetRing";
-import { MoneyBills } from "@/components/illustrations";
+import { Illustration } from "@/components/ui/Illustration";
 import {
   addCategory,
   addExpense,
@@ -363,7 +363,7 @@ export default async function PresupuestoPage({
           icon="wallet"
           title="Sin gastos registrados"
           message="Registra tus gastos reales para compararlos con el presupuesto."
-          illustration={<MoneyBills size={100} />}
+          illustration={<Illustration name="wallet" width={190} />}
         />
       ) : (
         <ul className="flex flex-col gap-2">

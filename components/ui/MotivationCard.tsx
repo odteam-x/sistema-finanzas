@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { formatDOP, clampPct } from "@/lib/format";
 import { ProgressBar } from "./ProgressBar";
-import { CoinStack, MoneyBills } from "@/components/illustrations";
+import { Illustration } from "./Illustration";
 import type { Goal } from "@/lib/types";
 
 const TIPS = [
@@ -28,7 +28,7 @@ export function MotivationCard({ topGoal }: { topGoal: Goal | null }) {
     return (
       <Link href="/metas" className="block mb-4">
         <div className="glass rounded-[var(--radius-glass)] p-4 sm:p-5 flex items-center gap-4">
-          <CoinStack size={72} className="shrink-0" />
+          <Illustration name="target" width={84} className="shrink-0" />
           <div className="min-w-0 flex-1">
             <p className="text-xs font-medium text-muted">Tu meta principal</p>
             <p className="font-bold text-ink truncate">{topGoal.name}</p>
@@ -47,7 +47,7 @@ export function MotivationCard({ topGoal }: { topGoal: Goal | null }) {
 
   return (
     <div className="glass rounded-[var(--radius-glass)] p-4 sm:p-5 mb-4 flex items-center gap-4">
-      <MoneyBills size={72} className="shrink-0" />
+      <Illustration name="finance" width={84} className="shrink-0" />
       <div className="min-w-0">
         <p className="text-xs font-medium text-muted">Consejo del día</p>
         <p className="text-sm text-ink mt-1">{dailyTip()}</p>

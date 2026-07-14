@@ -25,7 +25,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/DropdownMenu";
 import { MoneyValue } from "@/components/ui/MoneyValue";
-import { CoinStack } from "@/components/illustrations";
+import { Illustration } from "@/components/ui/Illustration";
 import { addSalary, deleteSalary, saveSalarySettings } from "./actions";
 
 export const metadata = { title: "Ingresos · Bolsillo Seguro" };
@@ -233,7 +233,7 @@ export default async function IngresosPage({
           icon="wallet"
           title="Sin pagos registrados"
           message="Registra tu primer pago con el botón “Nuevo”."
-          illustration={<CoinStack size={100} />}
+          illustration={<Illustration name="make-it-rain" width={190} />}
         />
       ) : (
         <ul className="flex flex-col gap-2">

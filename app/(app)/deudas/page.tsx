@@ -13,7 +13,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { Badge } from "@/components/ui/Badge";
 import { DeleteButton } from "@/components/ui/DeleteButton";
 import { IconBubble } from "@/components/ui/IconBubble";
-import { ReceiptCheck } from "@/components/illustrations";
+import { Illustration } from "@/components/ui/Illustration";
 import { AddDebtForm } from "./AddDebtForm";
 import { InstallmentRow, DebtPaidToggle } from "./DebtControls";
 import { deleteDebt } from "./actions";
@@ -107,7 +107,7 @@ export default async function DeudasPage() {
           icon="debt"
           title="Sin deudas registradas"
           message="Registra una deuda para llevar control de sus pagos y vencimientos."
-          illustration={<ReceiptCheck size={104} />}
+          illustration={<Illustration name="receipt" width={170} />}
         />
       ) : (
         <ul className="flex flex-col gap-3">

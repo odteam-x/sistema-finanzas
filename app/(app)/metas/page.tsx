@@ -9,7 +9,7 @@ import { Field, Input, MoneyInput } from "@/components/ui/Field";
 import { FormModal } from "@/components/ui/FormModal";
 import { DeleteButton } from "@/components/ui/DeleteButton";
 import { MoneyValue } from "@/components/ui/MoneyValue";
-import { GoalFlag } from "@/components/illustrations";
+import { Illustration } from "@/components/ui/Illustration";
 import { addMovement } from "../balance/actions";
 import { addGoal, addProgress, deleteGoal, updateGoal } from "./actions";
 
@@ -95,7 +95,7 @@ export default async function MetasPage() {
           icon="goal"
           title="Sin metas todavía"
           message="Crea tu primera meta de ahorro y sigue su progreso visualmente."
-          illustration={<GoalFlag size={104} />}
+          illustration={<Illustration name="goals" width={190} />}
         />
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
