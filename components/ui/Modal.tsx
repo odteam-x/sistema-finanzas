@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { createPortal } from "react-dom";
 import { AnimatePresence, motion, useDragControls } from "framer-motion";
 import { Icon } from "./Icon";
 import { cn } from "@/lib/cn";
@@ -32,7 +33,13 @@ export function Modal({ open, onClose, title, children, footer, compact }: Modal
     };
   }, [open, onClose]);
 
-  return (
+  // Portal a document.body: si no, el modal hereda el "contexto de
+  // contención" del motion.div de PageTransition (tiene transform, aunque
+  // sea identidad) y su `fixed` deja de posicionarse contra el viewport
+  // real — quedaba atrapado dentro del ancho de la página.
+  if (typeof document === "undefined") return null;
+
+  return createPortal(
     <AnimatePresence>
       {open && (
         <div
@@ -94,6 +101,7 @@ export function Modal({ open, onClose, title, children, footer, compact }: Modal
           </motion.div>
         </div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body,
   );
 }

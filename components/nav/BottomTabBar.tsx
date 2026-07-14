@@ -3,12 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import {
-  AnimatePresence,
-  motion,
-  useDragControls,
-  useReducedMotion,
-} from "framer-motion";
+import { AnimatePresence, motion, useDragControls, useReducedMotion } from "framer-motion";
 import { cn } from "@/lib/cn";
 import { Icon } from "@/components/ui/Icon";
 import { PRIMARY_ROUTES, SECONDARY_ROUTES } from "./routes";
@@ -20,27 +15,7 @@ export function BottomTabBar({ email }: { email: string | null }) {
   const rm = useReducedMotion();
   const dragControls = useDragControls();
   const [moreOpen, setMoreOpen] = useState(false);
-  const [hidden, setHidden] = useState(false);
   const onSecondary = SECONDARY_ROUTES.some((r) => pathname === r.href);
-
-  // Ocultar al bajar, mostrar al subir.
-  useEffect(() => {
-    let last = window.scrollY;
-    let ticking = false;
-    const onScroll = () => {
-      if (ticking) return;
-      ticking = true;
-      requestAnimationFrame(() => {
-        const y = window.scrollY;
-        if (y > last + 6 && y > 90) setHidden(true);
-        else if (y < last - 6) setHidden(false);
-        last = y;
-        ticking = false;
-      });
-    };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
 
   // Bloquear scroll del fondo mientras el menú "Más" está abierto (evita
   // repintados del contenido detrás mientras anima, que era parte del lag).
@@ -122,13 +97,8 @@ export function BottomTabBar({ email }: { email: string | null }) {
         )}
       </AnimatePresence>
 
-      {/* Tab bar: píldora flotante, no pegada al borde */}
-      <motion.nav
-        className="lg:hidden fixed bottom-[max(0.75rem,env(safe-area-inset-bottom))] left-3 right-3 z-[80] glass-nav border rounded-full overflow-hidden shadow-lg shadow-black/15"
-        style={{ willChange: "transform" }}
-        animate={{ y: hidden && !moreOpen ? 100 : 0 }}
-        transition={{ type: "spring", stiffness: 300, damping: 30 }}
-      >
+      {/* Tab bar: píldora flotante, siempre fija (no se oculta al hacer scroll) */}
+      <nav className="lg:hidden fixed bottom-[max(0.75rem,env(safe-area-inset-bottom))] left-3 right-3 z-[80] glass-nav border rounded-full overflow-hidden shadow-lg shadow-black/15">
         <ul className="grid grid-cols-5 px-2">
           {PRIMARY_ROUTES.map((r) => {
             const active = pathname === r.href;
@@ -162,7 +132,7 @@ export function BottomTabBar({ email }: { email: string | null }) {
             </button>
           </li>
         </ul>
-      </motion.nav>
+      </nav>
     </>
   );
 }

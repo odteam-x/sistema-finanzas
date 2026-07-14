@@ -15,15 +15,17 @@ const DEFAULT_ACTIONS: QuickAction[] = [
   { icon: "goal", label: "Metas", href: "/metas" },
 ];
 
-/** Fila de accesos rápidos con scroll horizontal nativo (sin librería). */
+/** Tarjeta de accesos rápidos: 4 destinos agrupados en una sola superficie
+ *  (antes: fila suelta con scroll horizontal innecesario para 4 ítems que
+ *  ya caben sin desbordar). */
 export function QuickActions({ actions = DEFAULT_ACTIONS }: { actions?: QuickAction[] }) {
   return (
-    <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory -mx-4 px-4 pb-1 mb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+    <div className="glass rounded-[var(--radius-glass)] p-3 mb-4 grid grid-cols-4 gap-1">
       {actions.map((a) => (
         <Link
           key={a.href}
           href={a.href}
-          className="flex flex-col items-center gap-1.5 shrink-0 snap-start w-16 active:scale-95 transition-transform"
+          className="flex flex-col items-center gap-1.5 py-1 rounded-2xl active:scale-95 active:bg-black/5 transition-transform"
         >
           <IconBubble icon={a.icon} tone="brand" size="md" />
           <span className="text-xs font-semibold text-ink/80 text-center leading-tight">

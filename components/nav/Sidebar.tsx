@@ -29,7 +29,7 @@ export function Sidebar({ email }: { email: string | null }) {
         </div>
       </div>
 
-      <nav className="glass rounded-[var(--radius-glass)] p-2 flex flex-col gap-0.5">
+      <nav className="glass-nav border overflow-hidden rounded-[var(--radius-glass)] p-2 flex flex-col gap-0.5">
         {NAV_ROUTES.map((r) => {
           const active = pathname === r.href;
           return (
@@ -51,7 +51,7 @@ export function Sidebar({ email }: { email: string | null }) {
         })}
       </nav>
 
-      <div className="mt-auto glass rounded-[var(--radius-glass)] p-3">
+      <div className="mt-auto glass-nav border rounded-[var(--radius-glass)] p-3">
         {email && (
           <p className="text-xs text-muted px-1 mb-2 truncate" title={email}>
             {email}

@@ -38,15 +38,20 @@
 :root {
   color-scheme: light;
 
-  /* Superficies de vidrio (variables; el modo oscuro las redefine abajo) */
-  --glass-bg: rgba(255, 255, 255, 0.55);
-  --glass-bg-strong: rgba(255, 255, 255, 0.72);
+  /* Superficies sólidas para tarjetas de contenido (StatTile, GlassCard,
+     EmptyState...). Antes eran translúcidas con blur ("glassmorfismo") pero
+     eso quedaba reservado a elementos que SÍ flotan sobre otro contenido
+     (nav, modal, sheet) — el resto ahora es opaco, sin blur, más liviano en
+     móvil y sin el ruido visual de ver el fondo a través de la tarjeta. */
+  --glass-bg: #ffffff;
+  --glass-bg-strong: #ffffff;
+  /* Estas tres SÍ flotan sobre otro contenido: mantienen translucidez. */
   --glass-bg-modal: rgba(252, 250, 246, 0.98);
   --glass-bg-sheet: rgba(252, 250, 246, 0.97);
-  --glass-bg-nav: rgba(244, 239, 227, 0.78);
-  --glass-border: rgba(255, 255, 255, 0.6);
-  --glass-border-strong: rgba(255, 255, 255, 0.7);
-  --glass-shadow: rgba(31, 42, 35, 0.25);
+  --glass-bg-nav: rgba(255, 255, 255, 0.78);
+  --glass-border: rgba(20, 30, 24, 0.06);
+  --glass-border-strong: rgba(20, 30, 24, 0.08);
+  --glass-shadow: rgba(31, 42, 35, 0.14);
 }
 
 /* ---------------------------------------------------------------------------
@@ -59,6 +64,8 @@
   --color-primary-active: #194377;
   --color-primary-soft: #e1ebf7;
   --color-accent: #4c93e0;
+  --color-cream: #eef3f9;
+  --color-cream-deep: #e2eaf4;
 }
 [data-theme="purple"] {
   --color-primary: #6d4aa6;
@@ -66,6 +73,8 @@
   --color-primary-active: #4a3173;
   --color-primary-soft: #ece5f7;
   --color-accent: #9b7fd4;
+  --color-cream: #f3eef9;
+  --color-cream-deep: #e8def3;
 }
 [data-theme="red"] {
   --color-primary: #b23a3a;
@@ -73,6 +82,8 @@
   --color-primary-active: #7c2727;
   --color-primary-soft: #f7e4e4;
   --color-accent: #dd6b6b;
+  --color-cream: #f9eeec;
+  --color-cream-deep: #f2e0dd;
 }
 [data-theme="orange"] {
   --color-primary: #c1631a;
@@ -80,6 +91,8 @@
   --color-primary-active: #874411;
   --color-primary-soft: #f7eadc;
   --color-accent: #e9924a;
+  --color-cream: #faf0e2;
+  --color-cream-deep: #f4e3cd;
 }
 
 /* ---------------------------------------------------------------------------
@@ -96,8 +109,10 @@
   --color-warning-soft: rgba(176, 111, 16, 0.2);
   --color-info-soft: rgba(92, 118, 144, 0.22);
 
-  --glass-bg: rgba(24, 30, 27, 0.55);
-  --glass-bg-strong: rgba(24, 30, 27, 0.72);
+  /* Tarjetas de contenido: superficie sólida elevada (más clara que el
+     fondo), sin blur — mismo criterio que en modo claro. */
+  --glass-bg: #1c2622;
+  --glass-bg-strong: #212d28;
   --glass-bg-modal: rgba(18, 23, 20, 0.97);
   --glass-bg-sheet: rgba(18, 23, 20, 0.96);
   --glass-bg-nav: rgba(14, 18, 16, 0.82);
@@ -106,22 +121,32 @@
   --glass-shadow: rgba(0, 0, 0, 0.5);
 }
 
-/* primary-soft por tema en oscuro (fondos pastel no sirven sobre fondo oscuro) */
+/* primary-soft y fondo por tema en oscuro (fondos pastel no sirven sobre
+   fondo oscuro; cada tema recibe un fondo tintado propio, no un negro
+   genérico compartido). */
 [data-mode="dark"][data-theme="green"],
 [data-mode="dark"]:not([data-theme]) {
   --color-primary-soft: rgba(63, 165, 118, 0.18);
 }
 [data-mode="dark"][data-theme="blue"] {
   --color-primary-soft: rgba(76, 147, 224, 0.18);
+  --color-cream: #0f161e;
+  --color-cream-deep: #0a0f15;
 }
 [data-mode="dark"][data-theme="purple"] {
   --color-primary-soft: rgba(155, 127, 212, 0.2);
+  --color-cream: #161220;
+  --color-cream-deep: #0f0c17;
 }
 [data-mode="dark"][data-theme="red"] {
   --color-primary-soft: rgba(221, 107, 107, 0.18);
+  --color-cream: #1a1310;
+  --color-cream-deep: #130e0b;
 }
 [data-mode="dark"][data-theme="orange"] {
   --color-primary-soft: rgba(233, 146, 74, 0.18);
+  --color-cream: #1a1510;
+  --color-cream-deep: #140f0b;
 }
 
 html {
@@ -165,28 +190,26 @@ body {
 }
 
 /* ---------------------------------------------------------------------------
-   Utilidades de vidrio (glassmorphism) — todas consumen variables, así que
-   el modo oscuro y los temas de color las recolorean automáticamente.
+   Superficies — todas consumen variables, así que el modo oscuro y los
+   temas de color las recolorean automáticamente. El translúcido/blur
+   ("vidrio") queda reservado a lo que SÍ flota sobre otro contenido (nav,
+   modal, sheet, más abajo); .glass/.glass-strong son ahora superficies
+   sólidas para tarjetas normales de la página — sin blur, más livianas en
+   móvil y sin transparentar el fondo detrás.
 --------------------------------------------------------------------------- */
 @layer components {
   .glass {
     background: var(--glass-bg);
     border: 1px solid var(--glass-border);
-    box-shadow:
-      0 8px 30px -12px var(--glass-shadow),
-      inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    box-shadow: 0 8px 30px -12px var(--glass-shadow);
     overflow: hidden;
-    @apply backdrop-blur-md backdrop-saturate-150;
   }
 
   .glass-strong {
     background: var(--glass-bg-strong);
     border: 1px solid var(--glass-border-strong);
-    box-shadow:
-      0 12px 40px -14px var(--glass-shadow),
-      inset 0 1px 0 rgba(255, 255, 255, 0.14);
+    box-shadow: 0 12px 40px -14px var(--glass-shadow);
     overflow: hidden;
-    @apply backdrop-blur-lg backdrop-saturate-150;
   }
 
   /* Barra de navegación translúcida */
@@ -218,34 +241,23 @@ body {
 }
 
 /* ---------------------------------------------------------------------------
-   Gradientes de marca (primary → accent, sigue el tema activo)
+   Colores de marca sólidos (antes degradados; sigue el tema activo). Se
+   mantienen los nombres de clase para no tocar cada sitio que las usa.
 --------------------------------------------------------------------------- */
 .bg-gradient-brand {
-  background-image: linear-gradient(135deg, var(--color-accent), var(--color-primary));
+  background-color: var(--color-primary);
 }
 .bg-gradient-danger {
-  background-image: linear-gradient(135deg, #d67c60, var(--color-danger));
+  background-color: var(--color-danger);
 }
 .bg-gradient-warning {
-  background-image: linear-gradient(135deg, #d08a2a, var(--color-warning));
+  background-color: var(--color-warning);
 }
 .bg-gradient-info {
-  background-image: linear-gradient(135deg, #7f96a8, var(--color-info));
+  background-color: var(--color-info);
 }
 
-.text-gradient-brand {
-  background-image: linear-gradient(
-    120deg,
-    color-mix(in srgb, var(--color-accent) 85%, white 15%),
-    var(--color-primary) 55%,
-    var(--color-primary-active)
-  );
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
-
-/* Badge de ícono con gradiente + halo suave */
+/* Badge de ícono: color sólido + halo suave */
 .icon-badge {
   color: #fff;
   box-shadow:
