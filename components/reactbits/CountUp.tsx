@@ -46,6 +46,10 @@ export function CountUp({
       duration,
       ease: [0.22, 1, 0.36, 1],
       onUpdate: (v) => setDisplay(fmt.current(v)),
+      // Aterrizar SIEMPRE en el valor exacto: el último frame interpolado
+      // puede quedar una fracción por debajo de `to` y, formateado sin
+      // decimales, mostrar "24,998" en vez de "25,000". Forzamos el exacto.
+      onComplete: () => setDisplay(fmt.current(to)),
     });
     return () => controls.stop();
   }, [inView, rm, to, from, duration]);

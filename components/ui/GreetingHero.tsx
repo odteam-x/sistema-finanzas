@@ -3,6 +3,7 @@
 import { useState, useSyncExternalStore } from "react";
 import Image from "next/image";
 import { readProfile } from "@/lib/profile";
+import { hourInDR } from "@/lib/time";
 
 interface GreetingHeroProps {
   subtitle: string;
@@ -13,7 +14,8 @@ interface GreetingHeroProps {
 }
 
 function timeGreeting(): string {
-  const h = new Date().getHours();
+  // Hora de RD, no la del dispositivo (que puede estar mal configurado).
+  const h = hourInDR();
   if (h < 12) return "Buenos días";
   if (h < 19) return "Buenas tardes";
   return "Buenas noches";

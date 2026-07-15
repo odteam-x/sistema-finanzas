@@ -1,9 +1,11 @@
-// Utilidades de formato (moneda DOP, fechas es-DO) y manejo de fechas
+// Utilidades de formato (moneda RD$, fechas es-DO) y manejo de fechas
 // tipo "YYYY-MM-DD" sin problemas de zona horaria.
 //
 // Los formateadores Intl se crean de forma perezosa (no al importar el
 // módulo) y con respaldo a "en-US" si el runtime no soporta el locale
 // "es-DO", para que un entorno con ICU reducido nunca tumbe la página.
+
+import { todayISODR } from "./time";
 
 function safeIntl<T>(build: (locale: string) => T): T {
   try {
@@ -13,36 +15,40 @@ function safeIntl<T>(build: (locale: string) => T): T {
   }
 }
 
-let _currencyFmt: Intl.NumberFormat | null = null;
-function currencyFmt(): Intl.NumberFormat {
-  return (_currencyFmt ??= safeIntl(
+// Solo se usa Intl para el agrupamiento de miles (independiente del locale
+// de moneda). El prefijo "RD$" se antepone a mano: antes se usaba
+// style:"currency" con currency:"DOP", pero en un runtime sin el locale
+// es-DO (ICU reducido, típico en el servidor) Intl imprime el código ISO
+// "DOP" en vez del símbolo "RD$" — de ahí la mezcla "RD$…"/"DOP…" según la
+// pantalla corriera en cliente o servidor. Con prefijo fijo, siempre "RD$".
+let _groupFmt: Intl.NumberFormat | null = null;
+function groupFmt(): Intl.NumberFormat {
+  return (_groupFmt ??= safeIntl(
     (locale) =>
       new Intl.NumberFormat(locale, {
-        style: "currency",
-        currency: "DOP",
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
       }),
   ));
 }
 
-let _currencyFmtNoDecimals: Intl.NumberFormat | null = null;
-function currencyFmtNoDecimals(): Intl.NumberFormat {
-  return (_currencyFmtNoDecimals ??= safeIntl(
+let _groupFmtNoDecimals: Intl.NumberFormat | null = null;
+function groupFmtNoDecimals(): Intl.NumberFormat {
+  return (_groupFmtNoDecimals ??= safeIntl(
     (locale) =>
       new Intl.NumberFormat(locale, {
-        style: "currency",
-        currency: "DOP",
         minimumFractionDigits: 0,
         maximumFractionDigits: 0,
       }),
   ));
 }
 
-/** Formato RD$ (ej. "RD$1,250.00"). */
+/** Formato RD$ (ej. "RD$1,250.00", "-RD$4,400"). Prefijo fijo — nunca "DOP". */
 export function formatDOP(amount: number, decimals = true): string {
   const n = Number.isFinite(amount) ? amount : 0;
-  return decimals ? currencyFmt().format(n) : currencyFmtNoDecimals().format(n);
+  const fmt = decimals ? groupFmt() : groupFmtNoDecimals();
+  const sign = n < 0 ? "-" : "";
+  return `${sign}RD$${fmt.format(Math.abs(n))}`;
 }
 
 /** Convierte "YYYY-MM-DD" a un Date local al mediodía (evita saltos por TZ). */
@@ -59,9 +65,10 @@ export function toISODate(date: Date): string {
   return `${y}-${m}-${d}`;
 }
 
-/** Hoy como "YYYY-MM-DD" (hora local). */
+/** Hoy como "YYYY-MM-DD", anclado a la TZ de RD (no a la del servidor).
+ *  Ver lib/time.ts — corrige el off-by-one cuando el runtime corre en UTC. */
 export function todayISO(): string {
-  return toISODate(new Date());
+  return todayISODR();
 }
 
 let _dateFmtLong: Intl.DateTimeFormat | null = null;
