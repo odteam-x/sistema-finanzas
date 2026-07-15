@@ -13,12 +13,13 @@ import {
   getSalarySettings,
   getSavingsAccounts,
   getSavingsMovements,
+  getSubscriptions,
   getTags,
 } from "./data";
 import { countWorkdays, exceptionsMap } from "./calendar";
 import { quincenaForDate, nextPayDate, type Period } from "./periods";
-import { daysBetween, toISODate, todayISO } from "./format";
-import type { Goal } from "./types";
+import { addDaysISO, daysBetween, toISODate, todayISO } from "./format";
+import type { Goal, SavingsMovement } from "./types";
 
 export interface Alert {
   tone: "warning" | "danger" | "info" | "success";
@@ -29,6 +30,13 @@ export interface Alert {
 export interface NamedValue {
   name: string;
   value: number;
+}
+
+export interface Commitment {
+  date: string;
+  name: string;
+  amount: number;
+  kind: "debt" | "subscription";
 }
 
 export interface FinanceSummary {
@@ -57,6 +65,8 @@ export interface FinanceSummary {
   estByCategory: NamedValue[];
   realByCategory: NamedValue[];
   alerts: Alert[];
+  upcomingCommitments: Commitment[];
+  recentMovements: SavingsMovement[];
 }
 
 export async function getFinanceSummary(): Promise<FinanceSummary> {
@@ -83,6 +93,7 @@ export async function getFinanceSummary(): Promise<FinanceSummary> {
     tags,
     periodOverrides,
     trailingExpenses,
+    subscriptions,
   ] = await Promise.all([
     getSalarySettings(),
     getSalaries(),
@@ -97,6 +108,7 @@ export async function getFinanceSummary(): Promise<FinanceSummary> {
     getTags(),
     getPeriodOverrides(),
     getExpenses(anomalyStart, monthEnd),
+    getSubscriptions(),
   ]);
 
   const balanceOfAccount = (accountId: string) =>
@@ -188,12 +200,12 @@ export async function getFinanceSummary(): Promise<FinanceSummary> {
   // Deudas
   let outstandingDebt = 0;
   let cuotasPeriodo = 0;
-  const upcoming: { date: string; name: string }[] = [];
+  const upcoming: Commitment[] = [];
   for (const d of debts) {
     if (d.payment_type === "cuotas") {
       for (const i of installments.filter((x) => x.debt_id === d.id && !x.paid)) {
         outstandingDebt += Number(i.amount);
-        upcoming.push({ date: i.due_date, name: d.name });
+        upcoming.push({ date: i.due_date, name: d.name, amount: Number(i.amount), kind: "debt" });
         if (i.due_date >= q.start && i.due_date <= q.end) {
           cuotasPeriodo += Number(i.amount);
         }
@@ -201,7 +213,7 @@ export async function getFinanceSummary(): Promise<FinanceSummary> {
     } else if (d.status !== "pagada") {
       outstandingDebt += Number(d.total_amount);
       if (d.due_date) {
-        upcoming.push({ date: d.due_date, name: d.name });
+        upcoming.push({ date: d.due_date, name: d.name, amount: Number(d.total_amount), kind: "debt" });
         if (d.due_date >= q.start && d.due_date <= q.end) {
           cuotasPeriodo += Number(d.total_amount);
         }
@@ -210,6 +222,18 @@ export async function getFinanceSummary(): Promise<FinanceSummary> {
   }
   upcoming.sort((a, b) => a.date.localeCompare(b.date));
   const next = upcoming[0] ?? null;
+
+  // Compromisos de los próximos 7 días para el Inicio: deudas + suscripciones
+  // activas, separado de `upcoming` (solo deudas) para no cambiar a qué
+  // apunta "Próxima deuda" en el resto del resumen.
+  const subscriptionCommitments: Commitment[] = subscriptions
+    .filter((s) => s.active)
+    .map((s) => ({ date: s.next_charge_date, name: s.name, amount: Number(s.amount), kind: "subscription" as const }));
+  const sevenDaysOut = addDaysISO(today, 7);
+  const upcomingCommitments = [...upcoming, ...subscriptionCommitments]
+    .filter((c) => c.date >= today && c.date <= sevenDaysOut)
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .slice(0, 5);
 
   // Pago de sueldo
   const nextPay = nextPayDate(today, settings.pay_day_1, settings.pay_day_2);
@@ -319,5 +343,7 @@ export async function getFinanceSummary(): Promise<FinanceSummary> {
     estByCategory,
     realByCategory,
     alerts,
+    upcomingCommitments,
+    recentMovements: savingsMovements.slice(0, 5),
   };
 }

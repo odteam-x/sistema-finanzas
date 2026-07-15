@@ -2,18 +2,18 @@ import Link from "next/link";
 import { getFinanceSummary } from "@/lib/summary";
 import { getUserProfile } from "@/lib/data";
 import { runSubscriptionCatchUp } from "@/lib/subscriptions";
-import { formatDOP, formatDateShort, clampPct } from "@/lib/format";
+import { formatDateShort, daysBetween, clampPct } from "@/lib/format";
 import { GreetingHero } from "@/components/ui/GreetingHero";
-import { QuickActions } from "@/components/ui/QuickActions";
-import { BalanceHero } from "@/components/ui/BalanceHero";
-import { MotivationCard } from "@/components/ui/MotivationCard";
+import { AvailableHero } from "@/components/ui/AvailableHero";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { StatTile } from "@/components/ui/StatTile";
 import { ProgressBar } from "@/components/ui/ProgressBar";
+import { IconBubble } from "@/components/ui/IconBubble";
 import { Icon, type IconName } from "@/components/ui/Icon";
+import { Money } from "@/components/ui/Money";
 import { MoneyValue } from "@/components/ui/MoneyValue";
-import { DonutChart } from "@/components/charts/DonutChart";
 import { BarCompare } from "@/components/charts/BarCompare";
+import { GoalsRing } from "@/components/charts/GoalsRing";
 import { cn } from "@/lib/cn";
 
 export const metadata = { title: "Inicio · Bolsillo Seguro" };
@@ -33,41 +33,40 @@ function dueSub(days: number | null): string {
   return `en ${days} días`;
 }
 
+function commitmentSub(days: number): string {
+  if (days < 0) return "vencido";
+  if (days === 0) return "Hoy";
+  if (days === 1) return "Mañana";
+  return `En ${days} días`;
+}
+
 export default async function DashboardPage() {
   await runSubscriptionCatchUp();
   const [s, profile] = await Promise.all([getFinanceSummary(), getUserProfile()]);
 
-  const donutData =
-    s.realQuincena > 0 ? s.realByCategory : s.estByCategory;
-  const donutLabel = s.realQuincena > 0 ? "Gasto real" : "Estimado";
-
-  const topGoals = s.goals.slice(0, 3);
   const budgetPct = clampPct(s.realQuincena, s.estQuincena || 1);
+  const daysLeft = Math.max(1, daysBetween(s.today, s.quincena.end) + 1);
+  const perDay = s.saldoReal / daysLeft;
 
   return (
     <>
       <GreetingHero subtitle={`Quincena ${s.quincena.label}`} displayName={profile?.display_name ?? undefined} />
-      <QuickActions />
 
-      <BalanceHero
-        saldoEstimado={s.saldoEstimado}
-        saldoReal={s.saldoReal}
-        ingresoQuincena={s.ingresoQuincena}
-        estQuincena={s.estQuincena}
-        realQuincena={s.realQuincena}
-        cuotasPeriodo={s.cuotasPeriodo}
-      />
+      <AvailableHero disponible={s.saldoReal} daysLeft={daysLeft} perDay={perDay} />
 
-      <MotivationCard topGoal={s.goals[0] ?? null} />
-
-      {/* Tiles (tamaños mixtos: total ahorrado/adeudado a todo el ancho) */}
+      {/* Resumen (2x2) */}
       <div className="grid grid-cols-2 gap-3 mb-4">
         <StatTile
-          className="col-span-2"
           label="Total ahorrado"
           value={<MoneyValue value={s.savingsTotal} decimals={false} />}
           icon="piggy"
           tone="primary"
+        />
+        <StatTile
+          label="Total adeudado"
+          value={<MoneyValue value={s.outstandingDebt} decimals={false} />}
+          icon="debt"
+          tone={s.outstandingDebt > 0 ? "danger" : "neutral"}
         />
         <StatTile
           label="Próximo pago"
@@ -83,22 +82,75 @@ export default async function DashboardPage() {
           icon="debt"
           tone={s.daysToDue !== null && s.daysToDue < 0 ? "danger" : "warning"}
         />
-        <StatTile
-          className="col-span-2"
-          label="Total adeudado"
-          value={<MoneyValue value={s.outstandingDebt} decimals={false} />}
-          icon="debt"
-          tone={s.outstandingDebt > 0 ? "danger" : "neutral"}
-        />
-        <StatTile
-          className="col-span-2"
-          label="Patrimonio neto"
-          value={<MoneyValue value={s.netWorth} decimals={false} />}
-          sub="Es lo que tendrías si vendieras todo lo que posees y pagaras todas tus deudas hoy."
-          icon="bank"
-          tone={s.netWorth >= 0 ? "primary" : "danger"}
-        />
       </div>
+
+      {/* Compromisos próximos */}
+      {s.upcomingCommitments.length > 0 && (
+        <GlassCard className="mb-4">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-bold text-ink">Compromisos próximos</h2>
+            <Link href="/calendario" className="text-sm font-semibold text-primary">
+              Calendario
+            </Link>
+          </div>
+          <ul className="flex flex-col gap-3">
+            {s.upcomingCommitments.map((c, i) => (
+              <li key={i} className="flex items-center gap-3">
+                <IconBubble
+                  icon={c.kind === "debt" ? "debt" : "repeat"}
+                  tone={c.kind === "debt" ? "warning" : "info"}
+                  size="sm"
+                />
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold text-ink truncate">{c.name}</p>
+                  <p className="text-xs text-muted">{commitmentSub(daysBetween(s.today, c.date))}</p>
+                </div>
+                <p className="text-sm font-semibold text-ink shrink-0">
+                  <Money value={c.amount} decimals={false} />
+                </p>
+              </li>
+            ))}
+          </ul>
+        </GlassCard>
+      )}
+
+      {/* Últimos movimientos */}
+      <GlassCard className="mb-4">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="font-bold text-ink">Últimos movimientos</h2>
+          <Link href="/movimientos" className="text-sm font-semibold text-primary">
+            Ver todos
+          </Link>
+        </div>
+        {s.recentMovements.length === 0 ? (
+          <p className="text-sm text-muted">Aún no has registrado movimientos.</p>
+        ) : (
+          <ul className="flex flex-col gap-3">
+            {s.recentMovements.map((m) => {
+              const isDep = m.kind === "deposito";
+              return (
+                <li key={m.id} className="flex items-center gap-3">
+                  <IconBubble
+                    icon={isDep ? "arrowDownLeft" : "arrowUpRight"}
+                    tone={isDep ? "neutral" : "danger"}
+                    size="sm"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-ink truncate">
+                      {m.note ?? (isDep ? "Ingreso" : "Gasto")}
+                    </p>
+                    <p className="text-xs text-muted">{formatDateShort(m.date)}</p>
+                  </div>
+                  <p className="text-sm font-semibold text-ink shrink-0">
+                    {isDep ? "+" : "−"}
+                    <Money value={Number(m.amount)} />
+                  </p>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </GlassCard>
 
       {/* Presupuesto de la quincena */}
       <GlassCard className="mb-4">
@@ -111,10 +163,10 @@ export default async function DashboardPage() {
         <div className="mb-4">
           <div className="flex items-end justify-between mb-1.5">
             <span className="text-sm text-muted">
-              Gastado <span className="font-bold text-ink tabular">{formatDOP(s.realQuincena, false)}</span>
+              Gastado <span className="font-bold text-ink"><Money value={s.realQuincena} decimals={false} /></span>
             </span>
             <span className="text-sm text-muted">
-              de <span className="font-bold text-ink tabular">{formatDOP(s.estQuincena, false)}</span>
+              de <span className="font-bold text-ink"><Money value={s.estQuincena} decimals={false} /></span>
             </span>
           </div>
           <ProgressBar
@@ -131,16 +183,8 @@ export default async function DashboardPage() {
         />
       </GlassCard>
 
-      {/* Distribución de gastos */}
-      {donutData.length > 0 && (
-        <GlassCard className="mb-4">
-          <h2 className="font-bold text-ink mb-3">Distribución de gastos</h2>
-          <DonutChart data={donutData} centerLabel={donutLabel} />
-        </GlassCard>
-      )}
-
       {/* Metas */}
-      {topGoals.length > 0 && (
+      {s.goals.length > 0 && (
         <GlassCard className="mb-4">
           <div className="flex items-center justify-between mb-3">
             <h2 className="font-bold text-ink">Metas</h2>
@@ -148,20 +192,7 @@ export default async function DashboardPage() {
               Ver todas
             </Link>
           </div>
-          <div className="flex flex-col gap-3">
-            {topGoals.map((g) => {
-              const pct = clampPct(Number(g.current_amount), Number(g.target_amount));
-              return (
-                <div key={g.id}>
-                  <div className="flex items-center justify-between gap-2 mb-1">
-                    <span className="text-sm font-semibold text-ink truncate min-w-0">{g.name}</span>
-                    <span className="text-xs text-muted tabular shrink-0">{Math.round(pct)}%</span>
-                  </div>
-                  <ProgressBar value={pct} />
-                </div>
-              );
-            })}
-          </div>
+          <GoalsRing saved={s.totalSaved} target={s.totalTarget} />
         </GlassCard>
       )}
 
