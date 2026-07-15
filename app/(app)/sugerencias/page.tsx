@@ -3,6 +3,7 @@ import { TIPS } from "@/lib/tips";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { IconBubble } from "@/components/ui/IconBubble";
+import { AccordionItem } from "@/components/ui/Accordion";
 import type { IconName } from "@/components/ui/Icon";
 import type { Alert } from "@/lib/summary";
 
@@ -55,19 +56,14 @@ export default async function SugerenciasPage() {
         </div>
       )}
 
-      {/* Tips generales */}
-      <h2 className="text-sm font-bold text-ink px-1 mb-2">
-        Tips de finanzas personales
-      </h2>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      {/* Tips generales: colapsados por defecto, no compiten con "Para ti
+          ahora" (lo único que de verdad cambia según tus datos). */}
+      <h2 className="text-sm font-bold text-ink px-1 mb-2">Aprender</h2>
+      <div className="flex flex-col gap-2">
         {TIPS.map((t, i) => (
-          <GlassCard key={i} className="flex gap-3">
-            <IconBubble icon="bulb" tone="neutral" size="sm" />
-            <div>
-              <p className="font-bold text-ink text-sm">{t.title}</p>
-              <p className="text-sm text-muted mt-0.5">{t.body}</p>
-            </div>
-          </GlassCard>
+          <AccordionItem key={i} title={t.title}>
+            {t.body}
+          </AccordionItem>
         ))}
       </div>
 

@@ -7,7 +7,6 @@ import { cn } from "@/lib/cn";
 import { Icon } from "@/components/ui/Icon";
 import { NAV_ROUTES } from "./routes";
 import { LogoutButton } from "./LogoutButton";
-import { ThemeButton } from "@/components/theme/ThemeButton";
 
 export function Sidebar({ email }: { email: string | null }) {
   const pathname = usePathname();
@@ -57,7 +56,6 @@ export function Sidebar({ email }: { email: string | null }) {
             {email}
           </p>
         )}
-        <ThemeButton variant="sidebar" />
         <LogoutButton />
       </div>
     </aside>

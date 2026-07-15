@@ -176,7 +176,7 @@ export default async function ReportesPage({
       {expenses.length === 0 ? (
         <EmptyState
           icon="chart"
-          title="Aún no hay datos"
+          title="Aún no hay meses para comparar"
           message="Registra gastos en Presupuesto para ver reportes comparativos de tus últimos meses."
           action={
             <Link

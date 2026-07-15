@@ -26,7 +26,7 @@ export function DisplayNameForm({ initialName }: { initialName: string }) {
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-      <Field label="Tu nombre" htmlFor="display_name" hint="El asistente IA y el saludo del Resumen lo usarán.">
+      <Field label="Tu nombre" htmlFor="display_name" hint="Se usa en el saludo del Inicio.">
         <Input
           id="display_name"
           name="display_name"

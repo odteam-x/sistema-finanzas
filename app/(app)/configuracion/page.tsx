@@ -9,6 +9,7 @@ import { FormModal } from "@/components/ui/FormModal";
 import { DeleteButton } from "@/components/ui/DeleteButton";
 import { IconBubble } from "@/components/ui/IconBubble";
 import { Money } from "@/components/ui/Money";
+import { ThemeButton } from "@/components/theme/ThemeButton";
 import { DisplayNameForm } from "./DisplayNameForm";
 import { ExportCsvForm } from "./ExportCsvForm";
 import { addTag, deleteTag, updateTag } from "./actions";
@@ -65,16 +66,11 @@ export default async function ConfiguracionPage() {
 
   return (
     <>
-      <PageHeader title="Configuración" subtitle="Tu perfil, etiquetas y datos" />
+      <PageHeader title="Configuración" subtitle="Perfil, etiquetas, apariencia y datos" />
 
       <GlassCard className="mb-4">
         <h2 className="font-bold text-ink mb-3">Perfil</h2>
         <DisplayNameForm initialName={profile?.display_name ?? ""} />
-      </GlassCard>
-
-      <GlassCard className="mb-4">
-        <h2 className="font-bold text-ink mb-3">Exportar datos</h2>
-        <ExportCsvForm />
       </GlassCard>
 
       <div className="flex items-center justify-between px-1 mb-2">
@@ -155,6 +151,16 @@ export default async function ConfiguracionPage() {
           })}
         </ul>
       )}
+
+      <GlassCard className="mt-4 mb-4">
+        <h2 className="font-bold text-ink mb-3">Preferencias</h2>
+        <ThemeButton variant="settings" />
+      </GlassCard>
+
+      <GlassCard>
+        <h2 className="font-bold text-ink mb-3">Datos</h2>
+        <ExportCsvForm />
+      </GlassCard>
     </>
   );
 }

@@ -8,7 +8,6 @@ import { cn } from "@/lib/cn";
 import { Icon } from "@/components/ui/Icon";
 import { PRIMARY_ROUTES, SECONDARY_ROUTES } from "./routes";
 import { LogoutButton } from "./LogoutButton";
-import { ThemeButton } from "@/components/theme/ThemeButton";
 import { QuickAddFab } from "./QuickAddFab";
 import type { SavingsAccount } from "@/lib/types";
 
@@ -94,9 +93,6 @@ export function BottomTabBar({
                 })}
               </div>
               <div className="mt-2 border-t border-black/5 pt-2">
-                <ThemeButton variant="sheet" onNavigate={() => setMoreOpen(false)} />
-              </div>
-              <div className="mt-1 border-t border-black/5 pt-2">
                 {email && <p className="text-xs text-muted px-1 mb-1 truncate">{email}</p>}
                 <LogoutButton />
               </div>

@@ -18,7 +18,7 @@ import {
 } from "./data";
 import { countWorkdays, exceptionsMap } from "./calendar";
 import { quincenaForDate, nextPayDate, type Period } from "./periods";
-import { addDaysISO, daysBetween, toISODate, todayISO } from "./format";
+import { addDaysISO, daysBetween, formatDOP, toISODate, todayISO } from "./format";
 import type { Goal, SavingsMovement } from "./types";
 
 export interface Alert {
@@ -313,7 +313,8 @@ export async function getFinanceSummary(): Promise<FinanceSummary> {
     alerts.push({
       tone: "success",
       title: "Vas bien",
-      message: "Tus gastos están dentro del presupuesto de esta quincena. ¡Sigue así!",
+      // Un dato real, no una palmadita genérica.
+      message: `${formatDOP(realQuincena, false)} de ${formatDOP(estQuincena, false)} gastados esta quincena.`,
     });
   }
 

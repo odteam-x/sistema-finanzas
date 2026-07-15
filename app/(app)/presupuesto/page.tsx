@@ -422,7 +422,7 @@ export default async function PresupuestoPage({
       {visibleExpenses.length === 0 ? (
         <EmptyState
           icon="wallet"
-          title="Sin gastos registrados"
+          title="Sin gastos aún"
           message="Registra tus gastos reales para compararlos con el presupuesto."
           action={
             <NewExpenseForm tags={tags} accounts={accounts} today={today} triggerLabel="Registrar gasto" />

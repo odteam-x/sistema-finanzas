@@ -8,7 +8,7 @@ export const metadata = { title: "Calculadoras · Bolsillo Seguro" };
 export default function CalculadorasPage() {
   return (
     <>
-      <PageHeader title="Calculadoras" subtitle="Estimaciones rápidas para tus metas y préstamos" />
+      <PageHeader title="Calculadoras" subtitle="Calcula rápido, guarda si quieres" />
 
       <Tabs defaultValue="goal">
         <TabsList className="mb-4">
