@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
+import { getOrCreateDefaultAccountId } from "@/lib/accounts";
 import { parseAmount, type ActionResult } from "@/lib/actions-shared";
 
 function revalidateAll() {
@@ -44,7 +45,7 @@ export async function addSalary(formData: FormData): Promise<ActionResult> {
   const pay_date = String(formData.get("pay_date") ?? "");
   const kind = String(formData.get("kind") ?? "quincena");
   const note = String(formData.get("note") ?? "").trim() || null;
-  const account_id = String(formData.get("account_id") ?? "") || null;
+  const chosenAccount = String(formData.get("account_id") ?? "") || null;
   const tag_id = String(formData.get("tag_id") ?? "") || null;
 
   if (!Number.isFinite(amount) || amount <= 0) {
@@ -53,13 +54,17 @@ export async function addSalary(formData: FormData): Promise<ActionResult> {
   if (!pay_date) return { ok: false, error: "Selecciona la fecha del pago." };
 
   const supabase = await createClient();
-  const { error } = await supabase
-    .from("salaries")
-    .insert({ user_id: user.id, amount, pay_date, kind, note, account_id, tag_id });
-  if (error) return { ok: false, error: "No se pudo registrar el pago." };
+  // El ledger es autoritativo: todo ingreso entra a una cuenta (la elegida
+  // o la de por defecto), de modo que el saldo en Balance sea siempre real.
+  const account_id = chosenAccount ?? (await getOrCreateDefaultAccountId(supabase, user.id));
 
-  // Si se asoció una cuenta, refleja el ingreso como depósito para que el
-  // saldo de la cuenta se actualice (misma fuente de verdad que Cuentas).
+  const { data: salary, error } = await supabase
+    .from("salaries")
+    .insert({ user_id: user.id, amount, pay_date, kind, note, account_id, tag_id })
+    .select("id")
+    .single();
+  if (error || !salary) return { ok: false, error: "No se pudo registrar el pago." };
+
   if (account_id) {
     await supabase.from("savings_movements").insert({
       account_id,
@@ -68,6 +73,8 @@ export async function addSalary(formData: FormData): Promise<ActionResult> {
       amount,
       date: pay_date,
       note: note ? `Ingreso: ${note}` : "Ingreso",
+      source: "salary",
+      source_ref_id: salary.id,
     });
   }
 
@@ -78,6 +85,12 @@ export async function addSalary(formData: FormData): Promise<ActionResult> {
 export async function deleteSalary(id: string): Promise<ActionResult> {
   await requireUser();
   const supabase = await createClient();
+  // Limpia primero el movimiento espejo del ledger (evita saldos huérfanos).
+  await supabase
+    .from("savings_movements")
+    .delete()
+    .eq("source", "salary")
+    .eq("source_ref_id", id);
   const { error } = await supabase.from("salaries").delete().eq("id", id);
   if (error) return { ok: false, error: "No se pudo eliminar." };
   revalidateAll();

@@ -113,19 +113,25 @@ create table if not exists public.savings_accounts (
   type       text not null default 'ahorro'
              check (type in ('ahorro', 'banco', 'efectivo', 'tarjeta_credito', 'tarjeta_debito')),
   icon       text,
+  is_default boolean not null default false,
   created_at timestamptz not null default now()
 );
 
 -- Movimientos de ahorro (depósitos y retiros); el saldo se deriva de aquí.
+-- Es el ledger autoritativo: source indica qué generó el movimiento y
+-- source_ref_id apunta a la fila origen (gasto/sueldo/suscripción/deuda/meta).
 create table if not exists public.savings_movements (
-  id         uuid primary key default gen_random_uuid(),
-  account_id uuid not null references public.savings_accounts (id) on delete cascade,
-  user_id    uuid not null references auth.users (id) on delete cascade,
-  kind       text not null check (kind in ('deposito', 'retiro')),
-  amount     numeric(12, 2) not null,
-  date       date not null,
-  note       text,
-  created_at timestamptz not null default now()
+  id            uuid primary key default gen_random_uuid(),
+  account_id    uuid not null references public.savings_accounts (id) on delete cascade,
+  user_id       uuid not null references auth.users (id) on delete cascade,
+  kind          text not null check (kind in ('deposito', 'retiro')),
+  amount        numeric(12, 2) not null,
+  date          date not null,
+  note          text,
+  source        text not null default 'manual'
+                check (source in ('manual', 'salary', 'subscription', 'debt_payment', 'goal_contribution')),
+  source_ref_id uuid,
+  created_at    timestamptz not null default now()
 );
 
 -- Asociar ingresos y gastos a una cuenta (opcional). Se agrega aquí, no en
@@ -200,6 +206,8 @@ create index if not exists idx_expenses_user_date on public.expenses (user_id, d
 create index if not exists idx_savings_accounts_user on public.savings_accounts (user_id, created_at);
 create index if not exists idx_savings_movements_account on public.savings_movements (account_id, date desc);
 create index if not exists idx_savings_movements_user on public.savings_movements (user_id, date desc);
+create index if not exists idx_savings_movements_source on public.savings_movements (user_id, source, source_ref_id);
+create index if not exists idx_savings_accounts_default on public.savings_accounts (user_id, is_default);
 create index if not exists idx_salaries_account on public.salaries (account_id);
 create index if not exists idx_expenses_account on public.expenses (account_id);
 create index if not exists idx_subscriptions_user_next on public.subscriptions (user_id, next_charge_date);

@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
+import { getOrCreateDefaultAccountId } from "@/lib/accounts";
 import { parseAmount, type ActionResult } from "@/lib/actions-shared";
 import { parseISODate, toISODate, todayISO } from "@/lib/format";
 import type { DebtFrequency } from "@/lib/types";
@@ -11,6 +12,39 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 function revalidateAll() {
   revalidatePath("/deudas");
   revalidatePath("/dashboard");
+  revalidatePath("/balance");
+}
+
+/** Inserta el retiro del ledger por un pago de deuda (source='debt_payment',
+ *  source_ref_id = id de la cuota o deuda pagada). */
+async function recordDebtPayment(
+  supabase: SupabaseClient,
+  userId: string,
+  refId: string,
+  amount: number,
+  label: string,
+): Promise<void> {
+  const account_id = await getOrCreateDefaultAccountId(supabase, userId);
+  if (!account_id) return;
+  await supabase.from("savings_movements").insert({
+    account_id,
+    user_id: userId,
+    kind: "retiro",
+    amount,
+    date: todayISO(),
+    note: `Pago deuda: ${label}`,
+    source: "debt_payment",
+    source_ref_id: refId,
+  });
+}
+
+/** Quita el retiro del ledger asociado a una cuota/deuda (al desmarcar pago). */
+async function removeDebtPayment(supabase: SupabaseClient, refId: string): Promise<void> {
+  await supabase
+    .from("savings_movements")
+    .delete()
+    .eq("source", "debt_payment")
+    .eq("source_ref_id", refId);
 }
 
 /** Suma "times" periodos de la frecuencia dada a una fecha ISO. */
@@ -117,13 +151,33 @@ export async function toggleInstallment(
   debtId: string,
   paid: boolean,
 ): Promise<ActionResult> {
-  await requireUser();
+  const user = await requireUser();
   const supabase = await createClient();
   const { error } = await supabase
     .from("debt_installments")
     .update({ paid, paid_date: paid ? todayISO() : null })
     .eq("id", installmentId);
   if (error) return { ok: false };
+
+  // Pagar una cuota mueve dinero: sale de la cuenta (ledger). Desmarcar lo revierte.
+  if (paid) {
+    const { data: inst } = await supabase
+      .from("debt_installments")
+      .select("amount")
+      .eq("id", installmentId)
+      .maybeSingle();
+    const { data: debt } = await supabase
+      .from("debts")
+      .select("name")
+      .eq("id", debtId)
+      .maybeSingle();
+    if (inst) {
+      await recordDebtPayment(supabase, user.id, installmentId, Number(inst.amount), debt?.name ?? "");
+    }
+  } else {
+    await removeDebtPayment(supabase, installmentId);
+  }
+
   await recomputeStatus(supabase, debtId);
   revalidateAll();
   return { ok: true };
@@ -133,13 +187,27 @@ export async function toggleDebtPaid(
   id: string,
   paid: boolean,
 ): Promise<ActionResult> {
-  await requireUser();
+  const user = await requireUser();
   const supabase = await createClient();
   const { error } = await supabase
     .from("debts")
     .update({ status: paid ? "pagada" : "pendiente" })
     .eq("id", id);
   if (error) return { ok: false };
+
+  if (paid) {
+    const { data: debt } = await supabase
+      .from("debts")
+      .select("name, total_amount")
+      .eq("id", id)
+      .maybeSingle();
+    if (debt) {
+      await recordDebtPayment(supabase, user.id, id, Number(debt.total_amount), debt.name);
+    }
+  } else {
+    await removeDebtPayment(supabase, id);
+  }
+
   revalidateAll();
   return { ok: true };
 }
@@ -147,6 +215,19 @@ export async function toggleDebtPaid(
 export async function deleteDebt(id: string): Promise<ActionResult> {
   await requireUser();
   const supabase = await createClient();
+  // Limpia los movimientos de pago del ledger (de la deuda única y de sus
+  // cuotas) antes de borrar, para no dejar retiros huérfanos.
+  const { data: insts } = await supabase
+    .from("debt_installments")
+    .select("id")
+    .eq("debt_id", id);
+  const refIds = [id, ...(insts ?? []).map((i) => i.id)];
+  await supabase
+    .from("savings_movements")
+    .delete()
+    .eq("source", "debt_payment")
+    .in("source_ref_id", refIds);
+
   const { error } = await supabase.from("debts").delete().eq("id", id);
   if (error) return { ok: false };
   revalidateAll();

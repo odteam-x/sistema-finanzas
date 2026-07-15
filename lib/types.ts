@@ -111,10 +111,20 @@ export interface SavingsAccount {
   /** Meta vinculada: si está definido, el saldo derivado de esta cuenta ES
    *  el progreso de esa meta (en vez de Goal.current_amount manual). */
   goal_id: string | null;
+  /** Cuenta a la que van los movimientos cuando no se elige una explícita. */
+  is_default: boolean;
   created_at: string;
 }
 
 export type MovementKind = "deposito" | "retiro";
+
+/** Qué generó un movimiento del ledger. 'manual' = registrado a mano. */
+export type MovementSource =
+  | "manual"
+  | "salary"
+  | "subscription"
+  | "debt_payment"
+  | "goal_contribution";
 
 export interface SavingsMovement {
   id: string;
@@ -124,6 +134,10 @@ export interface SavingsMovement {
   amount: number;
   date: string; // YYYY-MM-DD
   note: string | null;
+  source: MovementSource;
+  /** Id de la fila origen (gasto/sueldo/suscripción/deuda) — para limpiar el
+   *  movimiento espejo al borrarla. */
+  source_ref_id: string | null;
   created_at: string;
 }
 

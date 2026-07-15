@@ -6,6 +6,7 @@
 // revalidatePath: se escribe y en la misma petición se vuelve a leer.
 import { requireUser } from "./auth";
 import { createClient } from "./supabase/server";
+import { getOrCreateDefaultAccountId } from "./accounts";
 import { parseISODate, toISODate, todayISO } from "./format";
 import type { SubscriptionFrequency } from "./types";
 
@@ -48,23 +49,33 @@ export async function runSubscriptionCatchUp(): Promise<void> {
         .select("id");
       if (!updated || updated.length === 0) break;
 
-      await supabase.from("expenses").insert({
-        user_id: user.id,
-        date: cursor,
-        tag_id: sub.tag_id,
-        amount: sub.amount,
-        note: `Suscripción: ${sub.name}`,
-        account_id: sub.account_id,
-      });
+      // El cargo va a una cuenta (la de la suscripción o la de por defecto),
+      // para que el ledger refleje siempre el gasto recurrente.
+      const account_id = sub.account_id ?? (await getOrCreateDefaultAccountId(supabase, user.id));
 
-      if (sub.account_id) {
+      const { data: expense } = await supabase
+        .from("expenses")
+        .insert({
+          user_id: user.id,
+          date: cursor,
+          tag_id: sub.tag_id,
+          amount: sub.amount,
+          note: `Suscripción: ${sub.name}`,
+          account_id,
+        })
+        .select("id")
+        .single();
+
+      if (account_id && expense) {
         await supabase.from("savings_movements").insert({
-          account_id: sub.account_id,
+          account_id,
           user_id: user.id,
           kind: "retiro",
           amount: sub.amount,
           date: cursor,
           note: `Suscripción: ${sub.name}`,
+          source: "subscription",
+          source_ref_id: expense.id,
         });
       }
 

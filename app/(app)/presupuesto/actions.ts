@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
+import { getOrCreateDefaultAccountId } from "@/lib/accounts";
 import { parseAmount, type ActionResult } from "@/lib/actions-shared";
 
 function revalidateAll() {
@@ -76,24 +77,23 @@ export async function addExpense(formData: FormData): Promise<ActionResult> {
   const date = String(formData.get("date") ?? "");
   const tag_id = String(formData.get("tag_id") ?? "") || null;
   const note = String(formData.get("note") ?? "").trim() || null;
-  const account_id = String(formData.get("account_id") ?? "") || null;
+  const chosenAccount = String(formData.get("account_id") ?? "") || null;
   if (!Number.isFinite(amount) || amount <= 0) {
     return { ok: false, error: "Ingresa un monto válido." };
   }
   if (!date) return { ok: false, error: "Selecciona la fecha." };
   const supabase = await createClient();
-  const { error } = await supabase.from("expenses").insert({
-    user_id: user.id,
-    amount,
-    date,
-    tag_id,
-    note,
-    account_id,
-  });
-  if (error) return { ok: false, error: "No se pudo registrar el gasto." };
+  // El ledger es autoritativo: todo gasto sale de una cuenta (la elegida o
+  // la de por defecto), para que el saldo en Balance sea siempre real.
+  const account_id = chosenAccount ?? (await getOrCreateDefaultAccountId(supabase, user.id));
 
-  // Si se asoció una cuenta, refleja el gasto como retiro (misma fuente de
-  // verdad que Cuentas).
+  const { data: expense, error } = await supabase
+    .from("expenses")
+    .insert({ user_id: user.id, amount, date, tag_id, note, account_id })
+    .select("id")
+    .single();
+  if (error || !expense) return { ok: false, error: "No se pudo registrar el gasto." };
+
   if (account_id) {
     await supabase.from("savings_movements").insert({
       account_id,
@@ -102,6 +102,8 @@ export async function addExpense(formData: FormData): Promise<ActionResult> {
       amount,
       date,
       note: note ? `Gasto: ${note}` : "Gasto",
+      source: "manual",
+      source_ref_id: expense.id,
     });
   }
 
@@ -112,6 +114,9 @@ export async function addExpense(formData: FormData): Promise<ActionResult> {
 export async function deleteExpense(id: string): Promise<ActionResult> {
   await requireUser();
   const supabase = await createClient();
+  // Limpia el movimiento espejo del ledger (manual o de suscripción) antes de
+  // borrar el gasto, para no dejar el saldo de la cuenta descuadrado.
+  await supabase.from("savings_movements").delete().eq("source_ref_id", id);
   const { error } = await supabase.from("expenses").delete().eq("id", id);
   if (error) return { ok: false };
   revalidateAll();
