@@ -5,15 +5,17 @@ export interface Slice {
   value: number;
 }
 
-// Paleta accesible (verdes + acentos), consistente con el tema.
+// Paleta categórica derivada de los tokens de tema (nunca hex literal, para
+// que siga el modo claro/oscuro automáticamente). var()/color-mix() son
+// valores CSS válidos también como atributo de color SVG.
 const COLORS = [
-  "#2e7d5b",
-  "#3fa576",
-  "#7bc4a0",
-  "#b06f10",
-  "#e0b15c",
-  "#2b6cb0",
-  "#9aa79f",
+  "var(--color-primary)",
+  "var(--color-accent)",
+  "var(--color-info)",
+  "var(--color-warning)",
+  "var(--color-danger)",
+  "var(--color-success)",
+  "var(--color-muted)",
 ];
 
 interface DonutChartProps {

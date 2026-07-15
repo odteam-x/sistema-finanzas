@@ -1,50 +1,51 @@
-// Personalización de tema: color de marca + modo claro/oscuro.
+// Personalización de tema: modo claro/oscuro/automático. Una sola marca
+// (teal) desde la Fase 3 del rediseño — ya no hay selector de color.
 // Se guarda en localStorage — es por dispositivo/navegador, no por cuenta.
 
-export type ThemeColor = "green" | "blue" | "purple" | "red" | "orange";
-export type ThemeMode = "light" | "dark";
+export type ThemeMode = "light" | "dark" | "auto";
 
 export interface ThemePref {
-  color: ThemeColor;
   mode: ThemeMode;
 }
 
 export const THEME_STORAGE_KEY = "bolsillo-seguro:theme";
 
-export const DEFAULT_THEME: ThemePref = { color: "green", mode: "light" };
+export const DEFAULT_THEME: ThemePref = { mode: "auto" };
 
-export const THEME_COLORS: { value: ThemeColor; label: string; swatch: string }[] = [
-  { value: "green", label: "Verde", swatch: "#2E7D5B" },
-  { value: "blue", label: "Azul", swatch: "#2563AF" },
-  { value: "purple", label: "Púrpura", swatch: "#6D4AA6" },
-  { value: "red", label: "Rojo", swatch: "#B23A3A" },
-  { value: "orange", label: "Naranja", swatch: "#C1631A" },
-];
-
-function isThemeColor(v: unknown): v is ThemeColor {
-  return typeof v === "string" && THEME_COLORS.some((c) => c.value === v);
+function isThemeMode(v: unknown): v is ThemeMode {
+  return v === "light" || v === "dark" || v === "auto";
 }
 
-/** Lee la preferencia guardada; devuelve el default si no hay nada válido. */
+function systemPrefersDark(): boolean {
+  if (typeof window === "undefined" || !window.matchMedia) return false;
+  return window.matchMedia("(prefers-color-scheme: dark)").matches;
+}
+
+/** Resuelve "auto" al modo real según el sistema; light/dark quedan igual. */
+export function resolveMode(mode: ThemeMode): "light" | "dark" {
+  return mode === "auto" ? (systemPrefersDark() ? "dark" : "light") : mode;
+}
+
+/** Lee la preferencia guardada; devuelve el default (auto) si no hay nada válido. */
 export function readTheme(): ThemePref {
   if (typeof window === "undefined") return DEFAULT_THEME;
   try {
     const raw = window.localStorage.getItem(THEME_STORAGE_KEY);
     if (!raw) return DEFAULT_THEME;
     const parsed = JSON.parse(raw);
-    const color = isThemeColor(parsed?.color) ? parsed.color : DEFAULT_THEME.color;
-    const mode: ThemeMode = parsed?.mode === "dark" ? "dark" : "light";
-    return { color, mode };
+    const mode = isThemeMode(parsed?.mode) ? parsed.mode : DEFAULT_THEME.mode;
+    return { mode };
   } catch {
     return DEFAULT_THEME;
   }
 }
 
-/** Aplica la preferencia al documento (atributos que consume globals.css). */
+/** Aplica la preferencia al documento (atributo que consume globals.css).
+ *  Siempre escribe un data-mode concreto ("light"/"dark"), nunca "auto" —
+ *  así ningún selector CSS necesita saber sobre el modo automático. */
 export function applyTheme(pref: ThemePref): void {
   if (typeof document === "undefined") return;
-  document.documentElement.setAttribute("data-theme", pref.color);
-  document.documentElement.setAttribute("data-mode", pref.mode);
+  document.documentElement.setAttribute("data-mode", resolveMode(pref.mode));
 }
 
 /** Guarda y aplica de inmediato. */
@@ -61,7 +62,12 @@ export function writeTheme(pref: ThemePref): void {
 /**
  * Script inline a inyectar en <head> para aplicar el tema ANTES del primer
  * pintado (evita el "flash" de tema por defecto al cargar la página).
+ * Resuelve "auto" contra prefers-color-scheme del sistema en el momento.
  */
-export const THEME_INIT_SCRIPT = `(function(){try{var raw=localStorage.getItem(${JSON.stringify(
-  THEME_STORAGE_KEY,
-)});var t=raw?JSON.parse(raw):null;var color=(t&&t.color)||"green";var mode=(t&&t.mode==="dark")?"dark":"light";var d=document.documentElement;d.setAttribute("data-theme",color);d.setAttribute("data-mode",mode);}catch(e){}})();`;
+export const THEME_INIT_SCRIPT = `(function(){try{
+  var raw=localStorage.getItem(${JSON.stringify(THEME_STORAGE_KEY)});
+  var t=raw?JSON.parse(raw):null;
+  var mode=(t&&(t.mode==="dark"||t.mode==="light"||t.mode==="auto"))?t.mode:"auto";
+  var resolved=mode==="auto"?((window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches)?"dark":"light"):mode;
+  document.documentElement.setAttribute("data-mode",resolved);
+}catch(e){}})();`;

@@ -12,6 +12,8 @@ interface Spark {
 }
 
 interface ClickSparkProps {
+  /** Color de la chispa. Si no se da, se resuelve en vivo desde
+   *  --color-primary (sigue el tema claro/oscuro sin hex fijo). */
   color?: string;
   count?: number;
   size?: number;
@@ -20,7 +22,7 @@ interface ClickSparkProps {
 }
 
 export function ClickSpark({
-  color = "#2E7D5B",
+  color,
   count = 8,
   size = 11,
   radius = 18,
@@ -48,12 +50,20 @@ export function ClickSpark({
 
     const ease = (t: number) => 1 - Math.pow(1 - t, 3);
 
+    // Canvas 2D no resuelve var(--x) — hay que leer el color computado. Se
+    // relee en cada trazo (barato) para que siga el tema claro/oscuro en vivo.
+    const resolveColor = () =>
+      color ||
+      getComputedStyle(document.documentElement).getPropertyValue("--color-primary").trim() ||
+      "#127478";
+
     const draw = (now: number) => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       sparks.current = sparks.current.filter((s) => now - s.start < duration);
+      const strokeColor = resolveColor();
       for (const s of sparks.current) {
         const t = ease((now - s.start) / duration);
-        ctx.strokeStyle = color;
+        ctx.strokeStyle = strokeColor;
         ctx.globalAlpha = 1 - t;
         ctx.lineWidth = 2;
         ctx.lineCap = "round";

@@ -2,29 +2,42 @@
 
 /* ---------------------------------------------------------------------------
    Design tokens — Bolsillo Seguro
-   Estilo: glassmorfismo. Colores base (se sobrescriben por tema, ver abajo).
+   Una sola marca (teal), light + dark — ver [data-mode="dark"] más abajo.
+   El selector de 5 colores se retiró en la Fase 3 del rediseño: todos los
+   componentes ya consumían estas variables, así que recolorear aquí basta,
+   sin tocar componentes.
 --------------------------------------------------------------------------- */
 @theme {
-  --color-cream: #f4efe3;
-  --color-cream-deep: #ebe3d2;
+  --color-cream: #f1f7f7;
+  --color-cream-deep: #e7f1f1;
 
-  --color-primary: #2e7d5b;
-  --color-primary-hover: #27694c;
-  --color-primary-active: #1f5540;
-  --color-primary-soft: #e2efe8;
-  --color-accent: #3fa576;
+  /* brand: verificado con checker de contraste real (WCAG) — vs. blanco da
+     5.53:1 (AA normal). El dark-mode de abajo usa un teal apenas más claro
+     que sigue pasando AA con texto blanco (ver nota ahí: una marca más
+     brillante en dark que además exija texto oscuro no pasa 4.5:1 con
+     ningún teal "vivo" — se comprobó numéricamente — así que el texto sobre
+     superficies de marca se queda blanco en ambos modos). */
+  --color-primary: #127478;
+  --color-primary-hover: #0f5f63;
+  --color-primary-active: #0c4c4f;
+  --color-primary-soft: #dceeee;
+  --color-accent: #1d9498;
 
-  --color-ink: #1e2a23;
-  --color-muted: #51625a;
+  --color-ink: #0f2426;
+  --color-muted: #5a7375;
+  /* Texto terciario (fechas, metadatos) — pensado para tamaño ≥14px/bold o
+     mayor; a vs. blanco da 3.87:1 (AA "texto grande", no normal). */
+  --color-subtle: #71898a;
 
-  /* Semánticos: fijos siempre (verde=bien, rojo=mal, sin importar el tema).
-     Terracota suave y azul grisáceo apagado en vez de rojo/azul puros, para
-     quedarse dentro de la gama cálida del sitio. */
-  --color-danger: #b8593f;
-  --color-danger-soft: #f6e3dc;
-  --color-warning: #b06f10;
-  --color-warning-soft: #f7ecd8;
-  --color-success: #2e7d5b;
+  /* Semánticos: fijos siempre (verde=bien, rojo=mal, sin importar el modo).
+     Terracota/ámbar/verde cercanos a los valores originales del sitio —
+     ya estaban en la misma familia que pedía el rediseño. */
+  --color-danger: #d2503f;
+  --color-danger-soft: #fae2de;
+  --color-warning: #b87213;
+  --color-warning-soft: #faebd6;
+  --color-success: #2f8558;
+  --color-success-soft: #dff0e6;
   --color-info: #5c7690;
   --color-info-soft: #e6ebee;
 
@@ -62,58 +75,35 @@
 }
 
 /* ---------------------------------------------------------------------------
-   Temas de color — "Personalizar". Verde es el valor por defecto (arriba).
-   Solo cambian marca (primary/accent); los semánticos no se tocan.
---------------------------------------------------------------------------- */
-[data-theme="blue"] {
-  --color-primary: #2563af;
-  --color-primary-hover: #1f5391;
-  --color-primary-active: #194377;
-  --color-primary-soft: #e1ebf7;
-  --color-accent: #4c93e0;
-  --color-cream: #eef3f9;
-  --color-cream-deep: #e2eaf4;
-}
-[data-theme="purple"] {
-  --color-primary: #6d4aa6;
-  --color-primary-hover: #5c3d8e;
-  --color-primary-active: #4a3173;
-  --color-primary-soft: #ece5f7;
-  --color-accent: #9b7fd4;
-  --color-cream: #f3eef9;
-  --color-cream-deep: #e8def3;
-}
-[data-theme="red"] {
-  --color-primary: #b23a3a;
-  --color-primary-hover: #973030;
-  --color-primary-active: #7c2727;
-  --color-primary-soft: #f7e4e4;
-  --color-accent: #dd6b6b;
-  --color-cream: #f9eeec;
-  --color-cream-deep: #f2e0dd;
-}
-[data-theme="orange"] {
-  --color-primary: #c1631a;
-  --color-primary-hover: #a45315;
-  --color-primary-active: #874411;
-  --color-primary-soft: #f7eadc;
-  --color-accent: #e9924a;
-  --color-cream: #faf0e2;
-  --color-cream-deep: #f4e3cd;
-}
-
-/* ---------------------------------------------------------------------------
-   Modo oscuro — [data-mode="dark"] en <html>. Combinado con cada tema arriba.
+   Modo oscuro — [data-mode="dark"] en <html>. Una sola marca (teal): el
+   selector de 5 colores se retiró en la Fase 3. El teal de acá NO es el
+   claro invertido — es un poco más vívido (dark mode "sube de luminosidad"
+   respecto al claro) pero se mantuvo dentro del rango que sigue pasando AA
+   con texto blanco (4.66:1 verificado); un teal más brillante que el spec
+   original sugería deja de pasar 4.5:1 con blanco en cualquier combinación
+   probada — habría que invertir el texto a oscuro en botones/tabs/nav, que
+   es un cambio de componentes (Fase 4), no de tokens.
 --------------------------------------------------------------------------- */
 [data-mode="dark"] {
   color-scheme: dark;
-  --color-cream: #121815;
-  --color-cream-deep: #0c110f;
-  --color-ink: #edefec;
-  --color-muted: #9db0a7;
+  --color-cream: #0b1516;
+  --color-cream-deep: #101c1d;
+  --color-ink: #e8f2f2;
+  --color-muted: #93aeae;
+  --color-subtle: #6b8788;
 
-  --color-danger-soft: rgba(184, 89, 63, 0.2);
-  --color-warning-soft: rgba(176, 111, 16, 0.2);
+  --color-primary: #148185;
+  --color-primary-hover: #106669;
+  --color-primary-active: #0d5457;
+  --color-primary-soft: #123638;
+  --color-accent: #1b9599;
+
+  --color-danger: #e8705c;
+  --color-danger-soft: rgba(232, 112, 92, 0.18);
+  --color-warning: #dfa043;
+  --color-warning-soft: rgba(223, 160, 67, 0.2);
+  --color-success: #52b788;
+  --color-success-soft: rgba(82, 183, 136, 0.18);
   --color-info-soft: rgba(92, 118, 144, 0.22);
 
   /* Tarjetas de contenido: superficie sólida elevada (más clara que el
@@ -132,34 +122,6 @@
   --input-bg: #26332d;
   --input-bg-focus: #2c3b34;
   --input-border: rgba(255, 255, 255, 0.14);
-}
-
-/* primary-soft y fondo por tema en oscuro (fondos pastel no sirven sobre
-   fondo oscuro; cada tema recibe un fondo tintado propio, no un negro
-   genérico compartido). */
-[data-mode="dark"][data-theme="green"],
-[data-mode="dark"]:not([data-theme]) {
-  --color-primary-soft: rgba(63, 165, 118, 0.18);
-}
-[data-mode="dark"][data-theme="blue"] {
-  --color-primary-soft: rgba(76, 147, 224, 0.18);
-  --color-cream: #0f161e;
-  --color-cream-deep: #0a0f15;
-}
-[data-mode="dark"][data-theme="purple"] {
-  --color-primary-soft: rgba(155, 127, 212, 0.2);
-  --color-cream: #161220;
-  --color-cream-deep: #0f0c17;
-}
-[data-mode="dark"][data-theme="red"] {
-  --color-primary-soft: rgba(221, 107, 107, 0.18);
-  --color-cream: #1a1310;
-  --color-cream-deep: #130e0b;
-}
-[data-mode="dark"][data-theme="orange"] {
-  --color-primary-soft: rgba(233, 146, 74, 0.18);
-  --color-cream: #1a1510;
-  --color-cream-deep: #140f0b;
 }
 
 html {
