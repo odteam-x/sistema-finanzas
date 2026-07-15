@@ -1,6 +1,5 @@
 import { getDebts, getInstallments } from "@/lib/data";
 import {
-  formatDOP,
   formatDateLong,
   formatDateShort,
   todayISO,
@@ -13,7 +12,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { Badge } from "@/components/ui/Badge";
 import { DeleteButton } from "@/components/ui/DeleteButton";
 import { IconBubble } from "@/components/ui/IconBubble";
-import { Illustration } from "@/components/ui/Illustration";
+import { Money } from "@/components/ui/Money";
 import { AddDebtForm } from "./AddDebtForm";
 import { InstallmentRow, DebtPaidToggle } from "./DebtControls";
 import { deleteDebt } from "./actions";
@@ -82,7 +81,7 @@ export default async function DeudasPage() {
       <div className="grid grid-cols-2 gap-3 mb-4">
         <StatTile
           label="Total adeudado"
-          value={formatDOP(outstanding, false)}
+          value={<Money value={outstanding} decimals={false} />}
           icon="debt"
           tone={outstanding > 0 ? "danger" : "primary"}
         />
@@ -107,7 +106,7 @@ export default async function DeudasPage() {
           icon="debt"
           title="Sin deudas registradas"
           message="Registra una deuda para llevar control de sus pagos y vencimientos."
-          illustration={<Illustration name="receipt" width={170} />}
+          action={<AddDebtForm triggerLabel="Registrar deuda" />}
         />
       ) : (
         <ul className="flex flex-col gap-3">
@@ -126,8 +125,8 @@ export default async function DeudasPage() {
                           {statusLabel[d.status]}
                         </Badge>
                       </div>
-                      <p className="text-sm text-ink tabular font-semibold mt-0.5">
-                        {formatDOP(Number(d.total_amount))}
+                      <p className="text-sm text-ink font-semibold mt-0.5">
+                        <Money value={Number(d.total_amount)} />
                       </p>
                       <p className="text-xs text-muted">
                         Adquirida el {formatDateLong(d.acquired_date)}

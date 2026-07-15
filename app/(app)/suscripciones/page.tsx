@@ -1,6 +1,6 @@
 import { getSavingsAccounts, getSubscriptions, getTags } from "@/lib/data";
 import { runSubscriptionCatchUp } from "@/lib/subscriptions";
-import { formatDOP, formatDateShort, todayISO } from "@/lib/format";
+import { formatDateShort, todayISO } from "@/lib/format";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { StatTile } from "@/components/ui/StatTile";
@@ -11,10 +11,67 @@ import { Field, Input, Select, MoneyInput } from "@/components/ui/Field";
 import { FormModal } from "@/components/ui/FormModal";
 import { DeleteButton } from "@/components/ui/DeleteButton";
 import { MoneyValue } from "@/components/ui/MoneyValue";
-import { Illustration } from "@/components/ui/Illustration";
+import { Money } from "@/components/ui/Money";
 import { addSubscription, deleteSubscription, updateSubscription } from "./actions";
+import type { SavingsAccount, Tag } from "@/lib/types";
 
 export const metadata = { title: "Suscripciones · Bolsillo Seguro" };
+
+function NewSubscriptionForm({
+  tags,
+  accounts,
+  today,
+  triggerLabel,
+}: {
+  tags: Tag[];
+  accounts: SavingsAccount[];
+  today: string;
+  triggerLabel: string;
+}) {
+  return (
+    <FormModal title="Nueva suscripción" action={addSubscription} submitLabel="Agregar" triggerLabel={triggerLabel}>
+      <Field label="Nombre" htmlFor="name" required>
+        <Input id="name" name="name" placeholder="Netflix, Gimnasio…" required />
+      </Field>
+      <Field label="Monto" htmlFor="amount" required>
+        <MoneyInput id="amount" name="amount" required />
+      </Field>
+      <Field label="Frecuencia" htmlFor="frequency">
+        <Select id="frequency" name="frequency" defaultValue="mensual">
+          <option value="mensual">Mensual</option>
+          <option value="anual">Anual</option>
+        </Select>
+      </Field>
+      <Field label="Próximo cobro" htmlFor="next_charge_date" required>
+        <Input id="next_charge_date" name="next_charge_date" type="date" defaultValue={today} required />
+      </Field>
+      {tags.length > 0 && (
+        <Field label="Categoría" htmlFor="tag_id" hint="Opcional.">
+          <Select id="tag_id" name="tag_id" defaultValue="">
+            <option value="">General</option>
+            {tags.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.name}
+              </option>
+            ))}
+          </Select>
+        </Field>
+      )}
+      {accounts.length > 0 && (
+        <Field label="Cuenta" htmlFor="account_id" hint="Opcional: resta el monto al cobrarse.">
+          <Select id="account_id" name="account_id" defaultValue="">
+            <option value="">Sin asociar</option>
+            {accounts.map((a) => (
+              <option key={a.id} value={a.id}>
+                {a.name}
+              </option>
+            ))}
+          </Select>
+        </Field>
+      )}
+    </FormModal>
+  );
+}
 
 export default async function SuscripcionesPage() {
   await runSubscriptionCatchUp();
@@ -37,60 +94,7 @@ export default async function SuscripcionesPage() {
       <PageHeader
         title="Suscripciones"
         subtitle="Cobros recurrentes"
-        action={
-          <FormModal
-            title="Nueva suscripción"
-            action={addSubscription}
-            submitLabel="Agregar"
-            triggerLabel="Nueva"
-          >
-            <Field label="Nombre" htmlFor="name" required>
-              <Input id="name" name="name" placeholder="Netflix, Gimnasio…" required />
-            </Field>
-            <Field label="Monto" htmlFor="amount" required>
-              <MoneyInput id="amount" name="amount" required />
-            </Field>
-            <Field label="Frecuencia" htmlFor="frequency">
-              <Select id="frequency" name="frequency" defaultValue="mensual">
-                <option value="mensual">Mensual</option>
-                <option value="anual">Anual</option>
-              </Select>
-            </Field>
-            <Field label="Próximo cobro" htmlFor="next_charge_date" required>
-              <Input
-                id="next_charge_date"
-                name="next_charge_date"
-                type="date"
-                defaultValue={today}
-                required
-              />
-            </Field>
-            {tags.length > 0 && (
-              <Field label="Categoría" htmlFor="tag_id" hint="Opcional.">
-                <Select id="tag_id" name="tag_id" defaultValue="">
-                  <option value="">General</option>
-                  {tags.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.name}
-                    </option>
-                  ))}
-                </Select>
-              </Field>
-            )}
-            {accounts.length > 0 && (
-              <Field label="Cuenta" htmlFor="account_id" hint="Opcional: resta el monto al cobrarse.">
-                <Select id="account_id" name="account_id" defaultValue="">
-                  <option value="">Sin asociar</option>
-                  {accounts.map((a) => (
-                    <option key={a.id} value={a.id}>
-                      {a.name}
-                    </option>
-                  ))}
-                </Select>
-              </Field>
-            )}
-          </FormModal>
-        }
+        action={<NewSubscriptionForm tags={tags} accounts={accounts} today={today} triggerLabel="Nueva" />}
       />
 
       <div className="mb-4">
@@ -107,8 +111,8 @@ export default async function SuscripcionesPage() {
         <EmptyState
           icon="repeat"
           title="Sin suscripciones"
-          message="Registra tus cobros recurrentes (streaming, gimnasio…) y te generamos el gasto automáticamente cuando llegue la fecha."
-          illustration={<Illustration name="subscriptions" width={190} />}
+          message="Añade un cobro recurrente y lo generamos solo cada mes."
+          action={<NewSubscriptionForm tags={tags} accounts={accounts} today={today} triggerLabel="Añadir suscripción" />}
         />
       ) : (
         <ul className="flex flex-col gap-2">
@@ -118,8 +122,8 @@ export default async function SuscripcionesPage() {
                 <IconBubble icon="repeat" tone={s.active ? "brand" : "neutral"} />
                 <div className="min-w-0 flex-1">
                   <p className="font-bold text-ink truncate">{s.name}</p>
-                  <p className="text-sm text-ink tabular font-semibold">
-                    {formatDOP(Number(s.amount))}
+                  <p className="text-sm text-ink font-semibold">
+                    <Money value={Number(s.amount)} />
                   </p>
                   <p className="text-xs text-muted">
                     Próximo cobro: {formatDateShort(s.next_charge_date)}

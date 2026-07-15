@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { getSalaries, getSalarySettings, getSavingsAccounts, getTags } from "@/lib/data";
 import {
-  formatDOP,
   formatDateLong,
   formatDateShort,
   todayISO,
@@ -25,10 +24,74 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/DropdownMenu";
 import { MoneyValue } from "@/components/ui/MoneyValue";
-import { Illustration } from "@/components/ui/Illustration";
+import { Money } from "@/components/ui/Money";
 import { addSalary, deleteSalary, saveSalarySettings } from "./actions";
+import type { SavingsAccount, SalarySettings, Tag } from "@/lib/types";
 
 export const metadata = { title: "Ingresos · Bolsillo Seguro" };
+
+function NewSalaryForm({
+  settings,
+  tags,
+  accounts,
+  today,
+  triggerLabel,
+}: {
+  settings: Omit<SalarySettings, "user_id">;
+  tags: Tag[];
+  accounts: SavingsAccount[];
+  today: string;
+  triggerLabel: string;
+}) {
+  return (
+    <FormModal title="Registrar pago" action={addSalary} submitLabel="Registrar" triggerLabel={triggerLabel}>
+      <Field label="Monto" htmlFor="amount" required>
+        <MoneyInput
+          id="amount"
+          name="amount"
+          defaultValue={settings.default_amount ? String(settings.default_amount) : ""}
+          required
+        />
+      </Field>
+      <Field label="Fecha del pago" htmlFor="pay_date" required>
+        <Input id="pay_date" name="pay_date" type="date" defaultValue={today} required />
+      </Field>
+      <Field label="Tipo" htmlFor="kind">
+        <Select id="kind" name="kind" defaultValue="quincena">
+          <option value="quincena">Quincena (sueldo)</option>
+          <option value="extra">Extra (bono, otro)</option>
+        </Select>
+      </Field>
+      <Field label="Nota" htmlFor="note">
+        <Input id="note" name="note" placeholder="Opcional" />
+      </Field>
+      {tags.length > 0 && (
+        <Field label="Tag" htmlFor="tag_id" hint="Opcional.">
+          <Select id="tag_id" name="tag_id" defaultValue="">
+            <option value="">Sin tag</option>
+            {tags.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.name}
+              </option>
+            ))}
+          </Select>
+        </Field>
+      )}
+      {accounts.length > 0 && (
+        <Field label="Cuenta" htmlFor="account_id" hint="Opcional: suma el monto al saldo de esa cuenta.">
+          <Select id="account_id" name="account_id" defaultValue="">
+            <option value="">Sin asociar</option>
+            {accounts.map((a) => (
+              <option key={a.id} value={a.id}>
+                {a.name}
+              </option>
+            ))}
+          </Select>
+        </Field>
+      )}
+    </FormModal>
+  );
+}
 
 export default async function IngresosPage({
   searchParams,
@@ -60,59 +123,7 @@ export default async function IngresosPage({
         title="Ingresos"
         subtitle="Sueldo quincenal e ingresos extra"
         action={
-          <FormModal
-            title="Registrar pago"
-            action={addSalary}
-            submitLabel="Registrar"
-            triggerLabel="Nuevo"
-          >
-            <Field label="Monto" htmlFor="amount" required>
-              <MoneyInput
-                id="amount"
-                name="amount"
-                defaultValue={
-                  settings.default_amount ? String(settings.default_amount) : ""
-                }
-                required
-              />
-            </Field>
-            <Field label="Fecha del pago" htmlFor="pay_date" required>
-              <Input id="pay_date" name="pay_date" type="date" defaultValue={today} required />
-            </Field>
-            <Field label="Tipo" htmlFor="kind">
-              <Select id="kind" name="kind" defaultValue="quincena">
-                <option value="quincena">Quincena (sueldo)</option>
-                <option value="extra">Extra (bono, otro)</option>
-              </Select>
-            </Field>
-            <Field label="Nota" htmlFor="note">
-              <Input id="note" name="note" placeholder="Opcional" />
-            </Field>
-            {tags.length > 0 && (
-              <Field label="Tag" htmlFor="tag_id" hint="Opcional.">
-                <Select id="tag_id" name="tag_id" defaultValue="">
-                  <option value="">Sin tag</option>
-                  {tags.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.name}
-                    </option>
-                  ))}
-                </Select>
-              </Field>
-            )}
-            {accounts.length > 0 && (
-              <Field label="Cuenta" htmlFor="account_id" hint="Opcional: suma el monto al saldo de esa cuenta.">
-                <Select id="account_id" name="account_id" defaultValue="">
-                  <option value="">Sin asociar</option>
-                  {accounts.map((a) => (
-                    <option key={a.id} value={a.id}>
-                      {a.name}
-                    </option>
-                  ))}
-                </Select>
-              </Field>
-            )}
-          </FormModal>
+          <NewSalaryForm settings={settings} tags={tags} accounts={accounts} today={today} triggerLabel="Nuevo" />
         }
       />
 
@@ -151,7 +162,7 @@ export default async function IngresosPage({
             <p className="text-xs text-muted mt-0.5">
               Quincena por defecto:{" "}
               <span className="font-semibold text-ink">
-                {formatDOP(settings.default_amount)}
+                <Money value={settings.default_amount} />
               </span>{" "}
               · Pagos los días {settings.pay_day_1} y {settings.pay_day_2}
             </p>
@@ -232,8 +243,16 @@ export default async function IngresosPage({
         <EmptyState
           icon="wallet"
           title="Sin pagos registrados"
-          message="Registra tu primer pago con el botón “Nuevo”."
-          illustration={<Illustration name="make-it-rain" width={190} />}
+          message="Registra tu primer sueldo o ingreso extra."
+          action={
+            <NewSalaryForm
+              settings={settings}
+              tags={tags}
+              accounts={accounts}
+              today={today}
+              triggerLabel="Registrar pago"
+            />
+          }
         />
       ) : (
         <ul className="flex flex-col gap-2">
@@ -242,7 +261,7 @@ export default async function IngresosPage({
               <GlassCard className="flex items-center gap-3 py-3">
                 <IconBubble icon={s.kind === "extra" ? "trendUp" : "wallet"} tone="neutral" />
                 <div className="min-w-0 flex-1">
-                  <p className="font-bold text-ink tabular">{formatDOP(Number(s.amount))}</p>
+                  <p className="font-bold text-ink"><Money value={Number(s.amount)} /></p>
                   <p className="text-xs text-muted truncate">
                     {formatDateLong(s.pay_date)}
                     {s.note ? ` · ${s.note}` : ""}

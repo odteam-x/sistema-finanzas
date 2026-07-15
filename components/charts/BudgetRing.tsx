@@ -58,7 +58,7 @@ export function BudgetRing({ spent, budget, size = 108 }: BudgetRingProps) {
         >
           {formatDOP(Math.abs(remaining), false)}
         </p>
-        <p className="text-xs text-muted mt-0.5">
+        <p className="text-xs text-muted mt-0.5 tabular">
           {formatDOP(spent, false)} de {formatDOP(budget, false)}
         </p>
       </div>

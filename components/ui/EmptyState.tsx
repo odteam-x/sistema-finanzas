@@ -2,27 +2,26 @@ import { Icon, type IconName } from "./Icon";
 
 interface EmptyStateProps {
   icon: IconName;
+  /** Máximo ~4 palabras. */
   title: string;
+  /** Una línea de contexto. */
   message: string;
-  action?: React.ReactNode;
-  /** Ilustración opcional (ver components/ui/Illustration.tsx) — si se
-   *  da, reemplaza el círculo de ícono por defecto. */
-  illustration?: React.ReactNode;
+  /** Botón primario que resuelve el vacío — obligatorio: un estado vacío
+   *  sin acción es un callejón sin salida para el usuario. */
+  action: React.ReactNode;
 }
 
-export function EmptyState({ icon, title, message, action, illustration }: EmptyStateProps) {
+export function EmptyState({ icon, title, message, action }: EmptyStateProps) {
   return (
-    <div className="glass rounded-[var(--radius-glass)] p-8 text-center flex flex-col items-center gap-3">
-      {illustration ?? (
-        <span className="grid place-items-center size-14 rounded-full bg-primary-soft text-primary">
-          <Icon name={icon} size={28} />
-        </span>
-      )}
+    <div className="glass rounded-[var(--radius-glass)] p-6 text-center flex flex-col items-center gap-2.5">
+      <span className="grid place-items-center size-12 rounded-full bg-primary-soft text-primary">
+        <Icon name={icon} size={24} />
+      </span>
       <div>
         <p className="font-bold text-ink">{title}</p>
-        <p className="text-sm text-muted mt-1 max-w-xs mx-auto">{message}</p>
+        <p className="text-sm text-muted mt-0.5">{message}</p>
       </div>
-      {action}
+      <div className="mt-1">{action}</div>
     </div>
   );
 }

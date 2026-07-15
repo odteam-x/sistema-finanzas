@@ -7,7 +7,6 @@ import { GlassCard } from "@/components/ui/GlassCard";
 import { StatTile } from "@/components/ui/StatTile";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Icon } from "@/components/ui/Icon";
-import { Illustration } from "@/components/ui/Illustration";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,6 +15,7 @@ import {
 } from "@/components/ui/DropdownMenu";
 import { BarCompare, type Bar } from "@/components/charts/BarCompare";
 import { DonutChart } from "@/components/charts/DonutChart";
+import { Money } from "@/components/ui/Money";
 
 export const metadata = { title: "Reportes · Bolsillo Seguro" };
 
@@ -143,16 +143,24 @@ export default async function ReportesPage({
       {expenses.length === 0 ? (
         <EmptyState
           icon="chart"
-          title="Sin datos suficientes"
+          title="Aún no hay datos"
           message="Registra gastos en Presupuesto para ver reportes comparativos de tus últimos meses."
-          illustration={<Illustration name="data-reports" width={190} />}
+          action={
+            <Link
+              href="/presupuesto"
+              className="inline-flex items-center justify-center gap-2 rounded-full font-semibold min-h-11 px-4 text-[0.95rem] bg-gradient-brand text-white shadow-sm hover:brightness-[0.97] active:brightness-95"
+            >
+              <Icon name="plus" size={18} />
+              Registrar gasto
+            </Link>
+          }
         />
       ) : (
         <>
           <div className="grid grid-cols-2 gap-3 mb-4">
             <StatTile
               label="Gasto este mes"
-              value={formatDOP(currentTotal, false)}
+              value={<Money value={currentTotal} decimals={false} />}
               icon="wallet"
               tone="neutral"
             />

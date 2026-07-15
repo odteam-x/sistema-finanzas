@@ -7,7 +7,7 @@ import {
   getSavingsAccounts,
   getTags,
 } from "@/lib/data";
-import { formatDOP, formatDateShort, todayISO, toISODate, clampPct } from "@/lib/format";
+import { formatDateShort, todayISO, toISODate, clampPct } from "@/lib/format";
 import { countWorkdays, exceptionsMap } from "@/lib/calendar";
 import { quincenaForDate } from "@/lib/periods";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -28,7 +28,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/DropdownMenu";
 import { BudgetRing } from "@/components/charts/BudgetRing";
-import { Illustration } from "@/components/ui/Illustration";
+import { Money } from "@/components/ui/Money";
 import {
   addCategory,
   addExpense,
@@ -38,8 +38,93 @@ import {
   setPeriodOverride,
   updateCategory,
 } from "./actions";
+import type { SavingsAccount, Tag } from "@/lib/types";
 
 export const metadata = { title: "Presupuesto · Bolsillo Seguro" };
+
+function NewCategoryForm({ triggerLabel }: { triggerLabel: string }) {
+  return (
+    <FormModal title="Nueva categoría" action={addCategory} submitLabel="Agregar" triggerLabel={triggerLabel}>
+      <Field
+        label="Nombre"
+        htmlFor="name"
+        required
+        hint="Ej.: Pasaje ida, Pasaje vuelta, Desayuno, Almuerzo, Imprevistos"
+      >
+        <Input id="name" name="name" placeholder="Pasaje ida" required />
+      </Field>
+      <Field label="Monto por día trabajado" htmlFor="amount_per_workday" required>
+        <MoneyInput id="amount_per_workday" name="amount_per_workday" required />
+      </Field>
+      <Field
+        label="Límite mensual"
+        htmlFor="monthly_limit"
+        hint="Opcional. Define cuánto quieres gastar como máximo en esta categoría cada mes — si te pasas, lo verás en ámbar/rojo aquí y en Resumen."
+      >
+        <MoneyInput id="monthly_limit" name="monthly_limit" />
+      </Field>
+    </FormModal>
+  );
+}
+
+function NewExpenseForm({
+  tags,
+  accounts,
+  today,
+  triggerLabel,
+  trigger,
+  triggerIcon,
+}: {
+  tags: Tag[];
+  accounts: SavingsAccount[];
+  today: string;
+  triggerLabel: string;
+  trigger?: "button" | "link" | "icon" | "pill";
+  triggerIcon?: "plus";
+}) {
+  return (
+    <FormModal
+      title="Registrar gasto"
+      action={addExpense}
+      submitLabel="Registrar"
+      triggerLabel={triggerLabel}
+      trigger={trigger}
+      triggerIcon={triggerIcon}
+    >
+      <Field label="Monto" htmlFor="exp-amount" required>
+        <MoneyInput id="exp-amount" name="amount" required />
+      </Field>
+      <Field label="Fecha" htmlFor="exp-date" required>
+        <Input id="exp-date" name="date" type="date" defaultValue={today} required />
+      </Field>
+      <Field label="Categoría" htmlFor="exp-cat" hint="Categoría general del gasto (independiente del presupuesto por día).">
+        <Select id="exp-cat" name="tag_id" defaultValue="">
+          <option value="">General</option>
+          {tags.map((t) => (
+            <option key={t.id} value={t.id}>
+              {t.name}
+            </option>
+          ))}
+        </Select>
+      </Field>
+      <Field label="Nota" htmlFor="exp-note">
+        <Input id="exp-note" name="note" placeholder="Opcional" />
+      </Field>
+      {accounts.length > 0 && (
+        <Field label="Cuenta" htmlFor="exp-account" hint="Opcional: resta el monto del saldo de esa cuenta.">
+          <Select id="exp-account" name="account_id" defaultValue="">
+            <option value="">Sin asociar</option>
+            {accounts.map((a) => (
+              <option key={a.id} value={a.id}>
+                {a.name}
+              </option>
+            ))}
+          </Select>
+        </Field>
+      )}
+    </FormModal>
+  );
+}
 
 export default async function PresupuestoPage({
   searchParams,
@@ -98,33 +183,7 @@ export default async function PresupuestoPage({
       <PageHeader
         title="Presupuesto"
         subtitle={`Quincena ${q.label} · ${workedQuincena} días laborables`}
-        action={
-          <FormModal
-            title="Nueva categoría"
-            action={addCategory}
-            submitLabel="Agregar"
-            triggerLabel="Categoría"
-          >
-            <Field
-              label="Nombre"
-              htmlFor="name"
-              required
-              hint="Ej.: Pasaje ida, Pasaje vuelta, Desayuno, Almuerzo, Imprevistos"
-            >
-              <Input id="name" name="name" placeholder="Pasaje ida" required />
-            </Field>
-            <Field label="Monto por día trabajado" htmlFor="amount_per_workday" required>
-              <MoneyInput id="amount_per_workday" name="amount_per_workday" required />
-            </Field>
-            <Field
-              label="Límite mensual"
-              htmlFor="monthly_limit"
-              hint="Opcional. Define cuánto quieres gastar como máximo en esta categoría cada mes — si te pasas, lo verás en ámbar/rojo aquí y en Resumen."
-            >
-              <MoneyInput id="monthly_limit" name="monthly_limit" />
-            </Field>
-          </FormModal>
-        }
+        action={<NewCategoryForm triggerLabel="Categoría" />}
       />
 
       <div className="flex items-center gap-1.5 -mt-3 mb-4 px-1">
@@ -174,12 +233,17 @@ export default async function PresupuestoPage({
 
       {/* Resumen del periodo */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3 mb-3">
-        <StatTile label="Estimado quincena" value={formatDOP(estQuincena, false)} icon="calc" />
-        <StatTile label="Gasto real" value={formatDOP(realQuincena, false)} tone="neutral" icon="wallet" />
+        <StatTile label="Estimado quincena" value={<Money value={estQuincena} decimals={false} />} icon="calc" />
+        <StatTile
+          label="Gasto real"
+          value={<Money value={realQuincena} decimals={false} />}
+          tone="neutral"
+          icon="wallet"
+        />
         <StatTile
           className="col-span-2 sm:col-span-1"
           label={restante >= 0 ? "Restante" : "Excedido"}
-          value={formatDOP(Math.abs(restante), false)}
+          value={<Money value={Math.abs(restante)} decimals={false} />}
           tone={restante >= 0 ? "primary" : "danger"}
           icon={restante >= 0 ? "trendUp" : "trendDown"}
         />
@@ -188,12 +252,14 @@ export default async function PresupuestoPage({
       <GlassCard className="mb-4 flex items-center justify-between gap-3">
         <p className="text-sm text-muted">
           Gasto fijo por día:{" "}
-          <span className="font-bold text-ink tabular">{formatDOP(perDay)}</span>
+          <span className="font-bold text-ink">
+            <Money value={perDay} />
+          </span>
         </p>
         <p className="text-sm text-muted text-right">
           Estimado del mes:{" "}
-          <span className="font-bold text-ink tabular">
-            {formatDOP(estMonth, false)}
+          <span className="font-bold text-ink">
+            <Money value={estMonth} decimals={false} />
           </span>
         </p>
       </GlassCard>
@@ -205,6 +271,7 @@ export default async function PresupuestoPage({
           icon="budget"
           title="Sin categorías"
           message="Agrega categorías como pasaje, desayuno o almuerzo con su monto por día trabajado."
+          action={<NewCategoryForm triggerLabel="Agregar categoría" />}
         />
       ) : (
         <ul className="flex flex-col gap-2 mb-6">
@@ -220,14 +287,14 @@ export default async function PresupuestoPage({
                     <IconBubble icon="budget" tone="neutral" />
                     <div className="min-w-0 flex-1">
                       <p className="font-semibold text-ink truncate">{c.name}</p>
-                      <p className="text-xs text-muted tabular">
-                        {formatDOP(Number(c.amount_per_workday))} / día
+                      <p className="text-xs text-muted">
+                        <Money value={Number(c.amount_per_workday)} /> / día
                       </p>
                     </div>
                     <div className="text-right shrink-0">
                       <p className="text-xs text-muted">Quincena</p>
-                      <p className="font-bold text-ink tabular">
-                        {formatDOP(Number(c.amount_per_workday) * workedQuincena, false)}
+                      <p className="font-bold text-ink">
+                        <Money value={Number(c.amount_per_workday) * workedQuincena} decimals={false} />
                       </p>
                     </div>
                     <FormModal
@@ -273,10 +340,10 @@ export default async function PresupuestoPage({
                     <div className="mt-3 pt-3 border-t border-black/5">
                       <div className="flex items-center justify-between mb-1.5 text-xs">
                         <span className="text-muted">
-                          Este mes: <span className="font-bold text-ink tabular">{formatDOP(spent, false)}</span>
+                          Este mes: <span className="font-bold text-ink"><Money value={spent} decimals={false} /></span>
                         </span>
                         <span className="text-muted">
-                          Límite <span className="font-bold text-ink tabular">{formatDOP(limit, false)}</span>
+                          Límite <span className="font-bold text-ink"><Money value={limit} decimals={false} /></span>
                         </span>
                       </div>
                       <ProgressBar
@@ -295,46 +362,14 @@ export default async function PresupuestoPage({
       {/* Gastos reales */}
       <div className="flex items-center justify-between px-1 mb-2">
         <h2 className="text-sm font-bold text-ink">Gastos reales de la quincena</h2>
-        <FormModal
-          title="Registrar gasto"
-          action={addExpense}
-          submitLabel="Registrar"
+        <NewExpenseForm
+          tags={tags}
+          accounts={accounts}
+          today={today}
+          triggerLabel="Registrar"
           trigger="link"
           triggerIcon="plus"
-          triggerLabel="Registrar"
-        >
-          <Field label="Monto" htmlFor="exp-amount" required>
-            <MoneyInput id="exp-amount" name="amount" required />
-          </Field>
-          <Field label="Fecha" htmlFor="exp-date" required>
-            <Input id="exp-date" name="date" type="date" defaultValue={today} required />
-          </Field>
-          <Field label="Categoría" htmlFor="exp-cat" hint="Categoría general del gasto (independiente del presupuesto por día).">
-            <Select id="exp-cat" name="tag_id" defaultValue="">
-              <option value="">General</option>
-              {tags.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.name}
-                </option>
-              ))}
-            </Select>
-          </Field>
-          <Field label="Nota" htmlFor="exp-note">
-            <Input id="exp-note" name="note" placeholder="Opcional" />
-          </Field>
-          {accounts.length > 0 && (
-            <Field label="Cuenta" htmlFor="exp-account" hint="Opcional: resta el monto del saldo de esa cuenta.">
-              <Select id="exp-account" name="account_id" defaultValue="">
-                <option value="">Sin asociar</option>
-                {accounts.map((a) => (
-                  <option key={a.id} value={a.id}>
-                    {a.name}
-                  </option>
-                ))}
-              </Select>
-            </Field>
-          )}
-        </FormModal>
+        />
       </div>
 
       {tags.length > 0 && expenses.length > 0 && (
@@ -363,7 +398,9 @@ export default async function PresupuestoPage({
           icon="wallet"
           title="Sin gastos registrados"
           message="Registra tus gastos reales para compararlos con el presupuesto."
-          illustration={<Illustration name="wallet" width={190} />}
+          action={
+            <NewExpenseForm tags={tags} accounts={accounts} today={today} triggerLabel="Registrar gasto" />
+          }
         />
       ) : (
         <ul className="flex flex-col gap-2">
@@ -372,8 +409,8 @@ export default async function PresupuestoPage({
               <GlassCard className="flex items-center gap-3 py-2.5">
                 <IconBubble icon="wallet" tone="neutral" size="sm" />
                 <div className="min-w-0 flex-1">
-                  <p className="font-semibold text-ink tabular">
-                    {formatDOP(Number(e.amount))}
+                  <p className="font-semibold text-ink">
+                    <Money value={Number(e.amount)} />
                   </p>
                   <p className="text-xs text-muted truncate">
                     {formatDateShort(e.date)}

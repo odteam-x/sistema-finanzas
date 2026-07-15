@@ -8,7 +8,7 @@ import { Field, Input, Select, MoneyInput } from "@/components/ui/Field";
 import { todayISO } from "@/lib/format";
 import { addDebt } from "./actions";
 
-export function AddDebtForm() {
+export function AddDebtForm({ triggerLabel = "Deuda" }: { triggerLabel?: string }) {
   const [open, setOpen] = useState(false);
   const [type, setType] = useState<"unico" | "cuotas">("unico");
   const [error, setError] = useState<string | null>(null);
@@ -35,7 +35,7 @@ export function AddDebtForm() {
     <>
       <Button onClick={openModal}>
         <Icon name="plus" size={18} />
-        Deuda
+        {triggerLabel}
       </Button>
 
       <Modal open={open} onClose={() => setOpen(false)} title="Nueva deuda">

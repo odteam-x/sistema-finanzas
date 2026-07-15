@@ -1,5 +1,5 @@
 import { getExpenses, getTags, getUserProfile } from "@/lib/data";
-import { formatDOP, todayISO, toISODate, clampPct } from "@/lib/format";
+import { todayISO, toISODate, clampPct } from "@/lib/format";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -8,12 +8,44 @@ import { Field, Input, MoneyInput } from "@/components/ui/Field";
 import { FormModal } from "@/components/ui/FormModal";
 import { DeleteButton } from "@/components/ui/DeleteButton";
 import { IconBubble } from "@/components/ui/IconBubble";
-import { Illustration } from "@/components/ui/Illustration";
+import { Money } from "@/components/ui/Money";
 import { DisplayNameForm } from "./DisplayNameForm";
 import { ExportCsvForm } from "./ExportCsvForm";
 import { addTag, deleteTag, updateTag } from "./actions";
 
 export const metadata = { title: "Configuración · Bolsillo Seguro" };
+
+function NewTagForm({
+  triggerLabel,
+  trigger,
+  triggerIcon,
+}: {
+  triggerLabel: string;
+  trigger?: "button" | "link" | "icon" | "pill";
+  triggerIcon?: "plus";
+}) {
+  return (
+    <FormModal
+      title="Nueva etiqueta"
+      action={addTag}
+      submitLabel="Agregar"
+      trigger={trigger}
+      triggerIcon={triggerIcon}
+      triggerLabel={triggerLabel}
+    >
+      <Field label="Nombre" htmlFor="tag-name" required hint="Ej.: Comida, Transporte, Ocio, Salud">
+        <Input id="tag-name" name="name" placeholder="Comida" required />
+      </Field>
+      <Field
+        label="Límite mensual"
+        htmlFor="tag-limit"
+        hint="Opcional. Si te pasas, lo verás en ámbar/rojo aquí."
+      >
+        <MoneyInput id="tag-limit" name="monthly_limit" />
+      </Field>
+    </FormModal>
+  );
+}
 
 export default async function ConfiguracionPage() {
   const today = todayISO();
@@ -47,25 +79,7 @@ export default async function ConfiguracionPage() {
 
       <div className="flex items-center justify-between px-1 mb-2">
         <h2 className="text-sm font-bold text-ink">Etiquetas</h2>
-        <FormModal
-          title="Nueva etiqueta"
-          action={addTag}
-          submitLabel="Agregar"
-          trigger="link"
-          triggerIcon="plus"
-          triggerLabel="Nueva"
-        >
-          <Field label="Nombre" htmlFor="tag-name" required hint="Ej.: Comida, Transporte, Ocio, Salud">
-            <Input id="tag-name" name="name" placeholder="Comida" required />
-          </Field>
-          <Field
-            label="Límite mensual"
-            htmlFor="tag-limit"
-            hint="Opcional. Si te pasas, lo verás en ámbar/rojo aquí."
-          >
-            <MoneyInput id="tag-limit" name="monthly_limit" />
-          </Field>
-        </FormModal>
+        <NewTagForm triggerLabel="Nueva" trigger="link" triggerIcon="plus" />
       </div>
 
       {tags.length === 0 ? (
@@ -73,7 +87,7 @@ export default async function ConfiguracionPage() {
           icon="budget"
           title="Sin etiquetas todavía"
           message="Crea etiquetas generales (Comida, Transporte, Ocio…) para categorizar tus ingresos y gastos, sin depender de las líneas del presupuesto."
-          illustration={<Illustration name="preferences" width={190} />}
+          action={<NewTagForm triggerLabel="Crear etiqueta" />}
         />
       ) : (
         <ul className="flex flex-col gap-2">
@@ -90,7 +104,9 @@ export default async function ConfiguracionPage() {
                     <div className="min-w-0 flex-1">
                       <p className="font-semibold text-ink truncate">{t.name}</p>
                       {limit != null && (
-                        <p className="text-xs text-muted tabular">Límite {formatDOP(limit, false)}/mes</p>
+                        <p className="text-xs text-muted">
+                          Límite <Money value={limit} decimals={false} />/mes
+                        </p>
                       )}
                     </div>
                     <FormModal
@@ -124,10 +140,10 @@ export default async function ConfiguracionPage() {
                     <div className="mt-3 pt-3 border-t border-black/5">
                       <div className="flex items-center justify-between mb-1.5 text-xs">
                         <span className="text-muted">
-                          Este mes: <span className="font-bold text-ink tabular">{formatDOP(spent, false)}</span>
+                          Este mes: <span className="font-bold text-ink"><Money value={spent} decimals={false} /></span>
                         </span>
                         <span className="text-muted">
-                          Límite <span className="font-bold text-ink tabular">{formatDOP(limit, false)}</span>
+                          Límite <span className="font-bold text-ink"><Money value={limit} decimals={false} /></span>
                         </span>
                       </div>
                       <ProgressBar value={pct} tone={over ? "danger" : pct >= 80 ? "warning" : "primary"} />

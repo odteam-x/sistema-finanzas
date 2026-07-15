@@ -1,5 +1,5 @@
 import { getGoals, getSavingsAccounts, getSavingsMovements } from "@/lib/data";
-import { formatDOP, formatDateShort, todayISO } from "@/lib/format";
+import { formatDateShort, todayISO } from "@/lib/format";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -9,10 +9,10 @@ import { FormModal } from "@/components/ui/FormModal";
 import { DeleteButton } from "@/components/ui/DeleteButton";
 import { Icon, type IconName } from "@/components/ui/Icon";
 import { MoneyValue } from "@/components/ui/MoneyValue";
+import { Money } from "@/components/ui/Money";
 import { IconBubble } from "@/components/ui/IconBubble";
 import { PeekCarousel } from "@/components/ui/PeekCarousel";
-import { Illustration } from "@/components/ui/Illustration";
-import type { AccountType } from "@/lib/types";
+import type { AccountType, Goal } from "@/lib/types";
 import {
   addAccount,
   addMovement,
@@ -45,6 +45,32 @@ function TypeField({ defaultValue }: { defaultValue?: AccountType }) {
         ))}
       </Select>
     </Field>
+  );
+}
+
+function NewAccountForm({
+  goals,
+  accounts,
+  triggerLabel,
+}: {
+  goals: Goal[];
+  accounts: { goal_id: string | null }[];
+  triggerLabel: string;
+}) {
+  return (
+    <FormModal title="Nueva cuenta" action={addAccount} submitLabel="Crear cuenta" triggerLabel={triggerLabel}>
+      <Field label="Nombre" htmlFor="name" required>
+        <Input id="name" name="name" placeholder="Ej.: Banco BHD, Efectivo…" required />
+      </Field>
+      <TypeField />
+      <Field label="Saldo inicial" htmlFor="initial_amount" hint="Opcional.">
+        <MoneyInput id="initial_amount" name="initial_amount" />
+      </Field>
+      <GoalField
+        goals={goals.filter((g) => !accounts.some((acc) => acc.goal_id === g.id))}
+        idPrefix="new"
+      />
+    </FormModal>
   );
 }
 
@@ -99,26 +125,7 @@ export default async function BalancePage() {
       <PageHeader
         title="Balance"
         subtitle="Ahorro, banco, efectivo y tarjetas"
-        action={
-          <FormModal
-            title="Nueva cuenta"
-            action={addAccount}
-            submitLabel="Crear cuenta"
-            triggerLabel="Cuenta"
-          >
-            <Field label="Nombre" htmlFor="name" required>
-              <Input id="name" name="name" placeholder="Ej.: Banco BHD, Efectivo…" required />
-            </Field>
-            <TypeField />
-            <Field label="Saldo inicial" htmlFor="initial_amount" hint="Opcional.">
-              <MoneyInput id="initial_amount" name="initial_amount" />
-            </Field>
-            <GoalField
-              goals={goals.filter((g) => !accounts.some((acc) => acc.goal_id === g.id))}
-              idPrefix="new"
-            />
-          </FormModal>
-        }
+        action={<NewAccountForm goals={goals} accounts={accounts} triggerLabel="Cuenta" />}
       />
 
       {/* Total */}
@@ -140,8 +147,8 @@ export default async function BalancePage() {
         <EmptyState
           icon="piggy"
           title="Sin cuentas todavía"
-          message="Crea tu primera cuenta (banco, efectivo, ahorro…) y registra depósitos y retiros."
-          illustration={<Illustration name="savings" width={190} />}
+          message="Crea tu primera cuenta y registra depósitos y retiros."
+          action={<NewAccountForm goals={goals} accounts={accounts} triggerLabel="Crear cuenta" />}
         />
       ) : (
         <PeekCarousel>
@@ -264,9 +271,9 @@ export default async function BalancePage() {
                       size="sm"
                     />
                     <div className="min-w-0 flex-1">
-                      <p className="font-semibold text-ink tabular">
+                      <p className="font-semibold text-ink">
                         {isDep ? "+" : "−"}
-                        {formatDOP(Number(m.amount))}
+                        <Money value={Number(m.amount)} />
                       </p>
                       <p className="text-xs text-muted truncate">
                         {accountName(m.account_id)} · {formatDateShort(m.date)}

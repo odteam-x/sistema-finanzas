@@ -1,5 +1,5 @@
 import { getGoals, getSavingsAccounts, getSavingsMovements } from "@/lib/data";
-import { formatDOP, formatDateShort, clampPct, todayISO, daysBetween } from "@/lib/format";
+import { formatDateShort, clampPct, todayISO, daysBetween } from "@/lib/format";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -9,11 +9,32 @@ import { Field, Input, MoneyInput } from "@/components/ui/Field";
 import { FormModal } from "@/components/ui/FormModal";
 import { DeleteButton } from "@/components/ui/DeleteButton";
 import { MoneyValue } from "@/components/ui/MoneyValue";
-import { Illustration } from "@/components/ui/Illustration";
+import { Money } from "@/components/ui/Money";
 import { addMovement } from "../balance/actions";
 import { addGoal, addProgress, deleteGoal, updateGoal } from "./actions";
 
 export const metadata = { title: "Metas · Bolsillo Seguro" };
+
+function NewGoalForm({ triggerLabel }: { triggerLabel: string }) {
+  return (
+    <FormModal title="Nueva meta" action={addGoal} submitLabel="Crear meta" triggerLabel={triggerLabel}>
+      <Field label="Nombre" htmlFor="name" required>
+        <Input id="name" name="name" placeholder="Fondo de emergencia" required />
+      </Field>
+      <div className="grid grid-cols-2 gap-3">
+        <Field label="Monto objetivo" htmlFor="target_amount" required>
+          <MoneyInput id="target_amount" name="target_amount" required />
+        </Field>
+        <Field label="Ya ahorrado" htmlFor="current_amount">
+          <MoneyInput id="current_amount" name="current_amount" defaultValue="" />
+        </Field>
+      </div>
+      <Field label="Fecha límite" htmlFor="deadline">
+        <Input id="deadline" name="deadline" type="date" />
+      </Field>
+    </FormModal>
+  );
+}
 
 export default async function MetasPage() {
   const [goals, accounts, movements] = await Promise.all([
@@ -44,29 +65,7 @@ export default async function MetasPage() {
       <PageHeader
         title="Metas"
         subtitle="Tu tablero de objetivos financieros"
-        action={
-          <FormModal
-            title="Nueva meta"
-            action={addGoal}
-            submitLabel="Crear meta"
-            triggerLabel="Meta"
-          >
-            <Field label="Nombre" htmlFor="name" required>
-              <Input id="name" name="name" placeholder="Fondo de emergencia" required />
-            </Field>
-            <div className="grid grid-cols-2 gap-3">
-              <Field label="Monto objetivo" htmlFor="target_amount" required>
-                <MoneyInput id="target_amount" name="target_amount" required />
-              </Field>
-              <Field label="Ya ahorrado" htmlFor="current_amount">
-                <MoneyInput id="current_amount" name="current_amount" defaultValue="" />
-              </Field>
-            </div>
-            <Field label="Fecha límite" htmlFor="deadline">
-              <Input id="deadline" name="deadline" type="date" />
-            </Field>
-          </FormModal>
-        }
+        action={<NewGoalForm triggerLabel="Meta" />}
       />
 
       {goals.length > 0 && (
@@ -95,7 +94,7 @@ export default async function MetasPage() {
           icon="goal"
           title="Sin metas todavía"
           message="Crea tu primera meta de ahorro y sigue su progreso visualmente."
-          illustration={<Illustration name="goals" width={190} />}
+          action={<NewGoalForm triggerLabel="Crear meta" />}
         />
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -132,11 +131,11 @@ export default async function MetasPage() {
 
                 <div>
                   <div className="flex items-end justify-between mb-1.5">
-                    <span className="text-sm font-bold text-ink tabular">
-                      {formatDOP(currentAmount, false)}
+                    <span className="text-sm font-bold text-ink">
+                      <Money value={currentAmount} decimals={false} />
                     </span>
-                    <span className="text-xs text-muted tabular">
-                      de {formatDOP(Number(g.target_amount), false)}
+                    <span className="text-xs text-muted">
+                      de <Money value={Number(g.target_amount)} decimals={false} />
                     </span>
                   </div>
                   <ProgressBar value={pct} tone={done ? "primary" : "primary"} />

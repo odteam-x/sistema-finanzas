@@ -87,7 +87,7 @@ export function DonutChart({ data, centerLabel = "Total" }: DonutChartProps) {
           x={cx}
           y={cy + 14}
           textAnchor="middle"
-          className="fill-ink"
+          className="fill-ink tabular"
           style={{ fontSize: 17, fontWeight: 800 }}
         >
           {formatDOP(total, false)}

@@ -3,7 +3,8 @@
 import { useTransition } from "react";
 import { cn } from "@/lib/cn";
 import { Icon } from "@/components/ui/Icon";
-import { formatDOP, formatDateShort } from "@/lib/format";
+import { formatDateShort } from "@/lib/format";
+import { Money } from "@/components/ui/Money";
 import type { DebtInstallment } from "@/lib/types";
 import { toggleInstallment, toggleDebtPaid } from "./actions";
 
@@ -49,11 +50,11 @@ export function InstallmentRow({
       )}
       <span
         className={cn(
-          "text-sm font-semibold tabular",
+          "text-sm font-semibold",
           i.paid ? "text-muted line-through" : "text-ink",
         )}
       >
-        {formatDOP(Number(i.amount))}
+        <Money value={Number(i.amount)} />
       </span>
     </button>
   );
