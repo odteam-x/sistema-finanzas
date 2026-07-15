@@ -10,6 +10,7 @@ function revalidateAll() {
   revalidatePath("/presupuesto");
   revalidatePath("/dashboard");
   revalidatePath("/balance");
+  revalidatePath("/movimientos");
 }
 
 /** El límite mensual es opcional: un campo vacío guarda NULL (sin límite). */

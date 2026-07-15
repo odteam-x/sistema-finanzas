@@ -22,6 +22,13 @@ interface FormModalProps {
   triggerTone?: "solid" | "ghost";
   triggerAriaLabel?: string;
   triggerFull?: boolean;
+  /** Oculta el botón disparador propio — para cuando otro elemento (ej. un
+   *  ítem de una hoja de acciones) decide cuándo abrir el modal. */
+  hideTrigger?: boolean;
+  /** Estado controlado desde fuera (junto a onOpenChange). Si se omite,
+   *  el modal maneja su propio estado interno como siempre. */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 export function FormModal({
@@ -36,10 +43,20 @@ export function FormModal({
   triggerTone = "solid",
   triggerAriaLabel,
   triggerFull,
+  hideTrigger,
+  open: controlledOpen,
+  onOpenChange,
 }: FormModalProps) {
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const isControlled = controlledOpen !== undefined;
+  const open = isControlled ? controlledOpen : internalOpen;
+
+  function setOpen(next: boolean) {
+    if (!isControlled) setInternalOpen(next);
+    onOpenChange?.(next);
+  }
 
   function openModal() {
     setError(null);
@@ -61,14 +78,14 @@ export function FormModal({
 
   return (
     <>
-      {trigger === "button" && (
+      {!hideTrigger && trigger === "button" && (
         <Button variant={triggerVariant} onClick={openModal} full={triggerFull} size="md">
           <Icon name={triggerIcon} size={18} />
           {triggerLabel}
         </Button>
       )}
 
-      {trigger === "icon" && (
+      {!hideTrigger && trigger === "icon" && (
         <button
           onClick={openModal}
           aria-label={triggerAriaLabel ?? triggerLabel ?? "Abrir"}
@@ -78,7 +95,7 @@ export function FormModal({
         </button>
       )}
 
-      {trigger === "link" && (
+      {!hideTrigger && trigger === "link" && (
         <button
           onClick={openModal}
           className="inline-flex items-center gap-1 text-sm font-semibold text-primary hover:text-primary-hover cursor-pointer"
@@ -88,7 +105,7 @@ export function FormModal({
         </button>
       )}
 
-      {trigger === "pill" && (
+      {!hideTrigger && trigger === "pill" && (
         <button
           onClick={openModal}
           className={cn(

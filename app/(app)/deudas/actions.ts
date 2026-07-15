@@ -13,6 +13,7 @@ function revalidateAll() {
   revalidatePath("/deudas");
   revalidatePath("/dashboard");
   revalidatePath("/balance");
+  revalidatePath("/movimientos");
 }
 
 /** Inserta el retiro del ledger por un pago de deuda (source='debt_payment',

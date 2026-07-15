@@ -9,8 +9,16 @@ import { Icon } from "@/components/ui/Icon";
 import { PRIMARY_ROUTES, SECONDARY_ROUTES } from "./routes";
 import { LogoutButton } from "./LogoutButton";
 import { ThemeButton } from "@/components/theme/ThemeButton";
+import { QuickAddFab } from "./QuickAddFab";
+import type { SavingsAccount } from "@/lib/types";
 
-export function BottomTabBar({ email }: { email: string | null }) {
+export function BottomTabBar({
+  email,
+  accounts,
+}: {
+  email: string | null;
+  accounts: SavingsAccount[];
+}) {
   const pathname = usePathname();
   const rm = useReducedMotion();
   const dragControls = useDragControls();
@@ -97,42 +105,66 @@ export function BottomTabBar({ email }: { email: string | null }) {
         )}
       </AnimatePresence>
 
-      {/* Tab bar: píldora flotante, siempre fija (no se oculta al hacer scroll) */}
-      <nav className="lg:hidden fixed bottom-[max(0.75rem,env(safe-area-inset-bottom))] left-3 right-3 z-[80] glass-nav border rounded-full overflow-hidden shadow-lg shadow-black/15">
-        <ul className="grid grid-cols-5 px-2">
-          {PRIMARY_ROUTES.map((r) => {
-            const active = pathname === r.href;
-            return (
-              <li key={r.href}>
-                <Link
-                  href={r.href}
-                  aria-current={active ? "page" : undefined}
-                  className={cn(
-                    "flex flex-col items-center justify-center gap-0.5 pt-2 pb-1.5 min-h-[52px] text-[0.68rem] font-semibold transition-colors active:scale-95",
-                    active ? "text-primary" : "text-muted",
-                  )}
-                >
-                  <Icon name={r.icon} size={23} />
-                  {r.shortLabel}
-                </Link>
-              </li>
-            );
-          })}
-          <li>
-            <button
-              onClick={() => setMoreOpen(true)}
-              aria-label="Más secciones"
-              className={cn(
-                "flex flex-col items-center justify-center gap-0.5 pt-2 pb-1.5 min-h-[52px] w-full text-[0.68rem] font-semibold transition-colors cursor-pointer active:scale-95",
-                onSecondary ? "text-primary" : "text-muted",
-              )}
-            >
-              <Icon name="menu" size={23} />
-              Más
-            </button>
-          </li>
-        </ul>
-      </nav>
+      {/* Tab bar: píldora flotante, siempre fija (no se oculta al hacer scroll).
+          El FAB vive fuera del <nav> (que recorta con overflow-hidden para el
+          borde redondeado) para poder sobresalir por encima sin que se corte. */}
+      <div className="lg:hidden fixed bottom-[max(0.75rem,env(safe-area-inset-bottom))] left-3 right-3 z-[80]">
+        <nav className="glass-nav border rounded-full overflow-hidden shadow-lg shadow-black/15">
+          <ul className="grid grid-cols-5 px-2">
+            {PRIMARY_ROUTES.slice(0, 2).map((r) => {
+              const active = pathname === r.href;
+              return (
+                <li key={r.href}>
+                  <Link
+                    href={r.href}
+                    aria-current={active ? "page" : undefined}
+                    className={cn(
+                      "flex flex-col items-center justify-center gap-0.5 pt-2 pb-1.5 min-h-[52px] text-[0.68rem] font-semibold transition-colors active:scale-95",
+                      active ? "text-primary" : "text-muted",
+                    )}
+                  >
+                    <Icon name={r.icon} size={23} />
+                    {r.shortLabel}
+                  </Link>
+                </li>
+              );
+            })}
+            <li aria-hidden="true" />
+            {PRIMARY_ROUTES.slice(2).map((r) => {
+              const active = pathname === r.href;
+              return (
+                <li key={r.href}>
+                  <Link
+                    href={r.href}
+                    aria-current={active ? "page" : undefined}
+                    className={cn(
+                      "flex flex-col items-center justify-center gap-0.5 pt-2 pb-1.5 min-h-[52px] text-[0.68rem] font-semibold transition-colors active:scale-95",
+                      active ? "text-primary" : "text-muted",
+                    )}
+                  >
+                    <Icon name={r.icon} size={23} />
+                    {r.shortLabel}
+                  </Link>
+                </li>
+              );
+            })}
+            <li>
+              <button
+                onClick={() => setMoreOpen(true)}
+                aria-label="Más secciones"
+                className={cn(
+                  "flex flex-col items-center justify-center gap-0.5 pt-2 pb-1.5 min-h-[52px] w-full text-[0.68rem] font-semibold transition-colors cursor-pointer active:scale-95",
+                  onSecondary ? "text-primary" : "text-muted",
+                )}
+              >
+                <Icon name="menu" size={23} />
+                Más
+              </button>
+            </li>
+          </ul>
+        </nav>
+        <QuickAddFab accounts={accounts} />
+      </div>
     </>
   );
 }

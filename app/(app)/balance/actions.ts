@@ -26,6 +26,7 @@ function revalidateAll() {
   revalidatePath("/presupuesto");
   revalidatePath("/dashboard");
   revalidatePath("/metas");
+  revalidatePath("/movimientos");
 }
 
 export async function addAccount(formData: FormData): Promise<ActionResult> {

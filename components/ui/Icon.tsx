@@ -36,7 +36,8 @@ export type IconName =
   | "palette"
   | "bank"
   | "repeat"
-  | "chart";
+  | "chart"
+  | "movements";
 
 const paths: Record<IconName, React.ReactNode> = {
   dashboard: (
@@ -216,6 +217,12 @@ const paths: Record<IconName, React.ReactNode> = {
       <rect x="6" y="12" width="3.5" height="9" rx="1" />
       <rect x="12.25" y="7" width="3.5" height="14" rx="1" />
       <rect x="18.5" y="3" width="3.5" height="18" rx="1" />
+    </>
+  ),
+  movements: (
+    <>
+      <path d="M4 8h13M13 4l4 4-4 4" />
+      <path d="M20 16H7M11 12l-4 4 4 4" />
     </>
   ),
 };

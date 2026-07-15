@@ -12,6 +12,7 @@ function revalidateAll() {
   revalidatePath("/presupuesto");
   revalidatePath("/sugerencias");
   revalidatePath("/balance");
+  revalidatePath("/movimientos");
 }
 
 export async function saveSalarySettings(
