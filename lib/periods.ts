@@ -67,6 +67,18 @@ export function nextQuincena(p: Period): Period {
   return makePeriod(nextYear, nextMonth, 1);
 }
 
+/** Cuántas quincenas quedan (incluyendo la actual) hasta una fecha límite.
+ *  Mínimo 1 — siempre queda al menos la quincena en curso para aportar. */
+export function quincenasUntil(todayISO: string, deadlineISO: string): number {
+  let p = quincenaForDate(todayISO);
+  let count = 1;
+  while (p.end < deadlineISO && count < 1000) {
+    p = nextQuincena(p);
+    count++;
+  }
+  return count;
+}
+
 /**
  * Próxima fecha de pago (>= hoy) según los días de pago configurados.
  * payDay2 = 31 se interpreta como "último día del mes".

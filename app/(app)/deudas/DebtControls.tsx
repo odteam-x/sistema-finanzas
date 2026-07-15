@@ -60,7 +60,9 @@ export function InstallmentRow({
   );
 }
 
-/** Toggle de pago para deudas de pago único. */
+/** Toggle de pago para deudas de pago único — mismo checkbox que las
+ *  cuotas, en vez de un botón primario que competía visualmente con
+ *  "Registrar deuda" como si fuera la acción principal de la pantalla. */
 export function DebtPaidToggle({
   id,
   paid,
@@ -73,15 +75,19 @@ export function DebtPaidToggle({
     <button
       onClick={() => startTransition(() => toggleDebtPaid(id, !paid).then(() => {}))}
       disabled={pending}
-      className={cn(
-        "inline-flex items-center gap-1.5 min-h-9 px-3 rounded-full font-semibold text-sm cursor-pointer disabled:opacity-60 transition-colors",
-        paid
-          ? "bg-primary-soft text-primary"
-          : "bg-primary text-white hover:bg-primary-hover",
-      )}
+      className="flex items-center gap-2.5 w-full py-1 text-left cursor-pointer disabled:opacity-60"
     >
-      <Icon name="check" size={16} />
-      {paid ? "Pagada" : "Marcar pagada"}
+      <span
+        className={cn(
+          "grid place-items-center size-6 rounded-md border-2 shrink-0 transition-colors",
+          paid ? "bg-primary border-primary text-white" : "border-black/20 text-transparent",
+        )}
+      >
+        <Icon name="check" size={14} />
+      </span>
+      <span className={cn("text-sm flex-1", paid ? "text-muted line-through" : "text-ink")}>
+        {paid ? "Pagada" : "Marcar pagada"}
+      </span>
     </button>
   );
 }

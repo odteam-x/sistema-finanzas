@@ -25,11 +25,6 @@ const statusTone: Record<DebtStatus, "warning" | "info" | "success"> = {
   parcial: "info",
   pagada: "success",
 };
-const statusBubbleTone: Record<DebtStatus, "warning" | "info" | "brand"> = {
-  pendiente: "warning",
-  parcial: "info",
-  pagada: "brand",
-};
 const statusLabel: Record<DebtStatus, string> = {
   pendiente: "Pendiente",
   parcial: "Pago parcial",
@@ -69,6 +64,28 @@ export default async function DeudasPage() {
   }
   upcoming.sort();
   const nextDue = upcoming[0] ?? null;
+
+  // Agrupadas por acreedor: el mismo nombre puede tener varias deudas
+  // (ej. dos préstamos distintos con la misma persona/entidad).
+  const groups = new Map<string, typeof debts>();
+  for (const d of debts) {
+    const arr = groups.get(d.name) ?? [];
+    arr.push(d);
+    groups.set(d.name, arr);
+  }
+  const outstandingOf = (d: (typeof debts)[number]) => {
+    if (d.payment_type === "cuotas") {
+      return (byDebt.get(d.id) ?? []).filter((i) => !i.paid).reduce((s, i) => s + Number(i.amount), 0);
+    }
+    return d.status !== "pagada" ? Number(d.total_amount) : 0;
+  };
+  const isPaid = (d: (typeof debts)[number]) => {
+    if (d.payment_type === "cuotas") {
+      const ins = byDebt.get(d.id) ?? [];
+      return ins.length > 0 && ins.every((i) => i.paid);
+    }
+    return d.status === "pagada";
+  };
 
   return (
     <>
@@ -110,64 +127,87 @@ export default async function DeudasPage() {
         />
       ) : (
         <ul className="flex flex-col gap-3">
-          {debts.map((d) => {
-            const ins = (byDebt.get(d.id) ?? []).sort((a, b) => a.seq - b.seq);
-            const paidCount = ins.filter((i) => i.paid).length;
+          {Array.from(groups.entries()).map(([name, group]) => {
+            const groupOutstanding = group.reduce((s, d) => s + outstandingOf(d), 0);
+            const groupPaid = group.every(isPaid);
             return (
-              <li key={d.id}>
+              <li key={name}>
                 <GlassCard>
                   <div className="flex items-start gap-3">
-                    <IconBubble icon="debt" tone={statusBubbleTone[d.status]} />
+                    <IconBubble icon="debt" tone={groupPaid ? "brand" : "warning"} />
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 min-w-0">
-                        <p className="font-bold text-ink truncate min-w-0">{d.name}</p>
-                        <Badge tone={statusTone[d.status]} className="shrink-0">
-                          {statusLabel[d.status]}
-                        </Badge>
+                        <p className="font-bold text-ink truncate min-w-0">{name}</p>
+                        {group.length > 1 && (
+                          <Badge tone="neutral" className="shrink-0">
+                            {group.length} deudas
+                          </Badge>
+                        )}
                       </div>
                       <p className="text-sm text-ink font-semibold mt-0.5">
-                        <Money value={Number(d.total_amount)} />
-                      </p>
-                      <p className="text-xs text-muted">
-                        Adquirida el {formatDateLong(d.acquired_date)}
-                        {d.note ? ` · ${d.note}` : ""}
+                        <Money value={groupOutstanding} /> {groupOutstanding > 0 ? "pendiente" : "al día"}
                       </p>
                     </div>
-                    <DeleteButton
-                      action={deleteDebt.bind(null, d.id)}
-                      title="¿Eliminar deuda?"
-                      message="Se eliminará la deuda y sus cuotas."
-                    />
                   </div>
 
-                  {d.payment_type === "cuotas" ? (
-                    <div className="mt-3 pt-3 border-t border-black/5">
-                      <div className="flex items-center justify-between mb-1">
-                        <p className="text-xs font-semibold text-muted">
-                          Cuotas pagadas: {paidCount}/{ins.length}
-                          {d.frequency ? ` · ${d.frequency}` : ""}
-                        </p>
-                      </div>
-                      <div className="flex flex-col divide-y divide-black/5">
-                        {ins.map((i) => (
-                          <InstallmentRow
-                            key={i.id}
-                            installment={i}
-                            overdue={daysBetween(today, i.due_date) < 0}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="mt-3 pt-3 border-t border-black/5 flex items-center justify-between gap-3">
-                      <p className="text-xs text-muted">
-                        {d.due_date
-                          ? `Vence el ${formatDateLong(d.due_date)}`
-                          : "Sin fecha de pago"}
-                      </p>
-                      <DebtPaidToggle id={d.id} paid={d.status === "pagada"} />
-                    </div>
-                  )}
+                  <div className="mt-3 flex flex-col divide-y divide-black/5">
+                    {group.map((d) => {
+                      const ins = (byDebt.get(d.id) ?? []).sort((a, b) => a.seq - b.seq);
+                      const paidCount = ins.filter((i) => i.paid).length;
+                      return (
+                        <div key={d.id} className="pt-3 first:pt-0 pb-1">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-2 min-w-0">
+                                <Badge tone={statusTone[d.status]} className="shrink-0">
+                                  {statusLabel[d.status]}
+                                </Badge>
+                                <p className="text-sm font-semibold text-ink truncate">
+                                  <Money value={Number(d.total_amount)} />
+                                </p>
+                              </div>
+                              <p className="text-xs text-muted mt-0.5">
+                                Adquirida el {formatDateLong(d.acquired_date)}
+                                {d.note ? ` · ${d.note}` : ""}
+                              </p>
+                            </div>
+                            <DeleteButton
+                              action={deleteDebt.bind(null, d.id)}
+                              title="¿Eliminar deuda?"
+                              message="Se eliminará la deuda y sus cuotas."
+                            />
+                          </div>
+
+                          {d.payment_type === "cuotas" ? (
+                            <div className="mt-2">
+                              <p className="text-xs font-semibold text-muted mb-1">
+                                Cuotas pagadas: {paidCount}/{ins.length}
+                                {d.frequency ? ` · ${d.frequency}` : ""}
+                              </p>
+                              <div className="flex flex-col divide-y divide-black/5">
+                                {ins.map((i) => (
+                                  <InstallmentRow
+                                    key={i.id}
+                                    installment={i}
+                                    overdue={daysBetween(today, i.due_date) < 0}
+                                  />
+                                ))}
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="mt-2">
+                              <p className="text-xs text-muted mb-1">
+                                {d.due_date
+                                  ? `Vence el ${formatDateLong(d.due_date)}`
+                                  : "Sin fecha de pago"}
+                              </p>
+                              <DebtPaidToggle id={d.id} paid={d.status === "pagada"} />
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
                 </GlassCard>
               </li>
             );

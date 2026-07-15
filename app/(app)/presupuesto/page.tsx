@@ -5,6 +5,7 @@ import {
   getExpenses,
   getPeriodOverrides,
   getSavingsAccounts,
+  getSubscriptions,
   getTags,
 } from "@/lib/data";
 import { formatDateShort, todayISO, toISODate, clampPct } from "@/lib/format";
@@ -138,7 +139,7 @@ export default async function PresupuestoPage({
   const monthStart = toISODate(new Date(q.year, q.month, 1, 12));
   const monthEnd = toISODate(new Date(q.year, q.month + 1, 0, 12));
 
-  const [categories, exceptions, expenses, monthExpenses, accounts, tags, overrides] =
+  const [categories, exceptions, expenses, monthExpenses, accounts, tags, overrides, subscriptions] =
     await Promise.all([
       getBudgetCategories(),
       getExceptions(monthStart, monthEnd),
@@ -147,7 +148,9 @@ export default async function PresupuestoPage({
       getSavingsAccounts(),
       getTags(),
       getPeriodOverrides(),
+      getSubscriptions(),
     ]);
+  const activeSubs = subscriptions.filter((s) => s.active);
 
   const exMap = exceptionsMap(exceptions);
   const override = overrides.find((o) => o.period_key === q.key);
@@ -159,7 +162,6 @@ export default async function PresupuestoPage({
   const estQuincena = perDay * workedQuincena;
   const estMonth = perDay * workedMonth;
   const realQuincena = expenses.reduce((s, e) => s + Number(e.amount), 0);
-  const restante = estQuincena - realQuincena;
   // El filtro por etiqueta solo afecta la lista visible, no los totales
   // de la quincena (que siempre reflejan todo lo gastado).
   const visibleExpenses = tagFilter ? expenses.filter((e) => e.tag_id === tagFilter) : expenses;
@@ -186,18 +188,16 @@ export default async function PresupuestoPage({
         action={<NewCategoryForm triggerLabel="Categoría" />}
       />
 
+      {/* El número de días ya está en el subtítulo del header — aquí solo
+          va la acción para ajustarlo, sin repetir la cifra. */}
       <div className="flex items-center gap-1.5 -mt-3 mb-4 px-1">
-        <p className="text-xs text-muted">
-          {override ? "Días trabajados (manual):" : "Días laborables calculados:"}{" "}
-          <span className="font-semibold text-ink">{workedQuincena}</span>
-        </p>
         <FormModal
           title="Días trabajados de esta quincena"
           action={setPeriodOverride}
           submitLabel="Guardar"
-          trigger="icon"
+          trigger="link"
           triggerIcon="edit"
-          triggerAriaLabel="Editar días trabajados"
+          triggerLabel={override ? "Ajuste manual" : "Ajustar días"}
         >
           <input type="hidden" name="period_key" value={q.key} />
           <Field
@@ -231,21 +231,15 @@ export default async function PresupuestoPage({
         <BudgetRing spent={realQuincena} budget={estQuincena} />
       </GlassCard>
 
-      {/* Resumen del periodo */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3 mb-3">
+      {/* Resumen del periodo — el "Restante/Excedido" vive solo en el
+          anillo de arriba, para no repetir la misma cifra dos veces. */}
+      <div className="grid grid-cols-2 gap-2 sm:gap-3 mb-3">
         <StatTile label="Estimado quincena" value={<Money value={estQuincena} decimals={false} />} icon="calc" />
         <StatTile
           label="Gasto real"
           value={<Money value={realQuincena} decimals={false} />}
           tone="neutral"
           icon="wallet"
-        />
-        <StatTile
-          className="col-span-2 sm:col-span-1"
-          label={restante >= 0 ? "Restante" : "Excedido"}
-          value={<Money value={Math.abs(restante)} decimals={false} />}
-          tone={restante >= 0 ? "primary" : "danger"}
-          icon={restante >= 0 ? "trendUp" : "trendDown"}
         />
       </div>
 
@@ -286,7 +280,7 @@ export default async function PresupuestoPage({
                   <div className="flex items-center gap-3">
                     <IconBubble icon="budget" tone="neutral" />
                     <div className="min-w-0 flex-1">
-                      <p className="font-semibold text-ink truncate">{c.name}</p>
+                      <p className="font-semibold text-ink line-clamp-2">{c.name}</p>
                       <p className="text-xs text-muted">
                         <Money value={Number(c.amount_per_workday)} /> / día
                       </p>
@@ -357,6 +351,38 @@ export default async function PresupuestoPage({
             );
           })}
         </ul>
+      )}
+
+      {/* Cargos fijos: suscripciones activas, visibles aquí pero gestionadas
+          en Suscripciones (no duplica el CRUD, solo da contexto). */}
+      {activeSubs.length > 0 && (
+        <>
+          <div className="flex items-center justify-between px-1 mb-2">
+            <h2 className="text-sm font-bold text-ink">Cargos fijos</h2>
+            <Link href="/suscripciones" className="text-sm font-semibold text-primary">
+              Gestionar
+            </Link>
+          </div>
+          <ul className="flex flex-col gap-2 mb-6">
+            {activeSubs.map((sub) => (
+              <li key={sub.id}>
+                <GlassCard className="flex items-center gap-3 py-2.5">
+                  <IconBubble icon="repeat" tone="neutral" size="sm" />
+                  <div className="min-w-0 flex-1">
+                    <p className="font-semibold text-ink line-clamp-2">{sub.name}</p>
+                    <p className="text-xs text-muted">
+                      <Money value={sub.frequency === "anual" ? Number(sub.amount) / 12 : Number(sub.amount)} />{" "}
+                      / mes
+                    </p>
+                  </div>
+                  <Badge tone={sub.frequency === "anual" ? "info" : "neutral"}>
+                    {sub.frequency === "anual" ? "Anual" : "Mensual"}
+                  </Badge>
+                </GlassCard>
+              </li>
+            ))}
+          </ul>
+        </>
       )}
 
       {/* Gastos reales */}

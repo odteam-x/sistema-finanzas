@@ -1,5 +1,6 @@
 import { getGoals, getSavingsAccounts, getSavingsMovements } from "@/lib/data";
 import { formatDateShort, clampPct, todayISO, daysBetween } from "@/lib/format";
+import { quincenasUntil } from "@/lib/periods";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -104,6 +105,10 @@ export default async function MetasPage() {
             const pct = clampPct(currentAmount, Number(g.target_amount));
             const done = currentAmount >= Number(g.target_amount);
             const daysLeft = g.deadline ? daysBetween(today, g.deadline) : null;
+            const perQuincena =
+              !done && g.deadline && daysLeft !== null && daysLeft >= 0
+                ? (Number(g.target_amount) - currentAmount) / quincenasUntil(today, g.deadline)
+                : null;
             return (
               <GlassCard key={g.id} className="flex flex-col gap-3 min-w-0">
                 <div className="flex items-start gap-3">
@@ -139,9 +144,16 @@ export default async function MetasPage() {
                     </span>
                   </div>
                   <ProgressBar value={pct} tone={done ? "primary" : "primary"} />
-                  <p className="text-xs text-muted mt-1 text-right">
-                    {Math.round(pct)}%
-                  </p>
+                  <div className="flex items-center justify-between mt-1">
+                    {perQuincena != null ? (
+                      <p className="text-xs text-muted">
+                        <Money value={perQuincena} decimals={false} />/quincena para llegar
+                      </p>
+                    ) : (
+                      <span />
+                    )}
+                    <p className="text-xs text-muted">{Math.round(pct)}%</p>
+                  </div>
                 </div>
 
                 <div className="flex items-center gap-1 mt-auto">
