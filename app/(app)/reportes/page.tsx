@@ -24,6 +24,7 @@ function monthKey(year: number, month: number): string {
 }
 
 const MONTH_OPTIONS = [3, 6, 12];
+const MAX_MONTHS = 12;
 
 export default async function ReportesPage({
   searchParams,
@@ -31,23 +32,42 @@ export default async function ReportesPage({
   searchParams: Promise<{ months?: string; tag?: string }>;
 }) {
   const sp = await searchParams;
-  const monthsCount = MONTH_OPTIONS.includes(Number(sp.months)) ? Number(sp.months) : 6;
   const tagFilter = sp.tag || "";
 
   const today = todayISO();
   const [ty, tm] = today.split("-").map(Number);
 
-  const months = Array.from({ length: monthsCount }, (_, i) => {
-    const d = new Date(ty, tm - 1 - (monthsCount - 1 - i), 1);
+  // Se trae siempre la ventana más ancha (12 meses) una sola vez: sirve
+  // tanto para el rango elegido como para saber cuánta historia real hay
+  // y así deshabilitar los rangos que no tienen suficientes datos.
+  const allMonths = Array.from({ length: MAX_MONTHS }, (_, i) => {
+    const d = new Date(ty, tm - 1 - (MAX_MONTHS - 1 - i), 1);
     return { year: d.getFullYear(), month: d.getMonth() };
   });
+  const widestFromISO = toISODate(new Date(allMonths[0].year, allMonths[0].month, 1, 12));
 
-  const fromISO = toISODate(new Date(months[0].year, months[0].month, 1, 12));
-
-  const [allExpenses, tags] = await Promise.all([
-    getExpenses(fromISO, today),
+  const [widestExpenses, tags] = await Promise.all([
+    getExpenses(widestFromISO, today),
     getTags(),
   ]);
+
+  const earliestDate = widestExpenses.reduce<string | null>(
+    (min, e) => (min === null || e.date < min ? e.date : min),
+    null,
+  );
+  const monthsOfHistory = earliestDate
+    ? (ty - Number(earliestDate.slice(0, 4))) * 12 + (tm - Number(earliestDate.slice(5, 7))) + 1
+    : 0;
+  const availableOptions = MONTH_OPTIONS.filter((m) => monthsOfHistory === 0 || m <= monthsOfHistory);
+
+  const requestedMonths = Number(sp.months);
+  const monthsCount = MONTH_OPTIONS.includes(requestedMonths)
+    ? requestedMonths
+    : (availableOptions[availableOptions.length - 1] ?? MONTH_OPTIONS[0]);
+
+  const months = allMonths.slice(MAX_MONTHS - monthsCount);
+  const fromISO = toISODate(new Date(months[0].year, months[0].month, 1, 12));
+  const allExpenses = widestExpenses.filter((e) => e.date >= fromISO);
 
   const expenses = tagFilter ? allExpenses.filter((e) => e.tag_id === tagFilter) : allExpenses;
   const activeTagName = tagFilter ? tags.find((t) => t.id === tagFilter)?.name : null;
@@ -106,18 +126,31 @@ export default async function ReportesPage({
 
       <div className="flex items-center gap-2 mb-4">
         <div className="glass inline-flex gap-1 rounded-2xl p-1">
-          {MONTH_OPTIONS.map((m) => (
-            <Link
-              key={m}
-              href={hrefFor({ months: m, tag: tagFilter })}
-              className={cn(
-                "rounded-xl px-3 py-1.5 text-sm font-semibold transition-colors",
-                m === monthsCount ? "bg-primary text-white" : "text-muted",
-              )}
-            >
-              {m}M
-            </Link>
-          ))}
+          {MONTH_OPTIONS.map((m) => {
+            const active = m === monthsCount;
+            const disabled = !active && !availableOptions.includes(m);
+            return disabled ? (
+              <span
+                key={m}
+                aria-disabled="true"
+                title={`Aún no tienes ${m} meses de historial`}
+                className="rounded-xl px-3 py-1.5 text-sm font-semibold text-muted/40 cursor-not-allowed"
+              >
+                {m}M
+              </span>
+            ) : (
+              <Link
+                key={m}
+                href={hrefFor({ months: m, tag: tagFilter })}
+                className={cn(
+                  "rounded-xl px-3 py-1.5 text-sm font-semibold transition-colors",
+                  active ? "bg-primary text-white" : "text-muted",
+                )}
+              >
+                {m}M
+              </Link>
+            );
+          })}
         </div>
 
         {tags.length > 0 && (

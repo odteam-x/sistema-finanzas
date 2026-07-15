@@ -79,6 +79,14 @@ export function quincenasUntil(todayISO: string, deadlineISO: string): number {
   return count;
 }
 
+/** Inversa de quincenasUntil: la quincena que queda tras avanzar n
+ *  quincenas completas desde hoy (n=1 → la quincena en curso). */
+export function periodAfterN(todayISO: string, n: number): Period {
+  let p = quincenaForDate(todayISO);
+  for (let i = 1; i < n; i++) p = nextQuincena(p);
+  return p;
+}
+
 /**
  * Próxima fecha de pago (>= hoy) según los días de pago configurados.
  * payDay2 = 31 se interpreta como "último día del mes".
