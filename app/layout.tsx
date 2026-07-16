@@ -17,15 +17,15 @@ const outfit = Outfit({
 });
 
 export const metadata: Metadata = {
-  title: "Bolsillo Seguro",
+  title: "Cachin'",
   description:
     "Control de finanzas personales: sueldo, presupuesto diario, ahorros, metas y deudas.",
-  applicationName: "Bolsillo Seguro",
+  applicationName: "Cachin'",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Bolsillo Seguro",
+    title: "Cachin'",
   },
   icons: {
     icon: "/icons/icon-192.png",
@@ -34,7 +34,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#f1f7f7",
+  themeColor: "#127478",
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",

@@ -15,7 +15,7 @@ import { Money } from "@/components/ui/Money";
 import { addSubscription, deleteSubscription, updateSubscription } from "./actions";
 import type { SavingsAccount, Tag } from "@/lib/types";
 
-export const metadata = { title: "Suscripciones · Bolsillo Seguro" };
+export const metadata = { title: "Suscripciones · Cachin'" };
 
 function NewSubscriptionForm({
   tags,

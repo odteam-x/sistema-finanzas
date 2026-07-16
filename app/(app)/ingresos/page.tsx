@@ -29,7 +29,7 @@ import { Money } from "@/components/ui/Money";
 import { addSalary, deleteSalary, saveSalarySettings } from "./actions";
 import type { SavingsAccount, SalarySettings, Tag } from "@/lib/types";
 
-export const metadata = { title: "Ingresos · Bolsillo Seguro" };
+export const metadata = { title: "Ingresos · Cachin'" };
 
 const FREQ_LABEL: Record<string, string> = {
   semanal: "Semanal",

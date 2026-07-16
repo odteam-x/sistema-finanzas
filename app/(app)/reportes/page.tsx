@@ -17,7 +17,7 @@ import { BarCompare, type Bar } from "@/components/charts/BarCompare";
 import { DonutChart } from "@/components/charts/DonutChart";
 import { Money } from "@/components/ui/Money";
 
-export const metadata = { title: "Reportes · Bolsillo Seguro" };
+export const metadata = { title: "Reportes · Cachin'" };
 
 function monthKey(year: number, month: number): string {
   return `${year}-${String(month + 1).padStart(2, "0")}`;

@@ -19,7 +19,7 @@ import { IconBubble } from "@/components/ui/IconBubble";
 import { Money } from "@/components/ui/Money";
 import { addCategory, deleteCategory, updateCategory } from "../actions";
 
-export const metadata = { title: "Presupuesto · Bolsillo Seguro" };
+export const metadata = { title: "Presupuesto · Cachin'" };
 
 function NewCategoryForm({ triggerLabel }: { triggerLabel: string }) {
   return (

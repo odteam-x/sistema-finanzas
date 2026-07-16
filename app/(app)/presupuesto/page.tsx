@@ -36,7 +36,7 @@ import {
 } from "./actions";
 import type { SavingsAccount, Tag } from "@/lib/types";
 
-export const metadata = { title: "Gastos · Bolsillo Seguro" };
+export const metadata = { title: "Gastos · Cachin'" };
 
 function NewExpenseForm({
   tags,

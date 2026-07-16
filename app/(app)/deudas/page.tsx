@@ -20,7 +20,7 @@ import { InstallmentRow, DebtPaidToggle } from "./DebtControls";
 import { deleteDebt, updateDebt } from "./actions";
 import type { Debt, DebtStatus } from "@/lib/types";
 
-export const metadata = { title: "Deudas · Bolsillo Seguro" };
+export const metadata = { title: "Deudas · Cachin'" };
 
 const statusTone: Record<DebtStatus, "warning" | "info" | "success"> = {
   pendiente: "warning",

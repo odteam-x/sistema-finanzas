@@ -8,8 +8,11 @@
    sin tocar componentes.
 --------------------------------------------------------------------------- */
 @theme {
-  --color-cream: #f1f7f7;
-  --color-cream-deep: #e7f1f1;
+  /* Fondo base — antes "cream" (aun con un valor casi blanco en claro):
+     el mismo nombre de token en ambos modos leía como si el oscuro fuera
+     "el crema oscurecido". Son valores elegidos por separado; el nombre
+     ya no sugiere esa relación. */
+  --color-bg: #eef6f6;
 
   /* brand: verificado con checker de contraste real (WCAG) — vs. blanco da
      5.53:1 (AA normal). El dark-mode de abajo usa un teal apenas más claro
@@ -58,9 +61,11 @@
      móvil y sin el ruido visual de ver el fondo a través de la tarjeta. */
   --glass-bg: #ffffff;
   --glass-bg-strong: #ffffff;
-  /* Estas tres SÍ flotan sobre otro contenido: mantienen translucidez. */
-  --glass-bg-modal: rgba(252, 250, 246, 0.98);
-  --glass-bg-sheet: rgba(252, 250, 246, 0.97);
+  /* Estas tres SÍ flotan sobre otro contenido: mantienen translucidez.
+     (Antes con un tinte cálido tipo crema — 252,250,246 — se pasan a un
+     blanco frío, a tono con el resto de la paleta.) */
+  --glass-bg-modal: rgba(248, 252, 252, 0.98);
+  --glass-bg-sheet: rgba(248, 252, 252, 0.97);
   --glass-bg-nav: rgba(255, 255, 255, 0.78);
   --glass-border: rgba(20, 30, 24, 0.06);
 
@@ -86,8 +91,7 @@
 --------------------------------------------------------------------------- */
 [data-mode="dark"] {
   color-scheme: dark;
-  --color-cream: #0b1516;
-  --color-cream-deep: #101c1d;
+  --color-bg: #0a1213;
   --color-ink: #e8f2f2;
   --color-muted: #93aeae;
   --color-subtle: #6b8788;
@@ -126,7 +130,7 @@
 
 html {
   min-height: 100%;
-  background-color: var(--color-cream);
+  background-color: var(--color-bg);
 }
 
 /* Fondo con blobs suaves (capa fija, sin background-attachment para evitar
@@ -216,11 +220,14 @@ body {
 }
 
 /* ---------------------------------------------------------------------------
-   Colores de marca sólidos (antes degradados; sigue el tema activo). Se
-   mantienen los nombres de clase para no tocar cada sitio que las usa.
+   Marca: degradado (antes solo color sólido). Los semánticos (abajo) se
+   quedan sólidos — el gradiente es solo para el teal principal, que es el
+   único elemento saturado por pantalla.
 --------------------------------------------------------------------------- */
 .bg-gradient-brand {
-  background-color: var(--color-primary);
+  /* primary → primary-active (no accent): en ambos extremos el texto
+     blanco pasa AA normal (verificado, no solo AA "grande"). */
+  background-image: linear-gradient(135deg, var(--color-primary), var(--color-primary-active));
 }
 .bg-gradient-danger {
   background-color: var(--color-danger);

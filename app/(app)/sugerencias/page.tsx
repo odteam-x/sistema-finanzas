@@ -7,7 +7,7 @@ import { AccordionItem } from "@/components/ui/Accordion";
 import type { IconName } from "@/components/ui/Icon";
 import type { Alert } from "@/lib/summary";
 
-export const metadata = { title: "Consejos · Bolsillo Seguro" };
+export const metadata = { title: "Consejos · Cachin'" };
 
 const alertStyle: Record<
   Alert["tone"],

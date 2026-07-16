@@ -17,7 +17,7 @@ export function SetupNotice() {
           <span className="font-semibold text-ink">supabase.com</span> y agrega tus
           claves en un archivo <code className="px-1 rounded bg-black/5">.env.local</code>:
         </p>
-        <pre className="text-xs bg-ink/90 text-cream rounded-2xl p-4 overflow-x-auto mb-4">
+        <pre className="text-xs bg-ink/90 text-bg rounded-2xl p-4 overflow-x-auto mb-4">
 {`NEXT_PUBLIC_SUPABASE_URL=https://tu-proyecto.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=tu-anon-key`}
         </pre>

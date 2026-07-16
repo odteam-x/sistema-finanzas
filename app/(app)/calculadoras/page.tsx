@@ -3,7 +3,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/Tabs";
 import { GoalCalculator } from "./GoalCalculator";
 import { LoanCalculator } from "./LoanCalculator";
 
-export const metadata = { title: "Calculadoras · Bolsillo Seguro" };
+export const metadata = { title: "Calculadoras · Cachin'" };
 
 export default function CalculadorasPage() {
   return (

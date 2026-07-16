@@ -4,7 +4,7 @@ import { SetupNotice } from "@/components/SetupNotice";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { LoginForm } from "./LoginForm";
 
-export const metadata = { title: "Entrar · Bolsillo Seguro" };
+export const metadata = { title: "Entrar · Cachin'" };
 
 export default function LoginPage() {
   if (!isSupabaseConfigured) return <SetupNotice />;
@@ -15,13 +15,13 @@ export default function LoginPage() {
         <div className="flex flex-col items-center text-center mb-4">
           <Image
             src="/icons/icon-192.png"
-            alt="Bolsillo Seguro"
+            alt="Cachin'"
             width={100}
             height={100}
             className="mb-2 drop-shadow-sm"
             priority
           />
-          <h1 className="text-2xl font-extrabold text-ink">Bolsillo Seguro</h1>
+          <h1 className="text-2xl font-extrabold text-ink">Cachin&apos;</h1>
           <p className="text-sm text-muted mt-1">
             Entra para ver tu resumen financiero
           </p>

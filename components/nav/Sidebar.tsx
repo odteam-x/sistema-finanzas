@@ -16,14 +16,14 @@ export function Sidebar({ email }: { email: string | null }) {
       <div className="flex items-center gap-2.5 px-2 pt-2">
         <Image
           src="/icons/icon-192.png"
-          alt="Bolsillo Seguro"
+          alt="Cachin'"
           width={40}
           height={40}
           className="shrink-0"
           priority
         />
         <div className="leading-tight">
-          <p className="font-extrabold text-ink">Bolsillo Seguro</p>
+          <p className="font-extrabold text-ink">Cachin&apos;</p>
           <p className="text-xs text-muted">Control personal</p>
         </div>
       </div>

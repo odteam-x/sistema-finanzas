@@ -22,7 +22,7 @@ import {
 import { addMovement, deleteMovement } from "../balance/actions";
 import type { MovementSource, SavingsAccount } from "@/lib/types";
 
-export const metadata = { title: "Movimientos · Bolsillo Seguro" };
+export const metadata = { title: "Movimientos · Cachin'" };
 
 const sourceLabel: Record<MovementSource, string> = {
   manual: "Manual",

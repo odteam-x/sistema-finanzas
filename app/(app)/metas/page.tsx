@@ -15,7 +15,7 @@ import { IconBubble } from "@/components/ui/IconBubble";
 import { addAccount, addMovement } from "../balance/actions";
 import { addGoal, addProgress, deleteGoal, updateGoal } from "./actions";
 
-export const metadata = { title: "Ahorros · Bolsillo Seguro" };
+export const metadata = { title: "Ahorros · Cachin'" };
 
 function NewSavingsAccountForm({ triggerLabel }: { triggerLabel: string }) {
   return (

@@ -17,7 +17,7 @@ import { BarCompare } from "@/components/charts/BarCompare";
 import { GoalsRing } from "@/components/charts/GoalsRing";
 import { cn } from "@/lib/cn";
 
-export const metadata = { title: "Inicio · Bolsillo Seguro" };
+export const metadata = { title: "Inicio · Cachin'" };
 
 const alertTone: Record<string, string> = {
   warning: "text-warning",

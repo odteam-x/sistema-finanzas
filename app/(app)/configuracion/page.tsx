@@ -14,7 +14,7 @@ import { DisplayNameForm } from "./DisplayNameForm";
 import { ExportCsvForm } from "./ExportCsvForm";
 import { addTag, deleteTag, updateTag } from "./actions";
 
-export const metadata = { title: "Configuración · Bolsillo Seguro" };
+export const metadata = { title: "Configuración · Cachin'" };
 
 function NewTagForm({
   triggerLabel,

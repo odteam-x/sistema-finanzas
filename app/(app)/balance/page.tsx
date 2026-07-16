@@ -21,7 +21,7 @@ import {
   updateAccount,
 } from "./actions";
 
-export const metadata = { title: "Balance · Bolsillo Seguro" };
+export const metadata = { title: "Balance · Cachin'" };
 
 const ACCOUNT_TYPES: { value: AccountType; label: string; icon: IconName }[] = [
   { value: "ahorro", label: "Ahorro / Alcancía", icon: "piggy" },
