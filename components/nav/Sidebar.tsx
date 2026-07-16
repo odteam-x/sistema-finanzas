@@ -43,7 +43,7 @@ export function Sidebar({ email }: { email: string | null }) {
                   : "text-ink/80 hover:bg-black/5",
               )}
             >
-              <Icon name={r.icon} size={20} />
+              <Icon name={r.icon} size={20} weight={active ? "fill" : "regular"} />
               {r.label}
             </Link>
           );

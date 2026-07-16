@@ -86,7 +86,7 @@ export function BottomTabBar({
                         active ? "bg-primary text-white" : "text-ink/80 hover:bg-black/5",
                       )}
                     >
-                      <Icon name={r.icon} size={22} />
+                      <Icon name={r.icon} size={22} weight={active ? "fill" : "regular"} />
                       {r.label}
                     </Link>
                   );
@@ -119,7 +119,7 @@ export function BottomTabBar({
                       active ? "text-primary" : "text-muted",
                     )}
                   >
-                    <Icon name={r.icon} size={23} />
+                    <Icon name={r.icon} size={23} weight={active ? "fill" : "regular"} />
                     {r.shortLabel}
                   </Link>
                 </li>
@@ -138,7 +138,7 @@ export function BottomTabBar({
                       active ? "text-primary" : "text-muted",
                     )}
                   >
-                    <Icon name={r.icon} size={23} />
+                    <Icon name={r.icon} size={23} weight={active ? "fill" : "regular"} />
                     {r.shortLabel}
                   </Link>
                 </li>
@@ -153,7 +153,7 @@ export function BottomTabBar({
                   onSecondary ? "text-primary" : "text-muted",
                 )}
               >
-                <Icon name="menu" size={23} />
+                <Icon name="menu" size={23} weight={onSecondary ? "fill" : "regular"} />
                 Más
               </button>
             </li>

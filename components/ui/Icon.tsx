@@ -1,6 +1,50 @@
-// Set de iconos SVG (estilo lineal, stroke 2, currentColor).
-// Sin emojis: iconografía consistente y adaptable a temas.
-import type { SVGProps } from "react";
+"use client";
+
+// Set de iconos: Phosphor (@phosphor-icons/react) — reemplaza el set propio
+// dibujado a mano de la Fase 0-4. Los componentes de Phosphor vienen
+// pre-empaquetados (nada de fetch a una API en runtime), así que siguen
+// funcionando offline como corresponde a una PWA. El mapa de nombres
+// conserva el mismo `IconName` que usaba el set anterior para no tocar
+// ninguno de los ~40 sitios que ya llaman <Icon name="..." />.
+import type { IconWeight } from "@phosphor-icons/react";
+import {
+  ArrowDownLeft,
+  ArrowUpRight,
+  ArrowsClockwise,
+  ArrowsLeftRight,
+  Bank,
+  Calculator,
+  Calendar,
+  CaretDown,
+  CaretLeft,
+  CaretRight,
+  ChartBar,
+  Check,
+  Clock,
+  Coins,
+  CreditCard,
+  Eye,
+  EyeSlash,
+  Gear,
+  House,
+  Lightbulb,
+  List,
+  Moon,
+  Palette,
+  PencilSimple,
+  PiggyBank,
+  Plus,
+  SignOut,
+  Sun,
+  Target,
+  Trash,
+  TrendDown,
+  TrendUp,
+  Wallet,
+  WarningCircle,
+  X,
+  type Icon as PhosphorIcon,
+} from "@phosphor-icons/react";
 
 export type IconName =
   | "dashboard"
@@ -39,215 +83,57 @@ export type IconName =
   | "chart"
   | "movements";
 
-const paths: Record<IconName, React.ReactNode> = {
-  dashboard: (
-    <>
-      <rect x="3" y="3" width="7" height="9" rx="1.5" />
-      <rect x="14" y="3" width="7" height="5" rx="1.5" />
-      <rect x="14" y="12" width="7" height="9" rx="1.5" />
-      <rect x="3" y="16" width="7" height="5" rx="1.5" />
-    </>
-  ),
-  wallet: (
-    <>
-      <path d="M3 7.5A2.5 2.5 0 0 1 5.5 5H18a2 2 0 0 1 2 2v1" />
-      <path d="M3 7.5V18a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2H5.5A2.5 2.5 0 0 1 3 7.5Z" />
-      <circle cx="16.5" cy="14" r="1.2" fill="currentColor" stroke="none" />
-    </>
-  ),
-  calendar: (
-    <>
-      <rect x="3" y="5" width="18" height="16" rx="2.5" />
-      <path d="M3 9.5h18M8 3v4M16 3v4" />
-    </>
-  ),
-  budget: (
-    <>
-      <path d="M6 3h12a1 1 0 0 1 1 1v16l-2.5-1.5L14 20l-2-1.5L10 20l-2.5-1.5L5 20V4a1 1 0 0 1 1-1Z" />
-      <path d="M9 8h6M9 12h6" />
-    </>
-  ),
-  goal: (
-    <>
-      <circle cx="12" cy="12" r="8.5" />
-      <circle cx="12" cy="12" r="4.5" />
-      <circle cx="12" cy="12" r="1.2" fill="currentColor" stroke="none" />
-    </>
-  ),
-  debt: (
-    <>
-      <rect x="2.5" y="5.5" width="19" height="13" rx="2.5" />
-      <path d="M2.5 10h19" />
-      <path d="M6.5 15h4" />
-    </>
-  ),
-  bulb: (
-    <>
-      <path d="M9 18h6M10 21h4" />
-      <path d="M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2h5c0-.8.4-1.5 1-2A6 6 0 0 0 12 3Z" />
-    </>
-  ),
-  plus: <path d="M12 5v14M5 12h14" />,
-  close: <path d="M6 6l12 12M18 6L6 18" />,
-  trash: (
-    <>
-      <path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
-      <path d="M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13M10 11v6M14 11v6" />
-    </>
-  ),
-  edit: (
-    <>
-      <path d="M4 20h4L19 9l-4-4L4 16v4Z" />
-      <path d="M14 6l4 4" />
-    </>
-  ),
-  check: <path d="M5 12.5l4.5 4.5L19 7" />,
-  chevronLeft: <path d="M15 5l-7 7 7 7" />,
-  chevronRight: <path d="M9 5l7 7-7 7" />,
-  chevronDown: <path d="M5 9l7 7 7-7" />,
-  alert: (
-    <>
-      <path d="M12 3.5 22 20H2L12 3.5Z" />
-      <path d="M12 10v4.5M12 17.5h.01" />
-    </>
-  ),
-  menu: <path d="M4 7h16M4 12h16M4 17h16" />,
-  logout: (
-    <>
-      <path d="M14 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8" />
-      <path d="M16 8l4 4-4 4M9 12h11" />
-    </>
-  ),
-  trendUp: (
-    <>
-      <path d="M3 17l6-6 4 4 8-8" />
-      <path d="M16 7h5v5" />
-    </>
-  ),
-  trendDown: (
-    <>
-      <path d="M3 7l6 6 4-4 8 8" />
-      <path d="M16 17h5v-5" />
-    </>
-  ),
-  calc: (
-    <>
-      <rect x="5" y="3" width="14" height="18" rx="2.5" />
-      <path d="M8 7h8M8 11h.01M12 11h.01M16 11h.01M8 15h.01M12 15h.01M16 15v3M8 18h4" />
-    </>
-  ),
-  clock: (
-    <>
-      <circle cx="12" cy="12" r="8.5" />
-      <path d="M12 7v5l3.5 2" />
-    </>
-  ),
-  settings: (
-    <>
-      <circle cx="12" cy="12" r="3" />
-      <path d="M12 2.5v2.5M12 19v2.5M4.5 4.5l1.8 1.8M17.7 17.7l1.8 1.8M2.5 12H5M19 12h2.5M4.5 19.5l1.8-1.8M17.7 6.3l1.8-1.8" />
-    </>
-  ),
-  eye: (
-    <>
-      <path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z" />
-      <circle cx="12" cy="12" r="3" />
-    </>
-  ),
-  eyeOff: (
-    <>
-      <path d="M4 4l16 16" />
-      <path d="M9.9 5.2A9.5 9.5 0 0 1 12 5c6 0 9.5 6.5 9.5 6.5a15 15 0 0 1-3 3.6M6.5 7.6A15 15 0 0 0 2.5 12s3.5 6.5 9.5 6.5a9 9 0 0 0 3.4-.66" />
-      <path d="M9.9 9.9a3 3 0 0 0 4.2 4.2" />
-    </>
-  ),
-  piggy: (
-    <>
-      <path d="M4 12a6 6 0 0 1 6-6h4.5a5.5 5.5 0 0 1 4.3 2.1l2 .5v3l-1.5.4A5.5 5.5 0 0 1 16 17H9a5 5 0 0 1-4.4-2.6" />
-      <path d="M6 16.5V19a1 1 0 0 0 1 1h1.5a1 1 0 0 0 1-1v-1M14 16.5V19a1 1 0 0 0 1 1h1.5a1 1 0 0 0 1-1v-1.5" />
-      <path d="M10 6.5 9 4M11.5 9h3" />
-      <circle cx="16" cy="11" r="0.8" fill="currentColor" stroke="none" />
-    </>
-  ),
-  arrowDownLeft: (
-    <>
-      <path d="M17 7 7 17" />
-      <path d="M16 17H7V8" />
-    </>
-  ),
-  arrowUpRight: (
-    <>
-      <path d="M7 17 17 7" />
-      <path d="M8 7h9v9" />
-    </>
-  ),
-  sun: (
-    <>
-      <circle cx="12" cy="12" r="4.5" />
-      <path d="M12 2.5v2.5M12 19v2.5M4.2 4.2l1.8 1.8M18 18l1.8 1.8M2.5 12H5M19 12h2.5M4.2 19.8 6 18M18 6l1.8-1.8" />
-    </>
-  ),
-  moon: <path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5Z" />,
-  palette: (
-    <>
-      <path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.8-.9 1.4-1.9-.2-.5-.1-1.1.4-1.4.3-.2.7-.3 1.1-.3H17a4 4 0 0 0 4-4c0-5.8-4.5-10.4-9-10.4Z" />
-      <circle cx="7.5" cy="11" r="1.2" fill="currentColor" stroke="none" />
-      <circle cx="9.5" cy="7" r="1.2" fill="currentColor" stroke="none" />
-      <circle cx="14.5" cy="7" r="1.2" fill="currentColor" stroke="none" />
-      <circle cx="16.5" cy="11" r="1.2" fill="currentColor" stroke="none" />
-    </>
-  ),
-  bank: (
-    <>
-      <path d="M3 21h18M4 21V10M20 21V10M2 10l10-6 10 6" />
-      <path d="M7 10v11M12 10v11M17 10v11" />
-    </>
-  ),
-  repeat: (
-    <>
-      <path d="M17 2.5 21 6.5l-4 4" />
-      <path d="M3 12v-2a4 4 0 0 1 4-4h14" />
-      <path d="M7 21.5 3 17.5l4-4" />
-      <path d="M21 12v2a4 4 0 0 1-4 4H3" />
-    </>
-  ),
-  chart: (
-    <>
-      <path d="M3 21h18" />
-      <rect x="6" y="12" width="3.5" height="9" rx="1" />
-      <rect x="12.25" y="7" width="3.5" height="14" rx="1" />
-      <rect x="18.5" y="3" width="3.5" height="18" rx="1" />
-    </>
-  ),
-  movements: (
-    <>
-      <path d="M4 8h13M13 4l4 4-4 4" />
-      <path d="M20 16H7M11 12l-4 4 4 4" />
-    </>
-  ),
+const icons: Record<IconName, PhosphorIcon> = {
+  dashboard: House,
+  wallet: Wallet,
+  calendar: Calendar,
+  budget: Coins,
+  goal: Target,
+  debt: CreditCard,
+  bulb: Lightbulb,
+  plus: Plus,
+  close: X,
+  trash: Trash,
+  edit: PencilSimple,
+  check: Check,
+  chevronLeft: CaretLeft,
+  chevronRight: CaretRight,
+  chevronDown: CaretDown,
+  alert: WarningCircle,
+  menu: List,
+  logout: SignOut,
+  trendUp: TrendUp,
+  trendDown: TrendDown,
+  calc: Calculator,
+  clock: Clock,
+  settings: Gear,
+  eye: Eye,
+  eyeOff: EyeSlash,
+  piggy: PiggyBank,
+  arrowDownLeft: ArrowDownLeft,
+  arrowUpRight: ArrowUpRight,
+  sun: Sun,
+  moon: Moon,
+  palette: Palette,
+  bank: Bank,
+  repeat: ArrowsClockwise,
+  chart: ChartBar,
+  movements: ArrowsLeftRight,
 };
 
-interface IconProps extends SVGProps<SVGSVGElement> {
+interface IconProps {
   name: IconName;
   size?: number;
+  className?: string;
+  /** "regular" inactivo / "fill" activo es el patrón recomendado para
+   *  estados seleccionados (tabs, filtros) — por defecto "bold" para
+   *  mantener el peso visual que tenía el set dibujado a mano. */
+  weight?: IconWeight;
+  "aria-hidden"?: boolean | "true" | "false";
+  "aria-label"?: string;
 }
 
-export function Icon({ name, size = 22, className, ...props }: IconProps) {
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      aria-hidden="true"
-      {...props}
-    >
-      {paths[name]}
-    </svg>
-  );
+export function Icon({ name, size = 22, className, weight = "bold", ...props }: IconProps) {
+  const Component = icons[name];
+  return <Component size={size} weight={weight} className={className} aria-hidden="true" {...props} />;
 }
