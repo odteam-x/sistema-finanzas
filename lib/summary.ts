@@ -239,8 +239,16 @@ export async function getFinanceSummary(): Promise<FinanceSummary> {
   const nextPay = nextPayDate(today, settings.pay_day_1, settings.pay_day_2);
 
   const saldoEstimado = ingresoQuincena - estQuincena - cuotasPeriodo;
-  // Balance real: usa el gasto REAL registrado (no el presupuesto estimado).
-  const saldoReal = ingresoQuincena - realQuincena - cuotasPeriodo;
+  // Balance real: usa el gasto REAL registrado (no el presupuesto estimado)
+  // más lo que de verdad salió de la cuenta por pagos de deuda esta
+  // quincena (por fecha de pago en el ledger, no por fecha de vencimiento).
+  // Antes restaba `cuotasPeriodo` (deuda pendiente), que se reduce justo al
+  // pagar — el efecto era que pagar una deuda "devolvía" ese dinero al
+  // disponible en vez de restarlo.
+  const debtPaidThisQuincena = savingsMovements
+    .filter((m) => m.source === "debt_payment" && m.date >= q.start && m.date <= q.end)
+    .reduce((s, m) => s + Number(m.amount), 0);
+  const saldoReal = ingresoQuincena - realQuincena - debtPaidThisQuincena;
 
   // Metas con una cuenta vinculada derivan su progreso del saldo real de
   // esa cuenta en vez del current_amount manual (ver balance/page.tsx) — se

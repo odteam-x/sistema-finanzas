@@ -3,8 +3,11 @@
 import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import { getOrCreateDefaultAccountId } from "@/lib/accounts";
+import { getOrCreateDefaultAccountId, getOrCreateAccountByType } from "@/lib/accounts";
 import { parseAmount, type ActionResult } from "@/lib/actions-shared";
+import type { AccountType } from "@/lib/types";
+
+const PAYMENT_METHODS: AccountType[] = ["efectivo", "banco", "tarjeta_debito", "tarjeta_credito"];
 
 function revalidateAll() {
   revalidatePath("/ingresos");
@@ -47,6 +50,10 @@ export async function addSalary(formData: FormData): Promise<ActionResult> {
   const kind = String(formData.get("kind") ?? "quincena");
   const note = String(formData.get("note") ?? "").trim() || null;
   const chosenAccount = String(formData.get("account_id") ?? "") || null;
+  const rawMethod = String(formData.get("payment_method") ?? "");
+  const paymentMethod = PAYMENT_METHODS.includes(rawMethod as AccountType)
+    ? (rawMethod as AccountType)
+    : null;
   const tag_id = String(formData.get("tag_id") ?? "") || null;
 
   if (!Number.isFinite(amount) || amount <= 0) {
@@ -55,9 +62,13 @@ export async function addSalary(formData: FormData): Promise<ActionResult> {
   if (!pay_date) return { ok: false, error: "Selecciona la fecha del pago." };
 
   const supabase = await createClient();
-  // El ledger es autoritativo: todo ingreso entra a una cuenta (la elegida
-  // o la de por defecto), de modo que el saldo en Balance sea siempre real.
-  const account_id = chosenAccount ?? (await getOrCreateDefaultAccountId(supabase, user.id));
+  // El ledger es autoritativo: todo ingreso entra a una cuenta — la elegida
+  // explícitamente, o la que corresponde al método de cobro (efectivo,
+  // banco, tarjeta…), o la de por defecto si no se especificó nada.
+  const account_id =
+    chosenAccount ??
+    (paymentMethod ? await getOrCreateAccountByType(supabase, user.id, paymentMethod) : null) ??
+    (await getOrCreateDefaultAccountId(supabase, user.id));
 
   const { data: salary, error } = await supabase
     .from("salaries")

@@ -77,10 +77,22 @@ function NewSalaryForm({
           </Select>
         </Field>
       )}
+      <Field label="¿Cómo cobras?" htmlFor="payment_method" hint="El dinero entra a esa cuenta automáticamente.">
+        <Select id="payment_method" name="payment_method" defaultValue="efectivo">
+          <option value="efectivo">Efectivo</option>
+          <option value="banco">Depósito / transferencia (banco)</option>
+          <option value="tarjeta_debito">Tarjeta débito</option>
+          <option value="tarjeta_credito">Tarjeta crédito</option>
+        </Select>
+      </Field>
       {accounts.length > 0 && (
-        <Field label="Cuenta" htmlFor="account_id" hint="Opcional: suma el monto al saldo de esa cuenta.">
+        <Field
+          label="O elige una cuenta existente"
+          htmlFor="account_id"
+          hint="Opcional. Si la eliges, tiene prioridad sobre ¿Cómo cobras?."
+        >
           <Select id="account_id" name="account_id" defaultValue="">
-            <option value="">Sin asociar</option>
+            <option value="">Usar “¿Cómo cobras?”</option>
             {accounts.map((a) => (
               <option key={a.id} value={a.id}>
                 {a.name}

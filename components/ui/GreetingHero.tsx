@@ -38,7 +38,7 @@ export function GreetingHero({ subtitle, action, displayName }: GreetingHeroProp
   const name = displayName || localName;
 
   return (
-    <header className="flex items-center justify-between gap-3 mb-4">
+    <header className="glass-nav sticky top-0 z-30 -mx-4 sm:-mx-6 px-4 sm:px-6 py-3.5 mb-4 flex items-center justify-between gap-3 border-b">
       <div className="min-w-0">
         <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-ink truncate">
           {greeting}

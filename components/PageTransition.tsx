@@ -3,7 +3,12 @@
 import { motion, useReducedMotion } from "framer-motion";
 import { usePathname } from "next/navigation";
 
-/** Transición suave de entrada al cambiar de sección. */
+/** Transición suave de entrada al cambiar de sección.
+ *  Solo anima opacity (nunca transform): cualquier `transform` en un
+ *  ancestro — incluso translateY(0px) en reposo — crea un containing block
+ *  nuevo y rompe `position: sticky`/`fixed` en los descendientes (ver
+ *  Modal.tsx, que por el mismo motivo porta a document.body). El header de
+ *  cada pantalla necesita quedar sticky, así que aquí no se puede animar y. */
 export function PageTransition({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const rm = useReducedMotion();
@@ -11,9 +16,9 @@ export function PageTransition({ children }: { children: React.ReactNode }) {
   return (
     <motion.div
       key={pathname}
-      initial={rm ? false : { opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+      initial={rm ? false : { opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.22 }}
     >
       {children}
     </motion.div>

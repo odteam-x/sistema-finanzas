@@ -3,6 +3,15 @@
 // elige una, van a la cuenta por defecto. Así registrar un gasto nunca
 // obliga a elegir cuenta, pero el saldo sigue siendo real.
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { AccountType } from "./types";
+
+const TYPE_LABEL: Record<AccountType, string> = {
+  efectivo: "Efectivo",
+  banco: "Banco",
+  tarjeta_debito: "Tarjeta débito",
+  tarjeta_credito: "Tarjeta crédito",
+  ahorro: "Ahorro",
+};
 
 /**
  * Devuelve el id de la cuenta por defecto del usuario, creándola ("Efectivo")
@@ -36,6 +45,35 @@ export async function getOrCreateDefaultAccountId(
   const { data: created } = await supabase
     .from("savings_accounts")
     .insert({ user_id: userId, name: "Efectivo", type: "efectivo", is_default: true })
+    .select("id")
+    .single();
+  return created?.id ?? null;
+}
+
+/**
+ * Resuelve el id de cuenta a partir de un método de cobro (efectivo, banco,
+ * tarjeta…): reutiliza la primera cuenta existente de ese tipo si hay una, o
+ * crea una nueva con nombre genérico ("Banco", "Tarjeta débito"…). Así
+ * registrar un sueldo puede decir "cómo cobras" sin obligar a crear la
+ * cuenta a mano en Balance primero.
+ */
+export async function getOrCreateAccountByType(
+  supabase: SupabaseClient,
+  userId: string,
+  type: AccountType,
+): Promise<string | null> {
+  const { data: existing } = await supabase
+    .from("savings_accounts")
+    .select("id")
+    .eq("type", type)
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  if (existing?.id) return existing.id;
+
+  const { data: created } = await supabase
+    .from("savings_accounts")
+    .insert({ user_id: userId, name: TYPE_LABEL[type], type })
     .select("id")
     .single();
   return created?.id ?? null;

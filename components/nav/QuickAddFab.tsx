@@ -9,10 +9,11 @@ import { FormModal } from "@/components/ui/FormModal";
 import { addExpense } from "@/app/(app)/presupuesto/actions";
 import { addSalary } from "@/app/(app)/ingresos/actions";
 import { addMovement } from "@/app/(app)/balance/actions";
+import { addDebt } from "@/app/(app)/deudas/actions";
 import { todayISO } from "@/lib/format";
 import type { SavingsAccount } from "@/lib/types";
 
-type QuickForm = "gasto" | "ingreso" | "movimiento" | null;
+type QuickForm = "gasto" | "ingreso" | "movimiento" | "deuda" | null;
 
 function QuickRow({
   icon,
@@ -22,7 +23,7 @@ function QuickRow({
   onClick,
 }: {
   icon: IconName;
-  tone: "brand" | "danger" | "neutral";
+  tone: "brand" | "danger" | "warning" | "info" | "neutral";
   title: string;
   sub: string;
   onClick: () => void;
@@ -126,6 +127,13 @@ export function QuickAddFab({ accounts }: { accounts: SavingsAccount[] }) {
                     onClick={() => pick("movimiento")}
                   />
                 )}
+                <QuickRow
+                  icon="debt"
+                  tone="warning"
+                  title="Deuda"
+                  sub="Registra un préstamo o cuenta por pagar"
+                  onClick={() => pick("deuda")}
+                />
               </div>
             </motion.div>
           </div>
@@ -165,6 +173,14 @@ export function QuickAddFab({ accounts }: { accounts: SavingsAccount[] }) {
         <Field label="Fecha del pago" htmlFor="qa-inc-date" required>
           <Input id="qa-inc-date" name="pay_date" type="date" defaultValue={today} required />
         </Field>
+        <Field label="¿Cómo cobras?" htmlFor="qa-inc-method">
+          <Select id="qa-inc-method" name="payment_method" defaultValue="efectivo">
+            <option value="efectivo">Efectivo</option>
+            <option value="banco">Depósito / transferencia (banco)</option>
+            <option value="tarjeta_debito">Tarjeta débito</option>
+            <option value="tarjeta_credito">Tarjeta crédito</option>
+          </Select>
+        </Field>
         <Field label="Nota" htmlFor="qa-inc-note">
           <Input id="qa-inc-note" name="note" placeholder="Opcional" />
         </Field>
@@ -201,6 +217,30 @@ export function QuickAddFab({ accounts }: { accounts: SavingsAccount[] }) {
         </Field>
         <Field label="Nota" htmlFor="qa-mv-note">
           <Input id="qa-mv-note" name="note" placeholder="Opcional" />
+        </Field>
+      </FormModal>
+
+      <FormModal
+        title="Nueva deuda"
+        action={addDebt}
+        submitLabel="Crear deuda"
+        hideTrigger
+        open={activeForm === "deuda"}
+        onOpenChange={(v) => !v && setActiveForm(null)}
+      >
+        <input type="hidden" name="payment_type" value="unico" />
+        <input type="hidden" name="acquired_date" value={today} />
+        <Field label="Acreedor / nombre" htmlFor="qa-debt-name" required>
+          <Input id="qa-debt-name" name="name" placeholder="Ej.: Préstamo banco" required />
+        </Field>
+        <Field label="Monto total" htmlFor="qa-debt-amount" required>
+          <MoneyInput id="qa-debt-amount" name="total_amount" required />
+        </Field>
+        <Field label="Fecha de pago" htmlFor="qa-debt-due" hint="Opcional.">
+          <Input id="qa-debt-due" name="due_date" type="date" />
+        </Field>
+        <Field label="Nota" htmlFor="qa-debt-note">
+          <Input id="qa-debt-note" name="note" placeholder="Opcional" />
         </Field>
       </FormModal>
     </>

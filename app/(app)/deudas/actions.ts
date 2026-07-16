@@ -147,6 +147,52 @@ export async function addDebt(formData: FormData): Promise<ActionResult> {
   return { ok: true };
 }
 
+/** Edita una deuda existente: monto total (súmale o réstale) y, si es de
+ *  pago único, su fecha de vencimiento (aplázala). */
+export async function updateDebt(formData: FormData): Promise<ActionResult> {
+  await requireUser();
+  const id = String(formData.get("id") ?? "");
+  const name = String(formData.get("name") ?? "").trim();
+  const total = parseAmount(formData.get("total_amount"));
+  const due_date = String(formData.get("due_date") ?? "") || null;
+  const note = String(formData.get("note") ?? "").trim() || null;
+  if (!id) return { ok: false };
+  if (!name) return { ok: false, error: "Escribe el acreedor o nombre de la deuda." };
+  if (!Number.isFinite(total) || total <= 0) {
+    return { ok: false, error: "Ingresa un monto total válido." };
+  }
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("debts")
+    .update({ name, total_amount: total, due_date, note })
+    .eq("id", id);
+  if (error) return { ok: false, error: "No se pudo actualizar la deuda." };
+  revalidateAll();
+  return { ok: true };
+}
+
+/** Edita una cuota: monto y fecha (para aplazarla) — solo si no está pagada. */
+export async function updateInstallment(formData: FormData): Promise<ActionResult> {
+  await requireUser();
+  const id = String(formData.get("id") ?? "");
+  const amount = parseAmount(formData.get("amount"));
+  const due_date = String(formData.get("due_date") ?? "");
+  if (!id) return { ok: false };
+  if (!Number.isFinite(amount) || amount <= 0) {
+    return { ok: false, error: "Ingresa un monto válido." };
+  }
+  if (!due_date) return { ok: false, error: "Selecciona la fecha." };
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("debt_installments")
+    .update({ amount, due_date })
+    .eq("id", id)
+    .eq("paid", false);
+  if (error) return { ok: false, error: "No se pudo actualizar la cuota." };
+  revalidateAll();
+  return { ok: true };
+}
+
 export async function toggleInstallment(
   installmentId: string,
   debtId: string,

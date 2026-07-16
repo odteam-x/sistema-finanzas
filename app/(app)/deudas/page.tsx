@@ -13,10 +13,12 @@ import { Badge } from "@/components/ui/Badge";
 import { DeleteButton } from "@/components/ui/DeleteButton";
 import { IconBubble } from "@/components/ui/IconBubble";
 import { Money } from "@/components/ui/Money";
+import { Field, Input, MoneyInput } from "@/components/ui/Field";
+import { FormModal } from "@/components/ui/FormModal";
 import { AddDebtForm } from "./AddDebtForm";
 import { InstallmentRow, DebtPaidToggle } from "./DebtControls";
-import { deleteDebt } from "./actions";
-import type { DebtStatus } from "@/lib/types";
+import { deleteDebt, updateDebt } from "./actions";
+import type { Debt, DebtStatus } from "@/lib/types";
 
 export const metadata = { title: "Deudas · Bolsillo Seguro" };
 
@@ -30,6 +32,44 @@ const statusLabel: Record<DebtStatus, string> = {
   parcial: "Pago parcial",
   pagada: "Pagada",
 };
+
+function EditDebtForm({ debt }: { debt: Debt }) {
+  return (
+    <FormModal
+      title="Editar deuda"
+      action={updateDebt}
+      submitLabel="Guardar"
+      trigger="icon"
+      triggerIcon="edit"
+      triggerAriaLabel={`Editar ${debt.name}`}
+    >
+      <input type="hidden" name="id" value={debt.id} />
+      <Field label="Acreedor / nombre" htmlFor={`edn-${debt.id}`} required>
+        <Input id={`edn-${debt.id}`} name="name" defaultValue={debt.name} required />
+      </Field>
+      {debt.payment_type === "unico" ? (
+        <>
+          <Field
+            label="Monto total"
+            htmlFor={`eda-${debt.id}`}
+            required
+            hint="Súmale si te prestaron más, o ajústalo si pagaste distinto."
+          >
+            <MoneyInput id={`eda-${debt.id}`} name="total_amount" defaultValue={String(debt.total_amount)} required />
+          </Field>
+          <Field label="Fecha de pago" htmlFor={`edd-${debt.id}`} hint="Aplázala si necesitas más tiempo.">
+            <Input id={`edd-${debt.id}`} name="due_date" type="date" defaultValue={debt.due_date ?? ""} />
+          </Field>
+        </>
+      ) : (
+        <input type="hidden" name="total_amount" value={String(debt.total_amount)} />
+      )}
+      <Field label="Nota" htmlFor={`edno-${debt.id}`}>
+        <Input id={`edno-${debt.id}`} name="note" defaultValue={debt.note ?? ""} placeholder="Opcional" />
+      </Field>
+    </FormModal>
+  );
+}
 
 export default async function DeudasPage() {
   const today = todayISO();
@@ -171,11 +211,14 @@ export default async function DeudasPage() {
                                 {d.note ? ` · ${d.note}` : ""}
                               </p>
                             </div>
-                            <DeleteButton
-                              action={deleteDebt.bind(null, d.id)}
-                              title="¿Eliminar deuda?"
-                              message="Se eliminará la deuda y sus cuotas."
-                            />
+                            <div className="flex items-center gap-1 shrink-0">
+                              <EditDebtForm debt={d} />
+                              <DeleteButton
+                                action={deleteDebt.bind(null, d.id)}
+                                title="¿Eliminar deuda?"
+                                message="Se eliminará la deuda y sus cuotas."
+                              />
+                            </div>
                           </div>
 
                           {d.payment_type === "cuotas" ? (
