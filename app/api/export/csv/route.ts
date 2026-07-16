@@ -24,23 +24,23 @@ export async function GET(request: Request) {
   const to = searchParams.get("to") || undefined;
   const kind = searchParams.get("kind") ?? "todo";
 
-  const tags = await getTags();
+  const wantsExpenses = kind === "gastos" || kind === "todo";
+  const wantsSalaries = kind === "ingresos" || kind === "todo";
+
+  const [tags, expenses, salaries] = await Promise.all([
+    getTags(),
+    wantsExpenses ? getExpenses(from, to) : Promise.resolve([]),
+    wantsSalaries ? getSalaries() : Promise.resolve([]),
+  ]);
   const tagName = (id: string | null) => (id ? (tags.find((t) => t.id === id)?.name ?? "") : "");
 
   const rows: string[][] = [["Tipo", "Fecha", "Monto", "Categoría/Concepto", "Nota"]];
 
-  if (kind === "gastos" || kind === "todo") {
-    const expenses = await getExpenses(from, to);
-    for (const e of expenses) {
-      rows.push(["Gasto", e.date, String(e.amount), tagName(e.tag_id), e.note ?? ""]);
-    }
+  for (const e of expenses) {
+    rows.push(["Gasto", e.date, String(e.amount), tagName(e.tag_id), e.note ?? ""]);
   }
-
-  if (kind === "ingresos" || kind === "todo") {
-    const salaries = await getSalaries();
-    for (const s of salaries) {
-      rows.push(["Ingreso", s.pay_date, String(s.amount), s.kind, s.note ?? ""]);
-    }
+  for (const s of salaries) {
+    rows.push(["Ingreso", s.pay_date, String(s.amount), s.kind, s.note ?? ""]);
   }
 
   const csv = "﻿" + toCsv(rows);
@@ -49,7 +49,7 @@ export async function GET(request: Request) {
   return new Response(csv, {
     headers: {
       "Content-Type": "text/csv; charset=utf-8",
-      "Content-Disposition": `attachment; filename="bolsillo-seguro-${stamp}.csv"`,
+      "Content-Disposition": `attachment; filename="cachin-${stamp}.csv"`,
     },
   });
 }
