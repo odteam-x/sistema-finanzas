@@ -152,10 +152,10 @@ export default async function DashboardPage() {
         )}
       </GlassCard>
 
-      {/* Presupuesto de la quincena */}
+      {/* Gastos de la quincena */}
       <GlassCard className="mb-4">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="font-bold text-ink">Presupuesto de la quincena</h2>
+          <h2 className="font-bold text-ink">Gastos de la quincena</h2>
           <Link href="/presupuesto" className="text-sm font-semibold text-primary">
             Ver
           </Link>

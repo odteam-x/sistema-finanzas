@@ -11,7 +11,7 @@ export interface NavRoute {
 export const NAV_ROUTES: NavRoute[] = [
   { href: "/dashboard", label: "Inicio", shortLabel: "Inicio", icon: "dashboard", primary: true },
   { href: "/movimientos", label: "Movimientos", shortLabel: "Movim.", icon: "movements", primary: true },
-  { href: "/presupuesto", label: "Presupuesto", shortLabel: "Gastos", icon: "budget", primary: true },
+  { href: "/presupuesto", label: "Gastos", shortLabel: "Gastos", icon: "budget", primary: true },
   { href: "/ingresos", label: "Ingresos", shortLabel: "Ingresos", icon: "wallet", primary: false },
   { href: "/calendario", label: "Calendario", shortLabel: "Días", icon: "calendar", primary: false },
   { href: "/balance", label: "Balance", shortLabel: "Balance", icon: "bank", primary: false },

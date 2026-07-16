@@ -8,6 +8,7 @@ import { parseAmount, type ActionResult } from "@/lib/actions-shared";
 
 function revalidateAll() {
   revalidatePath("/presupuesto");
+  revalidatePath("/presupuesto/categorias");
   revalidatePath("/dashboard");
   revalidatePath("/balance");
   revalidatePath("/movimientos");
