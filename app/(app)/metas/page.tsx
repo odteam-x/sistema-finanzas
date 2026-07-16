@@ -11,10 +11,25 @@ import { FormModal } from "@/components/ui/FormModal";
 import { DeleteButton } from "@/components/ui/DeleteButton";
 import { MoneyValue } from "@/components/ui/MoneyValue";
 import { Money } from "@/components/ui/Money";
-import { addMovement } from "../balance/actions";
+import { IconBubble } from "@/components/ui/IconBubble";
+import { addAccount, addMovement } from "../balance/actions";
 import { addGoal, addProgress, deleteGoal, updateGoal } from "./actions";
 
-export const metadata = { title: "Metas · Bolsillo Seguro" };
+export const metadata = { title: "Ahorros · Bolsillo Seguro" };
+
+function NewSavingsAccountForm({ triggerLabel }: { triggerLabel: string }) {
+  return (
+    <FormModal title="Nueva cuenta de ahorro" action={addAccount} submitLabel="Crear cuenta" triggerLabel={triggerLabel}>
+      <input type="hidden" name="type" value="ahorro" />
+      <Field label="Nombre" htmlFor="sa-name" required hint="Ej.: Ahorro efectivo, Ahorro banco…">
+        <Input id="sa-name" name="name" placeholder="Ahorro" required />
+      </Field>
+      <Field label="Saldo inicial" htmlFor="sa-initial" hint="Opcional.">
+        <MoneyInput id="sa-initial" name="initial_amount" />
+      </Field>
+    </FormModal>
+  );
+}
 
 function NewGoalForm({ triggerLabel }: { triggerLabel: string }) {
   return (
@@ -61,13 +76,87 @@ export default async function MetasPage() {
     0,
   );
 
+  const generalSavings = accounts.filter((a) => a.type === "ahorro" && !a.goal_id);
+
   return (
     <>
       <PageHeader
-        title="Metas"
-        subtitle="Tu tablero de objetivos financieros"
+        title="Ahorros"
+        subtitle="Ahorra en general o para una meta"
         action={<NewGoalForm triggerLabel="Meta" />}
       />
+
+      {/* Ahorro general: guardar dinero sin atarlo a una meta específica. */}
+      <div className="flex items-center justify-between px-1 mb-2">
+        <h2 className="text-sm font-bold text-ink">Ahorro general</h2>
+        {generalSavings.length > 0 && <NewSavingsAccountForm triggerLabel="Nueva cuenta" />}
+      </div>
+      {generalSavings.length === 0 ? (
+        <GlassCard className="mb-4 flex items-center gap-3">
+          <IconBubble icon="piggy" tone="brand" />
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold text-ink">Aún no tienes ahorro general</p>
+            <p className="text-xs text-muted mt-0.5">Guarda dinero sin atarlo a ninguna meta.</p>
+          </div>
+          <NewSavingsAccountForm triggerLabel="Crear" />
+        </GlassCard>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+          {generalSavings.map((a) => {
+            const balance = balanceOfAccount(a.id);
+            return (
+              <GlassCard key={a.id} className="flex flex-col gap-3 min-w-0">
+                <div className="flex items-center gap-3">
+                  <IconBubble icon="piggy" tone="brand" />
+                  <div className="min-w-0 flex-1">
+                    <p className="font-bold text-ink truncate">{a.name}</p>
+                    <MoneyValue value={balance} decimals={false} className="text-lg font-extrabold text-primary" />
+                  </div>
+                </div>
+                <div className="flex items-center gap-1">
+                  <FormModal
+                    title={`Depositar en “${a.name}”`}
+                    action={addMovement}
+                    submitLabel="Depositar"
+                    trigger="pill"
+                    triggerIcon="arrowDownLeft"
+                    triggerLabel="Depositar"
+                  >
+                    <input type="hidden" name="account_id" value={a.id} />
+                    <input type="hidden" name="kind" value="deposito" />
+                    <Field label="Monto" htmlFor={`sadep-${a.id}`} required>
+                      <MoneyInput id={`sadep-${a.id}`} name="amount" required />
+                    </Field>
+                    <Field label="Fecha" htmlFor={`sadepd-${a.id}`} required>
+                      <Input id={`sadepd-${a.id}`} name="date" type="date" defaultValue={today} required />
+                    </Field>
+                  </FormModal>
+                  <FormModal
+                    title={`Retirar de “${a.name}”`}
+                    action={addMovement}
+                    submitLabel="Retirar"
+                    trigger="pill"
+                    triggerTone="ghost"
+                    triggerIcon="arrowUpRight"
+                    triggerLabel="Retirar"
+                  >
+                    <input type="hidden" name="account_id" value={a.id} />
+                    <input type="hidden" name="kind" value="retiro" />
+                    <Field label="Monto" htmlFor={`saret-${a.id}`} required>
+                      <MoneyInput id={`saret-${a.id}`} name="amount" required />
+                    </Field>
+                    <Field label="Fecha" htmlFor={`saretd-${a.id}`} required>
+                      <Input id={`saretd-${a.id}`} name="date" type="date" defaultValue={today} required />
+                    </Field>
+                  </FormModal>
+                </div>
+              </GlassCard>
+            );
+          })}
+        </div>
+      )}
+
+      <h2 className="text-sm font-bold text-ink px-1 mb-2">Tus metas</h2>
 
       {goals.length > 0 && (
         <GlassCard className="mb-4 flex items-center justify-between gap-3">

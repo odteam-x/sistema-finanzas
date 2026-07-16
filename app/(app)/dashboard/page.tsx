@@ -59,7 +59,7 @@ export default async function DashboardPage() {
       <div className="grid grid-cols-2 gap-3 mb-4">
         <StatTile
           label="Total ahorrado"
-          value={<MoneyValue value={s.totalSaved} decimals={false} />}
+          value={<MoneyValue value={s.totalSaved + s.generalSavings} decimals={false} />}
           icon="piggy"
           tone="primary"
         />
@@ -184,13 +184,13 @@ export default async function DashboardPage() {
         />
       </GlassCard>
 
-      {/* Metas */}
+      {/* Ahorros */}
       {s.goals.length > 0 && (
         <GlassCard className="mb-4">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="font-bold text-ink">Metas</h2>
+            <h2 className="font-bold text-ink">Ahorros</h2>
             <Link href="/metas" className="text-sm font-semibold text-primary">
-              Ver todas
+              Ver todos
             </Link>
           </div>
           <GoalsRing saved={s.totalSaved} target={s.totalTarget} />

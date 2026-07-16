@@ -60,6 +60,7 @@ export interface FinanceSummary {
   goals: Goal[];
   totalSaved: number;
   totalTarget: number;
+  generalSavings: number;
   savingsTotal: number;
   netWorth: number;
   estByCategory: NamedValue[];
@@ -260,6 +261,12 @@ export async function getFinanceSummary(): Promise<FinanceSummary> {
   });
   const totalSaved = goalsWithDerived.reduce((s, g) => s + Number(g.current_amount), 0);
   const totalTarget = goalsWithDerived.reduce((s, g) => s + Number(g.target_amount), 0);
+  // Ahorro general: cuentas tipo "ahorro" que no están atadas a ninguna
+  // meta — se suma aparte de totalSaved (que alimenta el anillo de metas,
+  // saved/target) para no inflar ese porcentaje con dinero sin objetivo.
+  const generalSavings = savingsAccounts
+    .filter((a) => a.type === "ahorro" && !a.goal_id)
+    .reduce((s, a) => s + balanceOfAccount(a.id), 0);
 
   // ---- Alertas derivadas de los datos ----
   const alerts: Alert[] = [];
@@ -347,6 +354,7 @@ export async function getFinanceSummary(): Promise<FinanceSummary> {
     goals: goalsWithDerived,
     totalSaved,
     totalTarget,
+    generalSavings,
     savingsTotal,
     netWorth: savingsTotal - outstandingDebt,
     estByCategory,
