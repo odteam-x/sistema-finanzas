@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { getSalaries, getSalarySettings, getSavingsAccounts, getTags } from "@/lib/data";
+import { runSalaryCatchUp } from "@/lib/salary";
 import {
   formatDateLong,
   formatDateShort,
   todayISO,
   daysBetween,
 } from "@/lib/format";
-import { nextPayDate } from "@/lib/periods";
+import { nextPayDateFrom } from "@/lib/periods";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { StatTile } from "@/components/ui/StatTile";
@@ -30,6 +31,12 @@ import type { SavingsAccount, SalarySettings, Tag } from "@/lib/types";
 
 export const metadata = { title: "Ingresos · Bolsillo Seguro" };
 
+const FREQ_LABEL: Record<string, string> = {
+  semanal: "Semanal",
+  quincenal: "Quincenal (cada 15 días)",
+  mensual: "Mensual",
+};
+
 function NewSalaryForm({
   settings,
   tags,
@@ -44,7 +51,7 @@ function NewSalaryForm({
   triggerLabel: string;
 }) {
   return (
-    <FormModal title="Registrar pago" action={addSalary} submitLabel="Registrar" triggerLabel={triggerLabel}>
+    <FormModal title="Registrar ingreso" action={addSalary} submitLabel="Registrar" triggerLabel={triggerLabel}>
       <Field label="Monto" htmlFor="amount" required>
         <MoneyInput
           id="amount"
@@ -53,12 +60,12 @@ function NewSalaryForm({
           required
         />
       </Field>
-      <Field label="Fecha del pago" htmlFor="pay_date" required>
+      <Field label="Fecha" htmlFor="pay_date" required>
         <Input id="pay_date" name="pay_date" type="date" defaultValue={today} required />
       </Field>
       <Field label="Tipo" htmlFor="kind">
         <Select id="kind" name="kind" defaultValue="quincena">
-          <option value="quincena">Quincena (sueldo)</option>
+          <option value="quincena">Sueldo</option>
           <option value="extra">Extra (bono, otro)</option>
         </Select>
       </Field>
@@ -78,7 +85,7 @@ function NewSalaryForm({
         </Field>
       )}
       <Field label="¿Cómo cobras?" htmlFor="payment_method" hint="El dinero entra a esa cuenta automáticamente.">
-        <Select id="payment_method" name="payment_method" defaultValue="efectivo">
+        <Select id="payment_method" name="payment_method" defaultValue={settings.payment_method ?? "efectivo"}>
           <option value="efectivo">Efectivo</option>
           <option value="banco">Depósito / transferencia (banco)</option>
           <option value="tarjeta_debito">Tarjeta débito</option>
@@ -110,6 +117,8 @@ export default async function IngresosPage({
 }: {
   searchParams: Promise<{ tag?: string }>;
 }) {
+  await runSalaryCatchUp();
+
   const sp = await searchParams;
   const tagFilter = sp.tag || "";
   const [settings, salaries, accounts, tags] = await Promise.all([
@@ -126,14 +135,14 @@ export default async function IngresosPage({
     .filter((s) => s.pay_date.slice(0, 7) === thisMonth)
     .reduce((sum, s) => sum + Number(s.amount), 0);
 
-  const nextPay = nextPayDate(today, settings.pay_day_1, settings.pay_day_2);
-  const daysToPay = daysBetween(today, nextPay);
+  const nextPay = nextPayDateFrom(settings.next_pay_date, settings.frequency, today);
+  const daysToPay = nextPay ? daysBetween(today, nextPay) : null;
 
   return (
     <>
       <PageHeader
         title="Ingresos"
-        subtitle="Sueldo quincenal e ingresos extra"
+        subtitle="Tu sueldo e ingresos extra"
         action={
           <NewSalaryForm settings={settings} tags={tags} accounts={accounts} today={today} triggerLabel="Nuevo" />
         }
@@ -152,14 +161,16 @@ export default async function IngresosPage({
 
       <div className="mb-4">
         <StatTile
-          label="Próximo pago"
-          value={formatDateShort(nextPay)}
+          label="Próximo ingreso"
+          value={nextPay ? formatDateShort(nextPay) : "—"}
           sub={
-            daysToPay === 0
-              ? "Es hoy"
-              : daysToPay === 1
-                ? "Mañana"
-                : `En ${daysToPay} días`
+            nextPay == null
+              ? "Configura tu frecuencia de cobro"
+              : daysToPay === 0
+                ? "Es hoy"
+                : daysToPay === 1
+                  ? "Mañana"
+                  : `En ${daysToPay} días`
           }
           icon="clock"
           tone="neutral"
@@ -169,14 +180,14 @@ export default async function IngresosPage({
       {/* Configuración del sueldo */}
       <GlassCard className="mb-4">
         <div className="flex items-center justify-between gap-3">
-          <div>
+          <div className="min-w-0">
             <p className="text-sm font-bold text-ink">Configuración del sueldo</p>
             <p className="text-xs text-muted mt-0.5">
-              Quincena por defecto:{" "}
+              Monto por defecto:{" "}
               <span className="font-semibold text-ink">
                 <Money value={settings.default_amount} />
               </span>{" "}
-              · Pagos los días {settings.pay_day_1} y {settings.pay_day_2}
+              · {FREQ_LABEL[settings.frequency]}
             </p>
           </div>
           <FormModal
@@ -187,9 +198,9 @@ export default async function IngresosPage({
             triggerAriaLabel="Editar configuración"
           >
             <Field
-              label="Sueldo quincenal por defecto"
+              label="Monto por defecto"
               htmlFor="default_amount"
-              hint="Se usará como monto sugerido al registrar un pago."
+              hint="Se usa como sugerencia al registrar un ingreso, y como monto del ingreso automático."
             >
               <MoneyInput
                 id="default_amount"
@@ -199,39 +210,46 @@ export default async function IngresosPage({
                 }
               />
             </Field>
-            <div className="grid grid-cols-2 gap-3">
-              <Field label="Día de pago 1" htmlFor="pay_day_1" required>
-                <Input
-                  id="pay_day_1"
-                  name="pay_day_1"
-                  type="number"
-                  inputMode="numeric"
-                  min={1}
-                  max={31}
-                  defaultValue={settings.pay_day_1}
-                  required
-                />
-              </Field>
-              <Field label="Día de pago 2" htmlFor="pay_day_2" required>
-                <Input
-                  id="pay_day_2"
-                  name="pay_day_2"
-                  type="number"
-                  inputMode="numeric"
-                  min={1}
-                  max={31}
-                  defaultValue={settings.pay_day_2}
-                  required
-                />
-              </Field>
-            </div>
+            <Field label="¿Cada cuánto cobras?" htmlFor="frequency">
+              <Select id="frequency" name="frequency" defaultValue={settings.frequency}>
+                <option value="semanal">Semanal</option>
+                <option value="quincenal">Quincenal (cada 15 días)</option>
+                <option value="mensual">Mensual</option>
+              </Select>
+            </Field>
+            <Field
+              label="Próxima fecha de cobro"
+              htmlFor="next_pay_date"
+              required
+              hint="A partir de aquí se calcula (y se registra sola) cada fecha siguiente."
+            >
+              <Input
+                id="next_pay_date"
+                name="next_pay_date"
+                type="date"
+                defaultValue={settings.next_pay_date ?? today}
+                required
+              />
+            </Field>
+            <Field
+              label="¿Cómo cobras?"
+              htmlFor="settings_payment_method"
+              hint="A esa cuenta se acredita el ingreso automático."
+            >
+              <Select id="settings_payment_method" name="payment_method" defaultValue={settings.payment_method ?? "efectivo"}>
+                <option value="efectivo">Efectivo</option>
+                <option value="banco">Depósito / transferencia (banco)</option>
+                <option value="tarjeta_debito">Tarjeta débito</option>
+                <option value="tarjeta_credito">Tarjeta crédito</option>
+              </Select>
+            </Field>
           </FormModal>
         </div>
       </GlassCard>
 
       {/* Historial */}
       <div className="flex items-center justify-between px-1 mb-2">
-        <h2 className="text-sm font-bold text-ink">Historial de pagos</h2>
+        <h2 className="text-sm font-bold text-ink">Historial de ingresos</h2>
         {tags.length > 0 && salaries.length > 0 && (
           <DropdownMenu>
             <DropdownMenuTrigger className="glass inline-flex items-center gap-1.5 rounded-2xl px-3 py-1.5 text-xs font-semibold text-ink cursor-pointer">
@@ -254,7 +272,7 @@ export default async function IngresosPage({
       {visibleSalaries.length === 0 ? (
         <EmptyState
           icon="wallet"
-          title="Sin pagos registrados"
+          title="Sin ingresos registrados"
           message="Registra tu primer sueldo o ingreso extra."
           action={
             <NewSalaryForm
@@ -262,7 +280,7 @@ export default async function IngresosPage({
               tags={tags}
               accounts={accounts}
               today={today}
-              triggerLabel="Registrar pago"
+              triggerLabel="Registrar ingreso"
             />
           }
         />
@@ -280,12 +298,12 @@ export default async function IngresosPage({
                   </p>
                 </div>
                 <Badge tone={s.kind === "extra" ? "warning" : "primary"}>
-                  {s.kind === "extra" ? "Extra" : "Quincena"}
+                  {s.kind === "extra" ? "Extra" : "Sueldo"}
                 </Badge>
                 <DeleteButton
                   action={deleteSalary.bind(null, s.id)}
-                  title="¿Eliminar pago?"
-                  message="Se quitará este pago del historial."
+                  title="¿Eliminar ingreso?"
+                  message="Se quitará este ingreso del historial."
                 />
               </GlassCard>
             </li>

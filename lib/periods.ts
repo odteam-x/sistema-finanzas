@@ -8,6 +8,7 @@
 // mitades del mes, que es como se organiza el gasto diario.
 
 import { parseISODate, toISODate } from "./format";
+import type { PayFrequency } from "./types";
 
 export interface Period {
   start: string; // YYYY-MM-DD
@@ -87,37 +88,71 @@ export function periodAfterN(todayISO: string, n: number): Period {
   return p;
 }
 
-/**
- * Próxima fecha de pago (>= hoy) según los días de pago configurados.
- * payDay2 = 31 se interpreta como "último día del mes".
- */
-export function nextPayDate(
-  todayISO: string,
-  payDay1: number,
-  payDay2: number,
-): string {
-  const today = parseISODate(todayISO);
-  const candidates: Date[] = [];
-  for (let offset = 0; offset <= 2; offset++) {
-    const y = today.getFullYear();
-    const m = today.getMonth() + offset;
-    const lastDay = new Date(y, m + 1, 0).getDate();
-    for (const day of [payDay1, payDay2]) {
-      const realDay = Math.min(day, lastDay);
-      candidates.push(new Date(y, m, realDay, 12));
-    }
-  }
-  candidates.sort((a, b) => a.getTime() - b.getTime());
-  const next = candidates.find((d) => d.getTime() >= today.getTime());
-  return toISODate(next ?? candidates[0]);
+/** Avanza una fecha ISO un período de la frecuencia de cobro dada.
+ *  "Quincenal" es cada 15 días desde el ancla que el usuario eligió — no
+ *  "los días 15 y 30", que no siempre coincide con cómo cobra cada quien. */
+export function stepPayDate(iso: string, freq: PayFrequency): string {
+  const d = parseISODate(iso);
+  if (freq === "semanal") d.setDate(d.getDate() + 7);
+  else if (freq === "quincenal") d.setDate(d.getDate() + 15);
+  else d.setMonth(d.getMonth() + 1);
+  return toISODate(d);
 }
 
-/**
- * Fechas de pago (payDay1/payDay2) dentro de un mes dado, como ISO.
- * payDay2 = 31 se interpreta como "último día del mes" (mismo clamp que nextPayDate).
- */
-export function paydaysInMonth(year: number, month: number, payDay1: number, payDay2: number): string[] {
-  const lastDay = new Date(year, month + 1, 0).getDate();
-  const days = Array.from(new Set([Math.min(payDay1, lastDay), Math.min(payDay2, lastDay)]));
-  return days.sort((a, b) => a - b).map((day) => toISODate(new Date(year, month, day, 12)));
+/** Inversa de stepPayDate: retrocede una fecha ISO un período. */
+function stepPayDateBack(iso: string, freq: PayFrequency): string {
+  const d = parseISODate(iso);
+  if (freq === "semanal") d.setDate(d.getDate() - 7);
+  else if (freq === "quincenal") d.setDate(d.getDate() - 15);
+  else d.setMonth(d.getMonth() - 1);
+  return toISODate(d);
+}
+
+/** Próxima fecha de pago (>= hoy), avanzando desde el ancla configurada
+ *  por la frecuencia elegida. Sin ancla, no hay próximo pago que calcular. */
+export function nextPayDateFrom(
+  anchorISO: string | null,
+  freq: PayFrequency,
+  todayISO: string,
+): string | null {
+  if (!anchorISO) return null;
+  let d = anchorISO;
+  let guard = 0;
+  while (d < todayISO && guard < 2000) {
+    d = stepPayDate(d, freq);
+    guard++;
+  }
+  return d;
+}
+
+/** Fechas de pago dentro de un mes visible dado, según ancla + frecuencia
+ *  (para pintarlas en el Calendario, sea el mes pasado, actual o futuro). */
+export function paydaysInMonthFrom(
+  year: number,
+  month: number,
+  anchorISO: string | null,
+  freq: PayFrequency,
+): string[] {
+  if (!anchorISO) return [];
+  const monthStart = toISODate(new Date(year, month, 1, 12));
+  const monthEnd = toISODate(new Date(year, month + 1, 0, 12));
+
+  let cursor = anchorISO;
+  let guard = 0;
+  while (cursor > monthEnd && guard < 2000) {
+    cursor = stepPayDateBack(cursor, freq);
+    guard++;
+  }
+  while (cursor < monthStart && guard < 2000) {
+    cursor = stepPayDate(cursor, freq);
+    guard++;
+  }
+
+  const dates: string[] = [];
+  while (cursor <= monthEnd && guard < 2000) {
+    dates.push(cursor);
+    cursor = stepPayDate(cursor, freq);
+    guard++;
+  }
+  return dates;
 }

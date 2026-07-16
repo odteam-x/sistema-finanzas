@@ -22,19 +22,27 @@ export async function saveSalarySettings(
   formData: FormData,
 ): Promise<ActionResult> {
   const user = await requireUser();
-  const pay1 = Number(formData.get("pay_day_1"));
-  const pay2 = Number(formData.get("pay_day_2"));
+  const frequencyRaw = String(formData.get("frequency") ?? "quincenal");
+  const frequency = ["semanal", "quincenal", "mensual"].includes(frequencyRaw)
+    ? (frequencyRaw as "semanal" | "quincenal" | "mensual")
+    : "quincenal";
+  const next_pay_date = String(formData.get("next_pay_date") ?? "") || null;
+  const rawMethod = String(formData.get("payment_method") ?? "");
+  const payment_method = PAYMENT_METHODS.includes(rawMethod as AccountType)
+    ? (rawMethod as AccountType)
+    : null;
   const amount = parseAmount(formData.get("default_amount"));
 
-  if (!(pay1 >= 1 && pay1 <= 31) || !(pay2 >= 1 && pay2 <= 31)) {
-    return { ok: false, error: "Los días de pago deben estar entre 1 y 31." };
+  if (!next_pay_date) {
+    return { ok: false, error: "Indica la próxima fecha de cobro." };
   }
 
   const supabase = await createClient();
   const { error } = await supabase.from("salary_settings").upsert({
     user_id: user.id,
-    pay_day_1: pay1,
-    pay_day_2: pay2,
+    frequency,
+    next_pay_date,
+    payment_method,
     default_amount: Number.isFinite(amount) ? amount : 0,
   });
   if (error) return { ok: false, error: "No se pudo guardar la configuración." };

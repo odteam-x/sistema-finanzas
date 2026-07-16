@@ -17,7 +17,7 @@ import {
   getTags,
 } from "./data";
 import { countWorkdays, exceptionsMap } from "./calendar";
-import { quincenaForDate, nextPayDate, type Period } from "./periods";
+import { quincenaForDate, nextPayDateFrom, type Period } from "./periods";
 import { addDaysISO, daysBetween, formatDOP, toISODate, todayISO } from "./format";
 import type { Goal, SavingsMovement } from "./types";
 
@@ -236,7 +236,7 @@ export async function getFinanceSummary(): Promise<FinanceSummary> {
     .slice(0, 5);
 
   // Pago de sueldo
-  const nextPay = nextPayDate(today, settings.pay_day_1, settings.pay_day_2);
+  const nextPay = nextPayDateFrom(settings.next_pay_date, settings.frequency, today) ?? today;
 
   const saldoEstimado = ingresoQuincena - estQuincena - cuotasPeriodo;
   // Balance real: usa el gasto REAL registrado (no el presupuesto estimado)

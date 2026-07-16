@@ -8,7 +8,7 @@ import {
 } from "@/lib/data";
 import { toISODate, formatMonth, todayISO } from "@/lib/format";
 import { countWorkdays, exceptionsMap } from "@/lib/calendar";
-import { monthPeriods, paydaysInMonth } from "@/lib/periods";
+import { monthPeriods, paydaysInMonthFrom } from "@/lib/periods";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { StatTile } from "@/components/ui/StatTile";
@@ -53,7 +53,7 @@ export default async function CalendarioPage({
     (events[date] ??= []).push(event);
   }
 
-  for (const day of paydaysInMonth(year, month, settings.pay_day_1, settings.pay_day_2)) {
+  for (const day of paydaysInMonthFrom(year, month, settings.next_pay_date, settings.frequency)) {
     pushEvent(day, {
       type: "pago",
       label: "Día de pago",

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getSavingsAccounts, getSavingsMovements } from "@/lib/data";
 import { runSubscriptionCatchUp } from "@/lib/subscriptions";
+import { runSalaryCatchUp } from "@/lib/salary";
 import { formatDateShort, todayISO } from "@/lib/format";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { GlassCard } from "@/components/ui/GlassCard";
@@ -75,7 +76,7 @@ export default async function MovimientosPage({
 }: {
   searchParams: Promise<{ tipo?: string }>;
 }) {
-  await runSubscriptionCatchUp();
+  await Promise.all([runSubscriptionCatchUp(), runSalaryCatchUp()]);
 
   const sp = await searchParams;
   const kindFilter = sp.tipo === "ingresos" ? "deposito" : sp.tipo === "gastos" ? "retiro" : null;

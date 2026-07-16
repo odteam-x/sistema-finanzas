@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getFinanceSummary } from "@/lib/summary";
 import { getUserProfile } from "@/lib/data";
 import { runSubscriptionCatchUp } from "@/lib/subscriptions";
+import { runSalaryCatchUp } from "@/lib/salary";
 import { formatDateShort, daysBetween, clampPct } from "@/lib/format";
 import { GreetingHero } from "@/components/ui/GreetingHero";
 import { AvailableHero } from "@/components/ui/AvailableHero";
@@ -41,7 +42,7 @@ function commitmentSub(days: number): string {
 }
 
 export default async function DashboardPage() {
-  await runSubscriptionCatchUp();
+  await Promise.all([runSubscriptionCatchUp(), runSalaryCatchUp()]);
   const [s, profile] = await Promise.all([getFinanceSummary(), getUserProfile()]);
 
   const budgetPct = clampPct(s.realQuincena, s.estQuincena || 1);

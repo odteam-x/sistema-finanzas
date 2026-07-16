@@ -14,11 +14,20 @@ export interface Salary {
   created_at: string;
 }
 
+export type PayFrequency = "semanal" | "quincenal" | "mensual";
+
 export interface SalarySettings {
   user_id: string;
-  pay_day_1: number; // día del mes del primer pago (ej. 15)
-  pay_day_2: number; // día del mes del segundo pago (ej. 30; 31 = fin de mes)
-  default_amount: number; // sueldo quincenal por defecto
+  /** @deprecated reemplazados por frequency/next_pay_date — se dejan solo
+   *  para no romper filas existentes, la app ya no los usa. */
+  pay_day_1: number;
+  pay_day_2: number;
+  frequency: PayFrequency;
+  /** Próxima fecha de cobro (ancla); null hasta que el usuario la configure. */
+  next_pay_date: string | null;
+  /** Cuenta a acreditar cuando el ingreso se genera solo (sin formulario). */
+  payment_method: AccountType | null;
+  default_amount: number; // sueldo por defecto según la frecuencia
 }
 
 // "trabajado" = override: forzar día laborable (ej. trabajar un domingo/feriado)

@@ -21,6 +21,9 @@ import type {
 export const DEFAULT_SETTINGS: Omit<SalarySettings, "user_id"> = {
   pay_day_1: 15,
   pay_day_2: 30,
+  frequency: "quincenal",
+  next_pay_date: null,
+  payment_method: null,
   default_amount: 0,
 };
 
@@ -30,7 +33,7 @@ export async function getSalarySettings(): Promise<
   const supabase = await createClient();
   const { data } = await supabase
     .from("salary_settings")
-    .select("pay_day_1, pay_day_2, default_amount")
+    .select("pay_day_1, pay_day_2, frequency, next_pay_date, payment_method, default_amount")
     .maybeSingle();
   return data ?? DEFAULT_SETTINGS;
 }
