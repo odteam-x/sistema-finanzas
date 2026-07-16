@@ -13,11 +13,14 @@ interface PageHeaderProps {
  *  `transform` (ver PageTransition.tsx — solo anima opacity por esto). */
 export function PageHeader({ title, subtitle, action, showBack = true }: PageHeaderProps) {
   return (
-    <header className="glass-nav sticky top-0 z-30 -mx-4 sm:-mx-6 px-4 sm:px-6 py-3.5 mb-4 flex items-center justify-between gap-3 border-b">
+    <header
+      className="glass-nav sticky top-0 z-30 -mx-4 sm:-mx-6 px-4 sm:px-6 pb-3.5 mb-4 flex items-center justify-between gap-3 border-b"
+      style={{ paddingTop: "max(0.875rem, env(safe-area-inset-top))" }}
+    >
       <div className="flex items-center gap-1 min-w-0">
         {showBack && <BackButton />}
         <div className="min-w-0">
-          <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-ink truncate">
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink truncate">
             {title}
           </h1>
           {subtitle && <p className="text-sm text-muted mt-0.5 truncate">{subtitle}</p>}

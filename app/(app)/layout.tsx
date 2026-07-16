@@ -22,7 +22,7 @@ export default async function AppLayout({
     <PersonalizeProvider>
       <div className="lg:flex">
         <Sidebar email={email} />
-        <main className="flex-1 min-w-0 w-full max-w-3xl mx-auto px-4 sm:px-6 pt-6 pb-28 lg:pb-10">
+        <main className="flex-1 min-w-0 w-full max-w-3xl mx-auto px-4 sm:px-6 pb-28 lg:pb-10">
           <PageTransition>{children}</PageTransition>
         </main>
         <BottomTabBar email={email} accounts={accounts} />

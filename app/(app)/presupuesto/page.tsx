@@ -13,7 +13,6 @@ import { countWorkdays, exceptionsMap } from "@/lib/calendar";
 import { quincenaForDate } from "@/lib/periods";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { GlassCard } from "@/components/ui/GlassCard";
-import { StatTile } from "@/components/ui/StatTile";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Badge } from "@/components/ui/Badge";
 import { Field, Input, Select, MoneyInput } from "@/components/ui/Field";
@@ -147,9 +146,9 @@ export default async function PresupuestoPage({
         action={
           <Link
             href="/presupuesto/categorias"
-            className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary"
+            className="inline-flex items-center gap-1.5 rounded-full bg-primary-soft px-3.5 py-2 text-sm font-bold text-primary active:scale-[0.97] transition-transform"
           >
-            <Icon name="budget" size={16} />
+            <Icon name="chart" size={17} />
             Presupuesto
           </Link>
         }
@@ -193,22 +192,11 @@ export default async function PresupuestoPage({
         )}
       </div>
 
-      {/* Anillo gastado vs. presupuesto */}
+      {/* Anillo gastado vs. presupuesto — ya trae "gastado de presupuestado"
+          como sub-texto, así que no se repite en tarjetas aparte. */}
       <GlassCard className="mb-3">
         <BudgetRing spent={realQuincena} budget={estQuincena} />
       </GlassCard>
-
-      {/* Resumen del periodo — el "Restante/Excedido" vive solo en el
-          anillo de arriba, para no repetir la misma cifra dos veces. */}
-      <div className="grid grid-cols-2 gap-2 sm:gap-3 mb-3">
-        <StatTile label="Estimado quincena" value={<Money value={estQuincena} decimals={false} />} icon="calc" />
-        <StatTile
-          label="Gasto real"
-          value={<Money value={realQuincena} decimals={false} />}
-          tone="neutral"
-          icon="wallet"
-        />
-      </div>
 
       <GlassCard className="mb-4 flex items-center justify-between gap-3">
         <p className="text-sm text-muted">

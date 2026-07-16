@@ -58,7 +58,7 @@ export default async function DashboardPage() {
       <div className="grid grid-cols-2 gap-3 mb-4">
         <StatTile
           label="Total ahorrado"
-          value={<MoneyValue value={s.savingsTotal} decimals={false} />}
+          value={<MoneyValue value={s.totalSaved} decimals={false} />}
           icon="piggy"
           tone="primary"
         />
@@ -79,7 +79,7 @@ export default async function DashboardPage() {
           label="Próxima deuda"
           value={s.nextDue ? formatDateShort(s.nextDue) : "—"}
           sub={s.nextDueName ? `${s.nextDueName} · ${dueSub(s.daysToDue)}` : dueSub(s.daysToDue)}
-          icon="debt"
+          icon="calendar"
           tone={s.daysToDue !== null && s.daysToDue < 0 ? "danger" : "warning"}
         />
       </div>

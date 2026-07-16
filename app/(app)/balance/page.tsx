@@ -167,7 +167,7 @@ export default async function BalancePage() {
                       </div>
                       <MoneyValue
                         value={balance}
-                        className="block text-money-md font-extrabold text-primary leading-tight"
+                        className="block text-money-sm font-extrabold text-primary leading-tight tabular"
                       />
                       <p className="text-xs text-muted">
                         {count} {count === 1 ? "movimiento" : "movimientos"}
