@@ -6,7 +6,13 @@
 // deja atascadas para siempre — es lo que causó que el ícono y el nombre
 // de instalación de la PWA quedaran obsoletos tras un rebrand. Esas ahora
 // son red-primero con la caché solo como respaldo offline.
-const CACHE = "cachin-v1";
+//
+// Offline de solo lectura: las navegaciones exitosas también se cachean
+// (antes solo se usaba caches.match como fallback, pero nunca se llenaba).
+// Así, una pantalla ya visitada con conexión queda disponible sin conexión
+// con los últimos datos vistos — de solo lectura: los Server Actions
+// (crear/editar) igual fallan sin red, eso no cambia acá.
+const CACHE = "cachin-v2";
 
 self.addEventListener("install", () => {
   self.skipWaiting();
@@ -30,12 +36,19 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return; // no cachear Supabase ni externos
 
-  // Navegaciones: red primero, con respaldo al caché
+  // Navegaciones: red primero (siempre datos frescos con conexión), y se
+  // guarda una copia en caché para que esa misma pantalla sirva sin
+  // conexión más adelante. Sin red, se sirve la última copia cacheada de
+  // ESA ruta, o el dashboard como último recurso.
   if (req.mode === "navigate") {
     event.respondWith(
-      fetch(req).catch(() =>
-        caches.match(req).then((r) => r || caches.match("/dashboard")),
-      ),
+      fetch(req)
+        .then((res) => {
+          const copy = res.clone();
+          caches.open(CACHE).then((c) => c.put(req, copy));
+          return res;
+        })
+        .catch(() => caches.match(req).then((r) => r || caches.match("/dashboard"))),
     );
     return;
   }

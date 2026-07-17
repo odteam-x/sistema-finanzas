@@ -6,6 +6,7 @@ import { Sidebar } from "@/components/nav/Sidebar";
 import { BottomTabBar } from "@/components/nav/BottomTabBar";
 import { PageTransition } from "@/components/PageTransition";
 import { PersonalizeProvider } from "@/components/theme/PersonalizeContext";
+import { OfflineBanner } from "@/components/OfflineBanner";
 
 export default async function AppLayout({
   children,
@@ -20,6 +21,7 @@ export default async function AppLayout({
 
   return (
     <PersonalizeProvider>
+      <OfflineBanner />
       <div className="lg:flex">
         <Sidebar email={email} />
         <main className="flex-1 min-w-0 w-full max-w-3xl mx-auto px-4 sm:px-6 pb-28 lg:pb-10">
