@@ -40,25 +40,31 @@ export function GreetingHero({ subtitle, action, displayName }: GreetingHeroProp
 
   return (
     <header
-      className="glass-nav sticky z-30 mb-4 grid grid-cols-[1fr_auto_1fr] items-center gap-2 rounded-[28px] border px-3 sm:px-4 py-3 shadow-lg shadow-black/10"
+      className="glass-nav sticky z-30 mb-4 flex items-center justify-between gap-3 rounded-[28px] border px-4 py-3 shadow-lg shadow-black/10"
       style={{ top: "max(0.75rem, env(safe-area-inset-top))" }}
     >
-      <div className="min-w-0 justify-self-start">
+      <div className="min-w-0">
         <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-ink truncate">
           {greeting}
           {name ? `, ${name}` : ""}
         </h1>
         <p className="text-sm text-muted mt-0.5">{subtitle}</p>
       </div>
-      <Image
-        src="/icons/logo-mark.png"
-        alt="Cachin'"
-        width={36}
-        height={36}
-        className="justify-self-center shrink-0 h-8 w-8 sm:h-9 sm:w-9"
-        priority
-      />
-      <div className="grid justify-items-end items-center justify-self-end shrink-0">{action}</div>
+      <div className="flex items-center gap-2 shrink-0">
+        {action}
+        {/* El isotipo solo vive acá (Inicio), no en cada pantalla — un
+         *  círculo pequeño a la derecha, como el ícono de perfil/notificación
+         *  de apps de referencia, en vez de flotar centrado compitiendo con
+         *  el título. */}
+        <Image
+          src="/icons/logo-mark-white.png"
+          alt="Cachin'"
+          width={40}
+          height={40}
+          className="rounded-full bg-gradient-brand p-2 shadow-md shadow-black/15"
+          priority
+        />
+      </div>
     </header>
   );
 }

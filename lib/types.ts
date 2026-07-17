@@ -111,6 +111,11 @@ export interface Expense {
   note: string | null;
   account_id: string | null;
   created_at: string;
+  /** null = registrado a mano. 'debt_payment' = generado al pagar una deuda
+   *  (source_ref_id apunta a la cuota o deuda pagada) — así un pago de
+   *  deuda cuenta como gasto real de la quincena, sin duplicar lógica. */
+  source: "debt_payment" | null;
+  source_ref_id: string | null;
 }
 
 export type AccountType = "ahorro" | "banco" | "efectivo" | "tarjeta_credito" | "tarjeta_debito";

@@ -339,25 +339,38 @@ export default async function PresupuestoPage({
                 {formatDateLong(group.date)}
               </p>
               <ul className="flex flex-col gap-2">
-                {group.items.map((e) => (
-                  <li key={e.id}>
-                    <GlassCard className="flex items-center gap-3 py-2.5">
-                      <IconBubble icon="wallet" tone="neutral" size="sm" />
-                      <div className="min-w-0 flex-1">
-                        <p className="font-semibold text-ink">
-                          <Money value={Number(e.amount)} />
-                        </p>
-                        {e.note && <p className="text-xs text-muted truncate">{e.note}</p>}
-                      </div>
-                      <Badge tone="neutral">{tagName(e.tag_id)}</Badge>
-                      <DeleteButton
-                        action={deleteExpense.bind(null, e.id)}
-                        title="¿Eliminar gasto?"
-                        message="Se quitará del historial de gastos."
-                      />
-                    </GlassCard>
-                  </li>
-                ))}
+                {group.items.map((e) => {
+                  const isDebtPayment = e.source === "debt_payment";
+                  return (
+                    <li key={e.id}>
+                      <GlassCard className="flex items-center gap-3 py-2.5">
+                        <IconBubble icon={isDebtPayment ? "debt" : "wallet"} tone="neutral" size="sm" />
+                        <div className="min-w-0 flex-1">
+                          <p className="font-semibold text-ink">
+                            <Money value={Number(e.amount)} />
+                          </p>
+                          {e.note && <p className="text-xs text-muted truncate">{e.note}</p>}
+                        </div>
+                        {isDebtPayment ? (
+                          <Badge tone="warning">Pago de deuda</Badge>
+                        ) : (
+                          <Badge tone="neutral">{tagName(e.tag_id)}</Badge>
+                        )}
+                        {/* Los pagos de deuda se desmarcan desde Deudas (así se
+                         *  limpia también la cuota y el movimiento del ledger
+                         *  juntos) — borrarlos solo de acá los dejaría
+                         *  desincronizados. */}
+                        {!isDebtPayment && (
+                          <DeleteButton
+                            action={deleteExpense.bind(null, e.id)}
+                            title="¿Eliminar gasto?"
+                            message="Se quitará del historial de gastos."
+                          />
+                        )}
+                      </GlassCard>
+                    </li>
+                  );
+                })}
               </ul>
             </div>
           ))}

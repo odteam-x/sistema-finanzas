@@ -1,31 +1,88 @@
 "use client";
 
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import { cn } from "@/lib/cn";
 import { Icon } from "@/components/ui/Icon";
-import { Field, Input, MoneyInput } from "@/components/ui/Field";
+import { Modal } from "@/components/ui/Modal";
+import { Button } from "@/components/ui/Button";
+import { Field, Input, MoneyInput, Select } from "@/components/ui/Field";
 import { FormModal } from "@/components/ui/FormModal";
 import { formatDateShort } from "@/lib/format";
 import { Money } from "@/components/ui/Money";
-import type { DebtInstallment } from "@/lib/types";
+import type { DebtInstallment, SavingsAccount } from "@/lib/types";
 import { toggleInstallment, toggleDebtPaid, updateInstallment } from "./actions";
+
+/** Al marcar un pago, si hay más de una cuenta pide de cuál sale el dinero
+ *  (antes siempre usaba la cuenta por defecto sin preguntar). Con una sola
+ *  cuenta (o ninguna) no hay nada que elegir, así que no agrega fricción. */
+function useAccountPicker(accounts: SavingsAccount[], onConfirm: (accountId?: string) => void) {
+  const [open, setOpen] = useState(false);
+  const [accountId, setAccountId] = useState(accounts[0]?.id ?? "");
+
+  function start() {
+    if (accounts.length > 1) {
+      setAccountId(accounts[0]?.id ?? "");
+      setOpen(true);
+    } else {
+      onConfirm(accounts[0]?.id);
+    }
+  }
+
+  function confirm() {
+    setOpen(false);
+    onConfirm(accountId);
+  }
+
+  const picker = (
+    <Modal open={open} onClose={() => setOpen(false)} title="¿De qué cuenta sale este pago?">
+      <Field label="Cuenta" htmlFor="debt-pay-account">
+        <Select id="debt-pay-account" value={accountId} onChange={(e) => setAccountId(e.target.value)}>
+          {accounts.map((a) => (
+            <option key={a.id} value={a.id}>
+              {a.name}
+            </option>
+          ))}
+        </Select>
+      </Field>
+      <div className="mt-5 flex gap-2">
+        <Button variant="secondary" onClick={() => setOpen(false)} full>
+          Cancelar
+        </Button>
+        <Button onClick={confirm} full>
+          Confirmar pago
+        </Button>
+      </div>
+    </Modal>
+  );
+
+  return { start, picker };
+}
 
 /** Fila de una cuota con checkbox para marcar pagada, y un ícono para
  *  editar monto/fecha (sumar cantidad o aplazar) mientras no esté pagada. */
 export function InstallmentRow({
   installment,
   overdue,
+  accounts,
 }: {
   installment: DebtInstallment;
   overdue: boolean;
+  accounts: SavingsAccount[];
 }) {
   const [pending, startTransition] = useTransition();
   const i = installment;
 
-  function toggle() {
+  function apply(accountId?: string) {
     startTransition(() => {
-      toggleInstallment(i.id, i.debt_id, !i.paid).then(() => {});
+      toggleInstallment(i.id, i.debt_id, !i.paid, accountId).then(() => {});
     });
+  }
+
+  const { start, picker } = useAccountPicker(accounts, apply);
+
+  function toggle() {
+    if (i.paid) apply(); // desmarcar no necesita elegir cuenta
+    else start();
   }
 
   return (
@@ -79,6 +136,7 @@ export function InstallmentRow({
           </Field>
         </FormModal>
       )}
+      {picker}
     </div>
   );
 }
@@ -89,28 +147,45 @@ export function InstallmentRow({
 export function DebtPaidToggle({
   id,
   paid,
+  accounts,
 }: {
   id: string;
   paid: boolean;
+  accounts: SavingsAccount[];
 }) {
   const [pending, startTransition] = useTransition();
+
+  function apply(accountId?: string) {
+    startTransition(() => toggleDebtPaid(id, !paid, accountId).then(() => {}));
+  }
+
+  const { start, picker } = useAccountPicker(accounts, apply);
+
+  function toggle() {
+    if (paid) apply();
+    else start();
+  }
+
   return (
-    <button
-      onClick={() => startTransition(() => toggleDebtPaid(id, !paid).then(() => {}))}
-      disabled={pending}
-      className="flex items-center gap-2.5 w-full py-1 text-left cursor-pointer disabled:opacity-60"
-    >
-      <span
-        className={cn(
-          "grid place-items-center size-6 rounded-md border-2 shrink-0 transition-colors",
-          paid ? "bg-primary border-primary text-white" : "border-black/20 text-transparent",
-        )}
+    <>
+      <button
+        onClick={toggle}
+        disabled={pending}
+        className="flex items-center gap-2.5 w-full py-1 text-left cursor-pointer disabled:opacity-60"
       >
-        <Icon name="check" size={14} />
-      </span>
-      <span className={cn("text-sm flex-1", paid ? "text-muted line-through" : "text-ink")}>
-        {paid ? "Pagada" : "Marcar pagada"}
-      </span>
-    </button>
+        <span
+          className={cn(
+            "grid place-items-center size-6 rounded-md border-2 shrink-0 transition-colors",
+            paid ? "bg-primary border-primary text-white" : "border-black/20 text-transparent",
+          )}
+        >
+          <Icon name="check" size={14} />
+        </span>
+        <span className={cn("text-sm flex-1", paid ? "text-muted line-through" : "text-ink")}>
+          {paid ? "Pagada" : "Marcar pagada"}
+        </span>
+      </button>
+      {picker}
+    </>
   );
 }

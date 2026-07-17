@@ -1,4 +1,4 @@
-import { getDebts, getInstallments } from "@/lib/data";
+import { getDebts, getInstallments, getSavingsAccounts } from "@/lib/data";
 import {
   formatDateLong,
   formatDateShort,
@@ -73,9 +73,10 @@ function EditDebtForm({ debt }: { debt: Debt }) {
 
 export default async function DeudasPage() {
   const today = todayISO();
-  const [debts, installments] = await Promise.all([
+  const [debts, installments, accounts] = await Promise.all([
     getDebts(),
     getInstallments(),
+    getSavingsAccounts(),
   ]);
 
   const byDebt = new Map<string, typeof installments>();
@@ -233,6 +234,7 @@ export default async function DeudasPage() {
                                     key={i.id}
                                     installment={i}
                                     overdue={daysBetween(today, i.due_date) < 0}
+                                    accounts={accounts}
                                   />
                                 ))}
                               </div>
@@ -244,7 +246,7 @@ export default async function DeudasPage() {
                                   ? `Vence el ${formatDateLong(d.due_date)}`
                                   : "Sin fecha de pago"}
                               </p>
-                              <DebtPaidToggle id={d.id} paid={d.status === "pagada"} />
+                              <DebtPaidToggle id={d.id} paid={d.status === "pagada"} accounts={accounts} />
                             </div>
                           )}
                         </div>

@@ -246,16 +246,24 @@ export async function getFinanceSummary(): Promise<FinanceSummary> {
   const nextPay = nextPayDateFrom(settings.next_pay_date, settings.frequency, today) ?? today;
 
   const saldoEstimado = ingresoQuincena - estQuincena - cuotasPeriodo;
-  // Balance real: usa el gasto REAL registrado (no el presupuesto estimado)
-  // más lo que de verdad salió de la cuenta por pagos de deuda esta
-  // quincena (por fecha de pago en el ledger, no por fecha de vencimiento).
-  // Antes restaba `cuotasPeriodo` (deuda pendiente), que se reduce justo al
-  // pagar — el efecto era que pagar una deuda "devolvía" ese dinero al
-  // disponible en vez de restarlo.
-  const debtPaidThisQuincena = savingsMovements
-    .filter((m) => m.source === "debt_payment" && m.date >= q.start && m.date <= q.end)
-    .reduce((s, m) => s + Number(m.amount), 0);
-  const saldoReal = ingresoQuincena - realQuincena - debtPaidThisQuincena;
+
+  // Aportes netos a cuentas de ahorro (generales o de meta) esta quincena:
+  // ese dinero ya no está "disponible para gastar" — está apartado en otra
+  // cuenta con otro destino — así que se resta aparte del gasto normal.
+  // Neto (depósitos - retiros) para que sacar plata de un ahorro sí la
+  // devuelva al disponible.
+  const ahorroAccountIds = new Set(savingsAccounts.filter((a) => a.type === "ahorro").map((a) => a.id));
+  const savingsContributedThisQuincena = savingsMovements
+    .filter((m) => ahorroAccountIds.has(m.account_id) && m.date >= q.start && m.date <= q.end)
+    .reduce((s, m) => s + (m.kind === "deposito" ? 1 : -1) * Number(m.amount), 0);
+
+  // Balance real: ingreso confirmado menos el gasto REAL registrado (que ya
+  // incluye los pagos de deuda de esta quincena, contados como gasto desde
+  // que se pagan — ver recordDebtPayment en deudas/actions.ts) menos lo
+  // apartado en ahorros. Antes se restaba el pago de deuda dos veces por
+  // separado (una vez aquí y de nuevo al no estar en `expenses`); ahora una
+  // sola fuente de verdad: `realQuincena`.
+  const saldoReal = ingresoQuincena - realQuincena - savingsContributedThisQuincena;
 
   // Metas con una cuenta vinculada derivan su progreso del saldo real de
   // esa cuenta en vez del current_amount manual (ver balance/page.tsx) — se
