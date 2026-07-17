@@ -38,12 +38,12 @@ export async function getSalarySettings(): Promise<
   return data ?? DEFAULT_SETTINGS;
 }
 
-export async function getSalaries(): Promise<Salary[]> {
+export async function getSalaries(fromISO?: string, toISO?: string): Promise<Salary[]> {
   const supabase = await createClient();
-  const { data } = await supabase
-    .from("salaries")
-    .select("*")
-    .order("pay_date", { ascending: false });
+  let q = supabase.from("salaries").select("*");
+  if (fromISO) q = q.gte("pay_date", fromISO);
+  if (toISO) q = q.lte("pay_date", toISO);
+  const { data } = await q.order("pay_date", { ascending: false });
   return data ?? [];
 }
 
@@ -117,13 +117,12 @@ export async function getSavingsAccounts(): Promise<SavingsAccount[]> {
   return data ?? [];
 }
 
-export async function getSavingsMovements(): Promise<SavingsMovement[]> {
+export async function getSavingsMovements(fromISO?: string, toISO?: string): Promise<SavingsMovement[]> {
   const supabase = await createClient();
-  const { data } = await supabase
-    .from("savings_movements")
-    .select("*")
-    .order("date", { ascending: false })
-    .order("created_at", { ascending: false });
+  let q = supabase.from("savings_movements").select("*");
+  if (fromISO) q = q.gte("date", fromISO);
+  if (toISO) q = q.lte("date", toISO);
+  const { data } = await q.order("date", { ascending: false }).order("created_at", { ascending: false });
   return data ?? [];
 }
 

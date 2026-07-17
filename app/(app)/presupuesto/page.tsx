@@ -8,9 +8,11 @@ import {
   getSubscriptions,
   getTags,
 } from "@/lib/data";
-import { formatDateShort, todayISO, toISODate } from "@/lib/format";
+import { formatDateLong, todayISO, toISODate } from "@/lib/format";
 import { countWorkdays, exceptionsMap } from "@/lib/calendar";
 import { quincenaForDate } from "@/lib/periods";
+import { groupByDate } from "@/lib/group";
+import { SearchBar } from "@/components/ui/SearchBar";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -100,10 +102,11 @@ function NewExpenseForm({
 export default async function PresupuestoPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tag?: string }>;
+  searchParams: Promise<{ tag?: string; q?: string }>;
 }) {
   const sp = await searchParams;
   const tagFilter = sp.tag || "";
+  const search = (sp.q ?? "").trim().toLowerCase();
   const today = todayISO();
   const q = quincenaForDate(today);
   const monthStart = toISODate(new Date(q.year, q.month, 1, 12));
@@ -131,12 +134,30 @@ export default async function PresupuestoPage({
   const estQuincena = perDay * workedQuincena;
   const estMonth = perDay * workedMonth;
   const realQuincena = expenses.reduce((s, e) => s + Number(e.amount), 0);
-  // El filtro por etiqueta solo afecta la lista visible, no los totales
-  // de la quincena (que siempre reflejan todo lo gastado).
-  const visibleExpenses = tagFilter ? expenses.filter((e) => e.tag_id === tagFilter) : expenses;
-
   const tagName = (id: string | null) =>
     id ? (tags.find((t) => t.id === id)?.name ?? "General") : "General";
+
+  // El filtro por etiqueta/búsqueda solo afecta la lista visible, no los
+  // totales de la quincena (que siempre reflejan todo lo gastado).
+  const visibleExpenses = expenses
+    .filter((e) => !tagFilter || e.tag_id === tagFilter)
+    .filter(
+      (e) =>
+        !search ||
+        (e.note ?? "").toLowerCase().includes(search) ||
+        tagName(e.tag_id).toLowerCase().includes(search),
+    );
+  const visibleTotal = visibleExpenses.reduce((s, e) => s + Number(e.amount), 0);
+  const groupedExpenses = groupByDate(visibleExpenses, (e) => e.date);
+
+  function hrefFor(next: { tag?: string }) {
+    const params = new URLSearchParams();
+    const tag = next.tag ?? sp.tag;
+    if (tag) params.set("tag", tag);
+    if (sp.q) params.set("q", sp.q);
+    const qs = params.toString();
+    return qs ? `/presupuesto?${qs}` : "/presupuesto";
+  }
 
   return (
     <>
@@ -258,28 +279,39 @@ export default async function PresupuestoPage({
         />
       </div>
 
-      {tags.length > 0 && expenses.length > 0 && (
-        <div className="flex items-center gap-2 px-1 mb-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger className="glass inline-flex items-center gap-1.5 rounded-2xl px-3 py-1.5 text-xs font-semibold text-ink cursor-pointer">
-              <Icon name="chevronDown" size={12} />
-              {tagFilter ? (tags.find((t) => t.id === tagFilter)?.name ?? "Filtrar") : "Todas las categorías"}
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start">
-              <DropdownMenuItem asChild>
-                <Link href="/presupuesto">Todas las categorías</Link>
-              </DropdownMenuItem>
-              {tags.map((t) => (
-                <DropdownMenuItem key={t.id} asChild>
-                  <Link href={`/presupuesto?tag=${t.id}`}>{t.name}</Link>
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
+      {expenses.length > 0 && (
+        <div className="flex flex-col gap-2 mb-2">
+          <SearchBar placeholder="Buscar por nota o categoría…" />
+          <div className="flex items-center justify-between gap-2 flex-wrap px-1">
+            {tags.length > 0 && (
+              <DropdownMenu>
+                <DropdownMenuTrigger className="glass inline-flex items-center gap-1.5 rounded-2xl px-3 py-1.5 text-xs font-semibold text-ink cursor-pointer">
+                  <Icon name="chevronDown" size={12} />
+                  {tagFilter ? (tags.find((t) => t.id === tagFilter)?.name ?? "Filtrar") : "Todas las categorías"}
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start">
+                  <DropdownMenuItem asChild>
+                    <Link href={hrefFor({ tag: undefined })}>Todas las categorías</Link>
+                  </DropdownMenuItem>
+                  {tags.map((t) => (
+                    <DropdownMenuItem key={t.id} asChild>
+                      <Link href={hrefFor({ tag: t.id })}>{t.name}</Link>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+            {visibleExpenses.length > 0 && (
+              <p className="text-xs text-muted">
+                {visibleExpenses.length} · Total{" "}
+                <Money value={visibleTotal} decimals={false} className="font-semibold text-ink" />
+              </p>
+            )}
+          </div>
         </div>
       )}
 
-      {visibleExpenses.length === 0 ? (
+      {visibleExpenses.length === 0 && expenses.length === 0 ? (
         <EmptyState
           icon="wallet"
           title="Sin gastos aún"
@@ -288,31 +320,48 @@ export default async function PresupuestoPage({
             <NewExpenseForm tags={tags} accounts={accounts} today={today} triggerLabel="Registrar gasto" />
           }
         />
+      ) : visibleExpenses.length === 0 ? (
+        <EmptyState
+          icon="wallet"
+          title="Sin resultados"
+          message="Ningún gasto coincide con este filtro."
+          action={
+            <Link href="/presupuesto" className="text-sm font-semibold text-primary">
+              Quitar filtros
+            </Link>
+          }
+        />
       ) : (
-        <ul className="flex flex-col gap-2">
-          {visibleExpenses.map((e) => (
-            <li key={e.id}>
-              <GlassCard className="flex items-center gap-3 py-2.5">
-                <IconBubble icon="wallet" tone="neutral" size="sm" />
-                <div className="min-w-0 flex-1">
-                  <p className="font-semibold text-ink">
-                    <Money value={Number(e.amount)} />
-                  </p>
-                  <p className="text-xs text-muted truncate">
-                    {formatDateShort(e.date)}
-                    {e.note ? ` · ${e.note}` : ""}
-                  </p>
-                </div>
-                <Badge tone="neutral">{tagName(e.tag_id)}</Badge>
-                <DeleteButton
-                  action={deleteExpense.bind(null, e.id)}
-                  title="¿Eliminar gasto?"
-                  message="Se quitará del historial de gastos."
-                />
-              </GlassCard>
-            </li>
+        <div className="flex flex-col gap-4">
+          {groupedExpenses.map((group) => (
+            <div key={group.date}>
+              <p className="text-xs font-semibold text-muted px-1 mb-1.5 capitalize">
+                {formatDateLong(group.date)}
+              </p>
+              <ul className="flex flex-col gap-2">
+                {group.items.map((e) => (
+                  <li key={e.id}>
+                    <GlassCard className="flex items-center gap-3 py-2.5">
+                      <IconBubble icon="wallet" tone="neutral" size="sm" />
+                      <div className="min-w-0 flex-1">
+                        <p className="font-semibold text-ink">
+                          <Money value={Number(e.amount)} />
+                        </p>
+                        {e.note && <p className="text-xs text-muted truncate">{e.note}</p>}
+                      </div>
+                      <Badge tone="neutral">{tagName(e.tag_id)}</Badge>
+                      <DeleteButton
+                        action={deleteExpense.bind(null, e.id)}
+                        title="¿Eliminar gasto?"
+                        message="Se quitará del historial de gastos."
+                      />
+                    </GlassCard>
+                  </li>
+                ))}
+              </ul>
+            </div>
           ))}
-        </ul>
+        </div>
       )}
     </>
   );

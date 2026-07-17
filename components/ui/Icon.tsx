@@ -29,6 +29,7 @@ import {
   House,
   Lightbulb,
   List,
+  MagnifyingGlass,
   Moon,
   Palette,
   PencilSimple,
@@ -81,7 +82,8 @@ export type IconName =
   | "bank"
   | "repeat"
   | "chart"
-  | "movements";
+  | "movements"
+  | "search";
 
 const icons: Record<IconName, PhosphorIcon> = {
   dashboard: House,
@@ -119,6 +121,7 @@ const icons: Record<IconName, PhosphorIcon> = {
   repeat: ArrowsClockwise,
   chart: ChartBar,
   movements: ArrowsLeftRight,
+  search: MagnifyingGlass,
 };
 
 interface IconProps {

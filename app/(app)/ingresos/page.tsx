@@ -8,6 +8,9 @@ import {
   daysBetween,
 } from "@/lib/format";
 import { nextPayDateFrom } from "@/lib/periods";
+import { groupByDate } from "@/lib/group";
+import { RANGE_LABEL, parseRangePreset, rangeBounds, type RangePreset } from "@/lib/range";
+import { SearchBar } from "@/components/ui/SearchBar";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { StatTile } from "@/components/ui/StatTile";
@@ -124,24 +127,48 @@ function NewSalaryForm({
 export default async function IngresosPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tag?: string }>;
+  searchParams: Promise<{ tag?: string; range?: string; q?: string }>;
 }) {
   await runSalaryCatchUp();
 
   const sp = await searchParams;
   const tagFilter = sp.tag || "";
+  const range = parseRangePreset(sp.range);
+  const { from, to } = rangeBounds(range);
+  const search = (sp.q ?? "").trim().toLowerCase();
   const [settings, salaries, accounts, tags] = await Promise.all([
     getSalarySettings(),
-    getSalaries(),
+    getSalaries(from, to),
     getSavingsAccounts(),
     getTags(),
   ]);
-  const visibleSalaries = tagFilter ? salaries.filter((s) => s.tag_id === tagFilter) : salaries;
+  const tagName = (id: string | null) => (id ? (tags.find((t) => t.id === id)?.name ?? "") : "");
+  const visibleSalaries = salaries
+    .filter((s) => !tagFilter || s.tag_id === tagFilter)
+    .filter(
+      (s) =>
+        !search ||
+        (s.note ?? "").toLowerCase().includes(search) ||
+        tagName(s.tag_id).toLowerCase().includes(search),
+    );
+  const visibleTotal = visibleSalaries.reduce((sum, s) => sum + Number(s.amount), 0);
+  const groupedSalaries = groupByDate(visibleSalaries, (s) => s.pay_date);
+
+  function hrefFor(next: { tag?: string; range?: RangePreset }) {
+    const params = new URLSearchParams();
+    const tag = next.tag ?? sp.tag;
+    const r = next.range ?? range;
+    if (tag) params.set("tag", tag);
+    if (r !== "todo") params.set("range", r);
+    if (sp.q) params.set("q", sp.q);
+    const qs = params.toString();
+    return qs ? `/ingresos?${qs}` : "/ingresos";
+  }
 
   const today = todayISO();
   const thisMonth = today.slice(0, 7);
   const monthTotal = salaries
-    .filter((s) => s.pay_date.slice(0, 7) === thisMonth)
+    .filter((s) => s.confirmed && s.pay_date.slice(0, 7) === thisMonth)
     .reduce((sum, s) => sum + Number(s.amount), 0);
 
   const nextPay = nextPayDateFrom(settings.next_pay_date, settings.frequency, today);
@@ -274,18 +301,46 @@ export default async function IngresosPage({
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem asChild>
-                <Link href="/ingresos">Todos</Link>
+                <Link href={hrefFor({ tag: undefined })}>Todos</Link>
               </DropdownMenuItem>
               {tags.map((t) => (
                 <DropdownMenuItem key={t.id} asChild>
-                  <Link href={`/ingresos?tag=${t.id}`}>{t.name}</Link>
+                  <Link href={hrefFor({ tag: t.id })}>{t.name}</Link>
                 </DropdownMenuItem>
               ))}
             </DropdownMenuContent>
           </DropdownMenu>
         )}
       </div>
-      {visibleSalaries.length === 0 ? (
+
+      {salaries.length > 0 && (
+        <div className="flex flex-col gap-2 mb-3">
+          <SearchBar placeholder="Buscar por nota o etiqueta…" />
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <div className="glass inline-flex gap-1 rounded-2xl p-1">
+              {(Object.keys(RANGE_LABEL) as RangePreset[]).map((r) => (
+                <Link
+                  key={r}
+                  href={hrefFor({ range: r })}
+                  className={`rounded-xl px-2.5 py-1 text-xs font-semibold transition-colors ${
+                    r === range ? "bg-primary text-white" : "text-ink/70"
+                  }`}
+                >
+                  {RANGE_LABEL[r]}
+                </Link>
+              ))}
+            </div>
+            {visibleSalaries.length > 0 && (
+              <p className="text-xs text-muted px-1">
+                {visibleSalaries.length} · Total{" "}
+                <Money value={visibleTotal} decimals={false} className="font-semibold text-ink" />
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {visibleSalaries.length === 0 && salaries.length === 0 ? (
         <EmptyState
           icon="wallet"
           title="Sin ingresos registrados"
@@ -300,38 +355,55 @@ export default async function IngresosPage({
             />
           }
         />
+      ) : visibleSalaries.length === 0 ? (
+        <EmptyState
+          icon="wallet"
+          title="Sin resultados"
+          message="Ningún ingreso coincide con este filtro."
+          action={
+            <Link href="/ingresos" className="text-sm font-semibold text-primary">
+              Quitar filtros
+            </Link>
+          }
+        />
       ) : (
-        <ul className="flex flex-col gap-2">
-          {visibleSalaries.map((s) => (
-            <li key={s.id}>
-              <GlassCard className="flex items-center gap-3 py-3">
-                <IconBubble icon={s.kind === "extra" ? "trendUp" : "wallet"} tone="neutral" />
-                <div className="min-w-0 flex-1">
-                  <p className="font-bold text-ink"><Money value={Number(s.amount)} /></p>
-                  <p className="text-xs text-muted truncate">
-                    {formatDateLong(s.pay_date)}
-                    {s.note ? ` · ${s.note}` : ""}
-                  </p>
-                </div>
-                {!s.confirmed ? (
-                  <>
-                    <Badge tone="warning">Pendiente</Badge>
-                    <ConfirmSalaryButton salaryId={s.id} compact />
-                  </>
-                ) : (
-                  <Badge tone={s.kind === "extra" ? "warning" : "primary"}>
-                    {s.kind === "extra" ? "Extra" : "Sueldo"}
-                  </Badge>
-                )}
-                <DeleteButton
-                  action={deleteSalary.bind(null, s.id)}
-                  title="¿Eliminar ingreso?"
-                  message="Se quitará este ingreso del historial."
-                />
-              </GlassCard>
-            </li>
+        <div className="flex flex-col gap-4">
+          {groupedSalaries.map((group) => (
+            <div key={group.date}>
+              <p className="text-xs font-semibold text-muted px-1 mb-1.5 capitalize">
+                {formatDateLong(group.date)}
+              </p>
+              <ul className="flex flex-col gap-2">
+                {group.items.map((s) => (
+                  <li key={s.id}>
+                    <GlassCard className="flex items-center gap-3 py-3">
+                      <IconBubble icon={s.kind === "extra" ? "trendUp" : "wallet"} tone="neutral" />
+                      <div className="min-w-0 flex-1">
+                        <p className="font-bold text-ink"><Money value={Number(s.amount)} /></p>
+                        {s.note && <p className="text-xs text-muted truncate">{s.note}</p>}
+                      </div>
+                      {!s.confirmed ? (
+                        <>
+                          <Badge tone="warning">Pendiente</Badge>
+                          <ConfirmSalaryButton salaryId={s.id} compact />
+                        </>
+                      ) : (
+                        <Badge tone={s.kind === "extra" ? "warning" : "primary"}>
+                          {s.kind === "extra" ? "Extra" : "Sueldo"}
+                        </Badge>
+                      )}
+                      <DeleteButton
+                        action={deleteSalary.bind(null, s.id)}
+                        title="¿Eliminar ingreso?"
+                        message="Se quitará este ingreso del historial."
+                      />
+                    </GlassCard>
+                  </li>
+                ))}
+              </ul>
+            </div>
           ))}
-        </ul>
+        </div>
       )}
     </>
   );
