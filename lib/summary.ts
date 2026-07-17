@@ -19,7 +19,7 @@ import {
 import { countWorkdays, exceptionsMap } from "./calendar";
 import { quincenaForDate, nextPayDateFrom, type Period } from "./periods";
 import { addDaysISO, daysBetween, formatDOP, toISODate, todayISO } from "./format";
-import type { Goal, SavingsMovement } from "./types";
+import type { Goal, Salary, SavingsMovement } from "./types";
 
 export interface Alert {
   tone: "warning" | "danger" | "info" | "success";
@@ -43,6 +43,9 @@ export interface FinanceSummary {
   today: string;
   quincena: Period;
   ingresoQuincena: number;
+  /** Ingreso auto-generado de esta quincena que el usuario aún no confirmó
+   *  que llegó — mientras exista, no cuenta en `ingresoQuincena`. */
+  pendingSalary: Salary | null;
   monthIncome: number;
   perDay: number;
   workedQuincena: number;
@@ -122,17 +125,20 @@ export async function getFinanceSummary(): Promise<FinanceSummary> {
     0,
   );
 
-  // Ingreso quincenal: config por defecto o última quincena registrada
-  const lastQuincena = salaries.find((s) => s.kind === "quincena");
-  const ingresoQuincena =
-    settings.default_amount > 0
-      ? settings.default_amount
-      : lastQuincena
-        ? Number(lastQuincena.amount)
-        : 0;
+  // Ingreso quincenal: SOLO lo que ya se confirmó que llegó, no lo
+  // configurado — antes se usaba `settings.default_amount` sin más, así que
+  // el dinero aparecía "disponible" desde el día 1 de la quincena, antes de
+  // que el cobro pasara de verdad. `runSalaryCatchUp` genera la fila de
+  // `salaries` con `confirmed: false` en la fecha de cobro; hasta que el
+  // usuario la confirma (banner en el Inicio), no suma acá.
+  const salariesThisQuincena = salaries.filter((s) => s.pay_date >= q.start && s.pay_date <= q.end);
+  const ingresoQuincena = salariesThisQuincena
+    .filter((s) => s.confirmed)
+    .reduce((sum, s) => sum + Number(s.amount), 0);
+  const pendingSalary = salariesThisQuincena.find((s) => !s.confirmed) ?? null;
 
   const monthIncome = salaries
-    .filter((s) => s.pay_date.slice(0, 7) === today.slice(0, 7))
+    .filter((s) => s.confirmed && s.pay_date.slice(0, 7) === today.slice(0, 7))
     .reduce((sum, s) => sum + Number(s.amount), 0);
 
   // Presupuesto
@@ -337,6 +343,7 @@ export async function getFinanceSummary(): Promise<FinanceSummary> {
     today,
     quincena: q,
     ingresoQuincena,
+    pendingSalary,
     monthIncome,
     perDay,
     workedQuincena,

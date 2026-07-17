@@ -27,6 +27,7 @@ import {
 import { MoneyValue } from "@/components/ui/MoneyValue";
 import { Money } from "@/components/ui/Money";
 import { addSalary, deleteSalary, saveSalarySettings } from "./actions";
+import { ConfirmSalaryButton } from "@/components/ui/ConfirmSalaryButton";
 import type { SavingsAccount, SalarySettings, Tag } from "@/lib/types";
 
 export const metadata = { title: "Ingresos · Cachin'" };
@@ -43,15 +44,23 @@ function NewSalaryForm({
   accounts,
   today,
   triggerLabel,
+  trigger,
 }: {
   settings: Omit<SalarySettings, "user_id">;
   tags: Tag[];
   accounts: SavingsAccount[];
   today: string;
   triggerLabel: string;
+  trigger?: "button" | "link" | "icon" | "pill";
 }) {
   return (
-    <FormModal title="Registrar ingreso" action={addSalary} submitLabel="Registrar" triggerLabel={triggerLabel}>
+    <FormModal
+      title="Registrar ingreso"
+      action={addSalary}
+      submitLabel="Registrar"
+      triggerLabel={triggerLabel}
+      trigger={trigger}
+    >
       <Field label="Monto" htmlFor="amount" required>
         <MoneyInput
           id="amount"
@@ -144,7 +153,14 @@ export default async function IngresosPage({
         title="Ingresos"
         subtitle="Tu sueldo e ingresos extra"
         action={
-          <NewSalaryForm settings={settings} tags={tags} accounts={accounts} today={today} triggerLabel="Nuevo" />
+          <NewSalaryForm
+            settings={settings}
+            tags={tags}
+            accounts={accounts}
+            today={today}
+            triggerLabel="Nuevo"
+            trigger="pill"
+          />
         }
       />
 
@@ -297,9 +313,16 @@ export default async function IngresosPage({
                     {s.note ? ` · ${s.note}` : ""}
                   </p>
                 </div>
-                <Badge tone={s.kind === "extra" ? "warning" : "primary"}>
-                  {s.kind === "extra" ? "Extra" : "Sueldo"}
-                </Badge>
+                {!s.confirmed ? (
+                  <>
+                    <Badge tone="warning">Pendiente</Badge>
+                    <ConfirmSalaryButton salaryId={s.id} compact />
+                  </>
+                ) : (
+                  <Badge tone={s.kind === "extra" ? "warning" : "primary"}>
+                    {s.kind === "extra" ? "Extra" : "Sueldo"}
+                  </Badge>
+                )}
                 <DeleteButton
                   action={deleteSalary.bind(null, s.id)}
                   title="¿Eliminar ingreso?"

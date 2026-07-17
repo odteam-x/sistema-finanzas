@@ -44,7 +44,7 @@ export function GreetingHero({ subtitle, action, displayName }: GreetingHeroProp
       style={{ top: "max(0.75rem, env(safe-area-inset-top))" }}
     >
       <div className="min-w-0 justify-self-start">
-        <h1 className="text-[1.75rem] sm:text-4xl font-extrabold tracking-tight text-ink truncate">
+        <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-ink truncate">
           {greeting}
           {name ? `, ${name}` : ""}
         </h1>
@@ -58,7 +58,7 @@ export function GreetingHero({ subtitle, action, displayName }: GreetingHeroProp
         className="justify-self-center shrink-0 h-8 w-8 sm:h-9 sm:w-9"
         priority
       />
-      <div className="flex items-center justify-end justify-self-end shrink-0">{action}</div>
+      <div className="grid justify-items-end items-center justify-self-end shrink-0">{action}</div>
     </header>
   );
 }

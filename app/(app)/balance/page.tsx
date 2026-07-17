@@ -52,13 +52,21 @@ function NewAccountForm({
   goals,
   accounts,
   triggerLabel,
+  trigger,
 }: {
   goals: Goal[];
   accounts: { goal_id: string | null }[];
   triggerLabel: string;
+  trigger?: "button" | "link" | "icon" | "pill";
 }) {
   return (
-    <FormModal title="Nueva cuenta" action={addAccount} submitLabel="Crear cuenta" triggerLabel={triggerLabel}>
+    <FormModal
+      title="Nueva cuenta"
+      action={addAccount}
+      submitLabel="Crear cuenta"
+      triggerLabel={triggerLabel}
+      trigger={trigger}
+    >
       <Field label="Nombre" htmlFor="name" required>
         <Input id="name" name="name" placeholder="Ej.: Banco BHD, Efectivo…" required />
       </Field>
@@ -125,7 +133,7 @@ export default async function BalancePage() {
       <PageHeader
         title="Balance"
         subtitle="Ahorro, banco, efectivo y tarjetas"
-        action={<NewAccountForm goals={goals} accounts={accounts} triggerLabel="Cuenta" />}
+        action={<NewAccountForm goals={goals} accounts={accounts} triggerLabel="Cuenta" trigger="pill" />}
       />
 
       {/* Total */}

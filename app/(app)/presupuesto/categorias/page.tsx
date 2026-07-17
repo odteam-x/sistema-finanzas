@@ -21,9 +21,21 @@ import { addCategory, deleteCategory, updateCategory } from "../actions";
 
 export const metadata = { title: "Presupuesto · Cachin'" };
 
-function NewCategoryForm({ triggerLabel }: { triggerLabel: string }) {
+function NewCategoryForm({
+  triggerLabel,
+  trigger,
+}: {
+  triggerLabel: string;
+  trigger?: "button" | "link" | "icon" | "pill";
+}) {
   return (
-    <FormModal title="Nueva categoría" action={addCategory} submitLabel="Agregar" triggerLabel={triggerLabel}>
+    <FormModal
+      title="Nueva categoría"
+      action={addCategory}
+      submitLabel="Agregar"
+      triggerLabel={triggerLabel}
+      trigger={trigger}
+    >
       <Field
         label="Nombre"
         htmlFor="name"
@@ -81,7 +93,7 @@ export default async function PresupuestoCategoriasPage() {
       <PageHeader
         title="Presupuesto"
         subtitle="Cuánto planeas gastar por día trabajado"
-        action={<NewCategoryForm triggerLabel="Categoría" />}
+        action={<NewCategoryForm triggerLabel="Categoría" trigger="pill" />}
       />
 
       <div className="grid grid-cols-2 gap-2 sm:gap-3 mb-4">

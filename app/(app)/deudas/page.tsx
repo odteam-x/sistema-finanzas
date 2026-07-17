@@ -132,7 +132,7 @@ export default async function DeudasPage() {
       <PageHeader
         title="Deudas"
         subtitle="Acreedores, cuotas y vencimientos"
-        action={<AddDebtForm />}
+        action={<AddDebtForm compact />}
       />
 
       <div className="grid grid-cols-2 gap-3 mb-4">

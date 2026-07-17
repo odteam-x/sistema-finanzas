@@ -43,31 +43,20 @@ export async function runSalaryCatchUp(): Promise<void> {
       ? await getOrCreateAccountByType(supabase, user.id, settings.payment_method as AccountType)
       : await getOrCreateDefaultAccountId(supabase, user.id);
 
-    const { data: salary } = await supabase
-      .from("salaries")
-      .insert({
-        user_id: user.id,
-        amount: settings.default_amount,
-        pay_date: cursor,
-        kind: "quincena",
-        note: "Ingreso automático",
-        account_id,
-      })
-      .select("id")
-      .single();
-
-    if (account_id && salary) {
-      await supabase.from("savings_movements").insert({
-        account_id,
-        user_id: user.id,
-        kind: "deposito",
-        amount: settings.default_amount,
-        date: cursor,
-        note: "Ingreso automático",
-        source: "salary",
-        source_ref_id: salary.id,
-      });
-    }
+    // confirmed: false — todavía no sabemos que este cobro de verdad llegó
+    // (esto corre solo porque se cumplió la fecha configurada, no porque el
+    // usuario avisó nada). El movimiento espejo en el ledger se difiere
+    // hasta que lo confirme (ver confirmSalary en ingresos/actions.ts) —
+    // así "Disponible" no cuenta dinero que aún no se sabe si llegó.
+    await supabase.from("salaries").insert({
+      user_id: user.id,
+      amount: settings.default_amount,
+      pay_date: cursor,
+      kind: "quincena",
+      note: "Ingreso automático",
+      account_id,
+      confirmed: false,
+    });
 
     cursor = nextCursor;
   }

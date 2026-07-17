@@ -22,14 +22,22 @@ function NewSubscriptionForm({
   accounts,
   today,
   triggerLabel,
+  trigger,
 }: {
   tags: Tag[];
   accounts: SavingsAccount[];
   today: string;
   triggerLabel: string;
+  trigger?: "button" | "link" | "icon" | "pill";
 }) {
   return (
-    <FormModal title="Nueva suscripción" action={addSubscription} submitLabel="Agregar" triggerLabel={triggerLabel}>
+    <FormModal
+      title="Nueva suscripción"
+      action={addSubscription}
+      submitLabel="Agregar"
+      triggerLabel={triggerLabel}
+      trigger={trigger}
+    >
       <Field label="Nombre" htmlFor="name" required>
         <Input id="name" name="name" placeholder="Netflix, Gimnasio…" required />
       </Field>
@@ -94,7 +102,9 @@ export default async function SuscripcionesPage() {
       <PageHeader
         title="Suscripciones"
         subtitle="Cobros recurrentes"
-        action={<NewSubscriptionForm tags={tags} accounts={accounts} today={today} triggerLabel="Nueva" />}
+        action={
+          <NewSubscriptionForm tags={tags} accounts={accounts} today={today} triggerLabel="Nueva" trigger="pill" />
+        }
       />
 
       <div className="mb-4">

@@ -31,9 +31,21 @@ function NewSavingsAccountForm({ triggerLabel }: { triggerLabel: string }) {
   );
 }
 
-function NewGoalForm({ triggerLabel }: { triggerLabel: string }) {
+function NewGoalForm({
+  triggerLabel,
+  trigger,
+}: {
+  triggerLabel: string;
+  trigger?: "button" | "link" | "icon" | "pill";
+}) {
   return (
-    <FormModal title="Nueva meta" action={addGoal} submitLabel="Crear meta" triggerLabel={triggerLabel}>
+    <FormModal
+      title="Nueva meta"
+      action={addGoal}
+      submitLabel="Crear meta"
+      triggerLabel={triggerLabel}
+      trigger={trigger}
+    >
       <Field label="Nombre" htmlFor="name" required>
         <Input id="name" name="name" placeholder="Fondo de emergencia" required />
       </Field>
@@ -83,7 +95,7 @@ export default async function MetasPage() {
       <PageHeader
         title="Ahorros"
         subtitle="Ahorra en general o para una meta"
-        action={<NewGoalForm triggerLabel="Meta" />}
+        action={<NewGoalForm triggerLabel="Meta" trigger="pill" />}
       />
 
       {/* Ahorro general: guardar dinero sin atarlo a una meta específica. */}

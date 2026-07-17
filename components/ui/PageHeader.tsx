@@ -23,7 +23,7 @@ export function PageHeader({ title, subtitle, action, showBack = true }: PageHea
       <div className="flex items-center gap-1 min-w-0 justify-self-start">
         {showBack && <BackButton />}
         <div className="min-w-0">
-          <h1 className="text-[1.75rem] sm:text-4xl font-extrabold tracking-tight text-ink truncate">
+          <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-ink truncate">
             {title}
           </h1>
           {subtitle && <p className="text-sm text-muted mt-0.5 truncate">{subtitle}</p>}
@@ -37,7 +37,12 @@ export function PageHeader({ title, subtitle, action, showBack = true }: PageHea
         className="justify-self-center shrink-0 h-8 w-8 sm:h-9 sm:w-9"
         priority
       />
-      <div className="flex items-center justify-end justify-self-end shrink-0">{action}</div>
+      {/* grid (no flex): el trigger="pill" de FormModal trae su propia clase
+          flex-1 pensada para filas de píldoras que llenan el ancho — en un
+          padre flex eso estira el botón a todo el alto de la columna. En un
+          padre grid, flex-grow no aplica a los grid items, así que el botón
+          conserva su ancho natural sin tocar FormModal. */}
+      <div className="grid justify-items-end items-center justify-self-end shrink-0">{action}</div>
     </header>
   );
 }

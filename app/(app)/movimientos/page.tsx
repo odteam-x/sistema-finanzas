@@ -36,13 +36,21 @@ function NewMovementForm({
   accounts,
   today,
   triggerLabel,
+  trigger,
 }: {
   accounts: SavingsAccount[];
   today: string;
   triggerLabel: string;
+  trigger?: "button" | "link" | "icon" | "pill";
 }) {
   return (
-    <FormModal title="Nuevo movimiento" action={addMovement} submitLabel="Registrar" triggerLabel={triggerLabel}>
+    <FormModal
+      title="Nuevo movimiento"
+      action={addMovement}
+      submitLabel="Registrar"
+      triggerLabel={triggerLabel}
+      trigger={trigger}
+    >
       <Field label="Tipo" htmlFor="mv-kind">
         <Select id="mv-kind" name="kind" defaultValue="retiro">
           <option value="deposito">Ingreso</option>
@@ -93,7 +101,7 @@ export default async function MovimientosPage({
       <PageHeader
         title="Movimientos"
         subtitle="Todo lo que entra y sale de tus cuentas"
-        action={<NewMovementForm accounts={accounts} today={today} triggerLabel="Movimiento" />}
+        action={<NewMovementForm accounts={accounts} today={today} triggerLabel="Movimiento" trigger="pill" />}
       />
 
       {movements.length > 0 && (

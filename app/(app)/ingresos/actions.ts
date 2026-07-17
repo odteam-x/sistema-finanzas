@@ -102,6 +102,44 @@ export async function addSalary(formData: FormData): Promise<ActionResult> {
   return { ok: true };
 }
 
+export async function confirmSalary(id: string): Promise<ActionResult> {
+  const user = await requireUser();
+  const supabase = await createClient();
+
+  const { data: salary, error: fetchError } = await supabase
+    .from("salaries")
+    .select("id, amount, pay_date, account_id, confirmed")
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .maybeSingle();
+  if (fetchError || !salary) return { ok: false, error: "No se encontró el ingreso." };
+  if (salary.confirmed) return { ok: true }; // ya confirmado, nada que hacer
+
+  const { error: updateError } = await supabase
+    .from("salaries")
+    .update({ confirmed: true })
+    .eq("id", id);
+  if (updateError) return { ok: false, error: "No se pudo confirmar el ingreso." };
+
+  // El movimiento espejo se crea recién ahora — runSalaryCatchUp lo dejó
+  // pendiente justamente para no acreditar dinero que aún no se confirma.
+  if (salary.account_id) {
+    await supabase.from("savings_movements").insert({
+      account_id: salary.account_id,
+      user_id: user.id,
+      kind: "deposito",
+      amount: salary.amount,
+      date: salary.pay_date,
+      note: "Ingreso automático",
+      source: "salary",
+      source_ref_id: salary.id,
+    });
+  }
+
+  revalidateAll();
+  return { ok: true };
+}
+
 export async function deleteSalary(id: string): Promise<ActionResult> {
   await requireUser();
   const supabase = await createClient();

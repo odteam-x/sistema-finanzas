@@ -12,6 +12,10 @@ export interface Salary {
   account_id: string | null;
   tag_id: string | null;
   created_at: string;
+  /** false = el usuario aún no confirmó que este cobro realmente llegó
+   *  (lo generó runSalaryCatchUp automáticamente); no cuenta como
+   *  disponible hasta que se confirme. Ver lib/summary.ts. */
+  confirmed: boolean;
 }
 
 export type PayFrequency = "semanal" | "quincenal" | "mensual";

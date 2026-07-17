@@ -8,7 +8,15 @@ import { Field, Input, Select, MoneyInput } from "@/components/ui/Field";
 import { todayISO } from "@/lib/format";
 import { addDebt } from "./actions";
 
-export function AddDebtForm({ triggerLabel = "Deuda" }: { triggerLabel?: string }) {
+export function AddDebtForm({
+  triggerLabel = "Deuda",
+  compact,
+}: {
+  triggerLabel?: string;
+  /** Disparador en píldora (36px) en vez del botón sólido (44px) — para
+   *  usarlo en PageHeader sin competir con el isotipo centrado. */
+  compact?: boolean;
+}) {
   const [open, setOpen] = useState(false);
   const [type, setType] = useState<"unico" | "cuotas">("unico");
   const [error, setError] = useState<string | null>(null);
@@ -33,10 +41,20 @@ export function AddDebtForm({ triggerLabel = "Deuda" }: { triggerLabel?: string 
 
   return (
     <>
-      <Button onClick={openModal}>
-        <Icon name="plus" size={18} />
-        {triggerLabel}
-      </Button>
+      {compact ? (
+        <button
+          onClick={openModal}
+          className="inline-flex items-center justify-center gap-1.5 min-h-9 rounded-full font-semibold text-sm cursor-pointer transition-colors active:scale-[0.97] bg-primary-soft text-primary hover:bg-primary/15"
+        >
+          <Icon name="plus" size={16} />
+          {triggerLabel}
+        </button>
+      ) : (
+        <Button onClick={openModal}>
+          <Icon name="plus" size={18} />
+          {triggerLabel}
+        </Button>
+      )}
 
       <Modal open={open} onClose={() => setOpen(false)} title="Nueva deuda">
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">

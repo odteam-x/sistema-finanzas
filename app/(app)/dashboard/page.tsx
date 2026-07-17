@@ -53,7 +53,12 @@ export default async function DashboardPage() {
     <>
       <GreetingHero subtitle={`Quincena ${s.quincena.label}`} displayName={profile?.display_name ?? undefined} />
 
-      <AvailableHero disponible={s.saldoReal} daysLeft={daysLeft} perDay={perDay} />
+      <AvailableHero
+        disponible={s.saldoReal}
+        daysLeft={daysLeft}
+        perDay={perDay}
+        pendingSalary={s.pendingSalary}
+      />
 
       {/* Resumen (2x2) */}
       <div className="grid grid-cols-2 gap-3 mb-4">
