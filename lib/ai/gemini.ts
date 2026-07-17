@@ -8,7 +8,11 @@ import type { FinanceSummary } from "@/lib/summary";
 import { formatDOP } from "@/lib/format";
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY ?? "";
-const MODEL = "gemini-2.0-flash";
+// gemini-2.0-flash se retiró el 1 jun 2026 (toda llamada devolvía error, por
+// eso el asistente nunca respondía). gemini-2.5-flash es el reemplazo
+// vigente en el tier gratuito — ojo: Google ya anunció su retiro para el
+// 16 oct 2026, para esa fecha esto va a necesitar otro cambio de MODEL.
+const MODEL = "gemini-2.5-flash";
 
 export const isGeminiConfigured = GEMINI_API_KEY.length > 0;
 
@@ -40,10 +44,18 @@ async function callGemini(contents: { role: "user" | "model"; parts: { text: str
         cache: "no-store",
       },
     );
-    if (!res.ok) return null;
+    if (!res.ok) {
+      // Log server-side (Vercel → proyecto → Logs) para poder diagnosticar
+      // sin adivinar — antes esto fallaba en silencio y parecía "no
+      // configurado" cuando en realidad la key era válida pero el modelo
+      // ya no existía (ver nota de MODEL arriba).
+      console.error(`[gemini] ${res.status} ${res.statusText}: ${await res.text()}`);
+      return null;
+    }
     const data = (await res.json()) as GeminiResponse;
     return data.candidates?.[0]?.content?.parts?.[0]?.text ?? null;
-  } catch {
+  } catch (err) {
+    console.error("[gemini] fetch failed:", err);
     return null;
   }
 }
@@ -98,7 +110,14 @@ export async function chatWithAssistant(
     saludo +
     "Responde en español, tono cercano y breve (unas pocas frases, no ensayos). " +
     "Usa los datos financieros de abajo para responder con precisión sobre la situación " +
-    "del usuario. No des asesoría de inversión ni información fuera de finanzas personales. " +
+    "del usuario. " +
+    "LÍMITE ESTRICTO DE TEMA: solo respondes sobre las finanzas personales del usuario " +
+    "(su disponible, presupuesto, deudas, ahorros, metas, gastos, ingresos) y educación " +
+    "financiera general básica relacionada. No das asesoría de inversión, trading ni " +
+    "criptomonedas. Si te preguntan algo fuera de finanzas personales (código, tareas, " +
+    "noticias, opiniones sobre otros temas, etc.), responde brevemente que solo puedes " +
+    "ayudar con las finanzas del usuario dentro de Cachin' y redirige la conversación ahí — " +
+    "no respondas la pregunta fuera de tema aunque la sepas. " +
     "Datos actuales del usuario:\n\n" +
     buildContext(summary);
 

@@ -40,8 +40,8 @@ export function GreetingHero({ subtitle, action, displayName }: GreetingHeroProp
 
   return (
     <header
-      className="glass-nav sticky z-30 mb-4 flex items-center justify-between gap-3 rounded-[28px] border px-4 py-3 shadow-lg shadow-black/10"
-      style={{ top: "max(0.75rem, env(safe-area-inset-top))" }}
+      className="sticky top-0 z-30 -mx-4 sm:-mx-6 px-4 sm:px-6 pb-3 mb-3 flex items-center justify-between gap-3 bg-[var(--color-bg)]/85 backdrop-blur-md"
+      style={{ paddingTop: "max(1rem, env(safe-area-inset-top))" }}
     >
       <div className="min-w-0">
         <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-ink truncate">

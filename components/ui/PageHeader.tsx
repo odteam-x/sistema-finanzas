@@ -8,18 +8,21 @@ interface PageHeaderProps {
   showBack?: boolean;
 }
 
-/** Flotante (sticky con separación del borde) arriba de cada pantalla: nunca
- *  pierdes de vista en qué sección estás al hacer scroll, con el mismo
- *  lenguaje visual que BottomTabBar (glass-nav + borde + sombra + margen).
- *  Dos zonas simples (título a la izq., acción a la der.) — el isotipo ya
- *  no se repite en cada pantalla (competía con el título/la acción); vive
- *  solo en GreetingHero, la pantalla de Inicio. Requiere que ningún
- *  ancestro anime `transform` (ver PageTransition.tsx — solo anima opacity). */
+/** Barra simple (no una tarjeta flotante) pegada arriba de cada pantalla,
+ *  edge-to-edge: en un dispositivo con notch/Dynamic Island, una forma
+ *  redondeada "flotando" cerca del borde superior se ve mal recortada por
+ *  esa curva — una barra plana con suficiente padding-top de safe-area no
+ *  choca con nada. Sigue siendo `sticky` para no perder de vista en qué
+ *  sección estás al hacer scroll. Dos zonas simples (título a la izq.,
+ *  acción a la der.) — el isotipo no se repite en cada pantalla (competía
+ *  con el título/la acción); vive solo en GreetingHero, la de Inicio.
+ *  Requiere que ningún ancestro anime `transform` (ver PageTransition.tsx
+ *  — solo anima opacity). */
 export function PageHeader({ title, subtitle, action, showBack = true }: PageHeaderProps) {
   return (
     <header
-      className="glass-nav sticky z-30 mb-4 flex items-center justify-between gap-2 rounded-[28px] border px-3 sm:px-4 py-3 shadow-lg shadow-black/10"
-      style={{ top: "max(0.75rem, env(safe-area-inset-top))" }}
+      className="sticky top-0 z-30 -mx-4 sm:-mx-6 px-4 sm:px-6 pb-3 mb-3 flex items-center justify-between gap-2 bg-[var(--color-bg)]/85 backdrop-blur-md"
+      style={{ paddingTop: "max(1rem, env(safe-area-inset-top))" }}
     >
       <div className="flex items-center gap-1 min-w-0">
         {showBack && <BackButton />}

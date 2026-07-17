@@ -5,6 +5,7 @@ import { runSubscriptionCatchUp } from "@/lib/subscriptions";
 import { runSalaryCatchUp } from "@/lib/salary";
 import { formatDateShort, daysBetween, clampPct } from "@/lib/format";
 import { GreetingHero } from "@/components/ui/GreetingHero";
+import { BalanceHero } from "@/components/ui/BalanceHero";
 import { AvailableHero } from "@/components/ui/AvailableHero";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { StatTile } from "@/components/ui/StatTile";
@@ -68,6 +69,8 @@ export default async function DashboardPage() {
     <>
       <NotificationTrigger candidates={notifCandidates} />
       <GreetingHero subtitle={`Quincena ${s.quincena.label}`} displayName={profile?.display_name ?? undefined} />
+
+      <BalanceHero balance={s.savingsTotal} />
 
       <AvailableHero
         disponible={s.saldoReal}

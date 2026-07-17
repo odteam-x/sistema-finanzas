@@ -50,13 +50,26 @@ export function AssistantWidget() {
 
   return (
     <>
-      <button
-        onClick={() => setOpen((v) => !v)}
-        aria-label={open ? "Cerrar asistente" : "Abrir asistente"}
-        className="fixed bottom-24 right-4 lg:bottom-6 lg:right-6 z-[70] grid place-items-center size-14 rounded-full bg-gradient-brand text-white shadow-lg shadow-black/25 cursor-pointer active:scale-95 transition-transform"
-      >
-        <Icon name={open ? "close" : "bulb"} size={24} />
-      </button>
+      <div className="fixed bottom-24 right-4 lg:bottom-6 lg:right-6 z-[70] grid place-items-center">
+        {/* Anillo de brillo pulsante — distingue esta burbuja del resto de
+         *  la UI (todo lo demás es teal sólido); el gradiente violeta-teal
+         *  y el pulso son la señal visual de "esto es IA". */}
+        {!open && (
+          <motion.span
+            aria-hidden="true"
+            className="absolute inset-0 rounded-full bg-[linear-gradient(135deg,#8b5cf6,#14b8a6)]"
+            animate={rm ? undefined : { scale: [1, 1.35, 1], opacity: [0.55, 0, 0.55] }}
+            transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
+          />
+        )}
+        <button
+          onClick={() => setOpen((v) => !v)}
+          aria-label={open ? "Cerrar asistente" : "Abrir asistente"}
+          className="relative grid place-items-center size-14 rounded-full bg-[linear-gradient(135deg,#8b5cf6,#14b8a6)] text-white shadow-lg shadow-black/30 cursor-pointer active:scale-95 transition-transform"
+        >
+          <Icon name={open ? "close" : "sparkle"} size={24} weight={open ? "bold" : "fill"} />
+        </button>
+      </div>
 
       <AnimatePresence>
         {open && (
@@ -69,7 +82,9 @@ export function AssistantWidget() {
             transition={{ type: "spring", stiffness: 380, damping: 34 }}
           >
             <div className="px-4 py-3 border-b border-black/5 flex items-center gap-2">
-              <Icon name="bulb" size={18} className="text-primary" />
+              <span className="grid place-items-center size-7 rounded-full bg-[linear-gradient(135deg,#8b5cf6,#14b8a6)] text-white shrink-0">
+                <Icon name="sparkle" size={14} weight="fill" />
+              </span>
               <p className="font-bold text-ink text-sm">Asistente de Cachin&apos;</p>
             </div>
 

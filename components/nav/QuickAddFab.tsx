@@ -154,6 +154,18 @@ export function QuickAddFab({ accounts }: { accounts: SavingsAccount[] }) {
         <Field label="Fecha" htmlFor="qa-exp-date" required>
           <Input id="qa-exp-date" name="date" type="date" defaultValue={today} required />
         </Field>
+        {accounts.length > 0 && (
+          <Field label="Cuenta" htmlFor="qa-exp-account" hint="De dónde sale el dinero.">
+            <Select id="qa-exp-account" name="account_id" defaultValue="">
+              <option value="">Sin asociar</option>
+              {accounts.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.name}
+                </option>
+              ))}
+            </Select>
+          </Field>
+        )}
         <Field label="Nota" htmlFor="qa-exp-note">
           <Input id="qa-exp-note" name="note" placeholder="Opcional" />
         </Field>
@@ -173,7 +185,7 @@ export function QuickAddFab({ accounts }: { accounts: SavingsAccount[] }) {
         <Field label="Fecha del pago" htmlFor="qa-inc-date" required>
           <Input id="qa-inc-date" name="pay_date" type="date" defaultValue={today} required />
         </Field>
-        <Field label="¿Cómo cobras?" htmlFor="qa-inc-method">
+        <Field label="¿Cómo cobras?" htmlFor="qa-inc-method" hint="A esa cuenta se acredita, salvo que elijas una abajo.">
           <Select id="qa-inc-method" name="payment_method" defaultValue="efectivo">
             <option value="efectivo">Efectivo</option>
             <option value="banco">Depósito / transferencia (banco)</option>
@@ -181,6 +193,18 @@ export function QuickAddFab({ accounts }: { accounts: SavingsAccount[] }) {
             <option value="tarjeta_credito">Tarjeta crédito</option>
           </Select>
         </Field>
+        {accounts.length > 0 && (
+          <Field label="O elige una cuenta existente" htmlFor="qa-inc-account" hint="Opcional. Tiene prioridad sobre ¿Cómo cobras?.">
+            <Select id="qa-inc-account" name="account_id" defaultValue="">
+              <option value="">Usar “¿Cómo cobras?”</option>
+              {accounts.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.name}
+                </option>
+              ))}
+            </Select>
+          </Field>
+        )}
         <Field label="Nota" htmlFor="qa-inc-note">
           <Input id="qa-inc-note" name="note" placeholder="Opcional" />
         </Field>

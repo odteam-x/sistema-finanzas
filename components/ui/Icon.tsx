@@ -37,6 +37,7 @@ import {
   PiggyBank,
   Plus,
   SignOut,
+  Sparkle,
   Sun,
   Target,
   Trash,
@@ -85,7 +86,8 @@ export type IconName =
   | "chart"
   | "movements"
   | "search"
-  | "bell";
+  | "bell"
+  | "sparkle";
 
 const icons: Record<IconName, PhosphorIcon> = {
   dashboard: House,
@@ -125,6 +127,7 @@ const icons: Record<IconName, PhosphorIcon> = {
   movements: ArrowsLeftRight,
   search: MagnifyingGlass,
   bell: Bell,
+  sparkle: Sparkle,
 };
 
 interface IconProps {
