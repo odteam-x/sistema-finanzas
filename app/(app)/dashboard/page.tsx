@@ -15,6 +15,7 @@ import { Money } from "@/components/ui/Money";
 import { MoneyValue } from "@/components/ui/MoneyValue";
 import { BarCompare } from "@/components/charts/BarCompare";
 import { GoalsRing } from "@/components/charts/GoalsRing";
+import { NotificationTrigger, type NotificationCandidate } from "@/components/NotificationTrigger";
 import { cn } from "@/lib/cn";
 
 export const metadata = { title: "Inicio · Cachin'" };
@@ -49,8 +50,23 @@ export default async function DashboardPage() {
   const daysLeft = Math.max(1, daysBetween(s.today, s.quincena.end) + 1);
   const perDay = s.saldoReal / daysLeft;
 
+  // Recordatorios locales al abrir el Inicio (ver NotificationTrigger.tsx):
+  // reusa las alertas ya calculadas (deuda por vencer, presupuesto excedido)
+  // y agrega el caso de día de cobro, que no tiene alerta propia.
+  const notifCandidates: NotificationCandidate[] = s.alerts
+    .filter((a) => a.tone === "warning" || a.tone === "danger")
+    .map((a) => ({ key: `${s.today}-${a.title}`, title: a.title, body: a.message }));
+  if (s.daysToPay === 0) {
+    notifCandidates.push({
+      key: `${s.today}-cobro`,
+      title: "Día de cobro",
+      body: "Hoy te toca cobrar — no olvides confirmarlo cuando te llegue.",
+    });
+  }
+
   return (
     <>
+      <NotificationTrigger candidates={notifCandidates} />
       <GreetingHero subtitle={`Quincena ${s.quincena.label}`} displayName={profile?.display_name ?? undefined} />
 
       <AvailableHero

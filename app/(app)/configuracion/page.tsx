@@ -10,6 +10,7 @@ import { DeleteButton } from "@/components/ui/DeleteButton";
 import { IconBubble } from "@/components/ui/IconBubble";
 import { Money } from "@/components/ui/Money";
 import { ThemeButton } from "@/components/theme/ThemeButton";
+import { NotificationToggle } from "@/components/NotificationToggle";
 import { DisplayNameForm } from "./DisplayNameForm";
 import { ExportCsvForm } from "./ExportCsvForm";
 import { addTag, deleteTag, updateTag } from "./actions";
@@ -155,6 +156,9 @@ export default async function ConfiguracionPage() {
       <GlassCard className="mt-4 mb-4">
         <h2 className="font-bold text-ink mb-3">Preferencias</h2>
         <ThemeButton variant="settings" />
+        <div className="mt-3 pt-3 border-t border-black/5">
+          <NotificationToggle />
+        </div>
       </GlassCard>
 
       <GlassCard>

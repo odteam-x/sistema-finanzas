@@ -13,6 +13,7 @@ import {
   ArrowsClockwise,
   ArrowsLeftRight,
   Bank,
+  Bell,
   Calculator,
   Calendar,
   CaretDown,
@@ -83,7 +84,8 @@ export type IconName =
   | "repeat"
   | "chart"
   | "movements"
-  | "search";
+  | "search"
+  | "bell";
 
 const icons: Record<IconName, PhosphorIcon> = {
   dashboard: House,
@@ -122,6 +124,7 @@ const icons: Record<IconName, PhosphorIcon> = {
   chart: ChartBar,
   movements: ArrowsLeftRight,
   search: MagnifyingGlass,
+  bell: Bell,
 };
 
 interface IconProps {
