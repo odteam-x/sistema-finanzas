@@ -30,10 +30,6 @@ export default function LoginPage() {
         <GlassCard strong className="p-6">
           <LoginForm />
         </GlassCard>
-
-        <p className="text-center text-xs text-muted mt-5">
-          Acceso privado · un solo usuario
-        </p>
       </div>
     </div>
   );
