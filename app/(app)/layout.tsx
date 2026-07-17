@@ -7,6 +7,7 @@ import { BottomTabBar } from "@/components/nav/BottomTabBar";
 import { PageTransition } from "@/components/PageTransition";
 import { PersonalizeProvider } from "@/components/theme/PersonalizeContext";
 import { OfflineBanner } from "@/components/OfflineBanner";
+import { AssistantWidget } from "@/components/assistant/AssistantWidget";
 
 export default async function AppLayout({
   children,
@@ -29,6 +30,7 @@ export default async function AppLayout({
         </main>
         <BottomTabBar email={email} accounts={accounts} />
       </div>
+      <AssistantWidget />
     </PersonalizeProvider>
   );
 }
