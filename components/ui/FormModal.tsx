@@ -89,7 +89,7 @@ export function FormModal({
         <button
           onClick={openModal}
           aria-label={triggerAriaLabel ?? triggerLabel ?? "Abrir"}
-          className="grid place-items-center size-9 rounded-full text-muted hover:bg-black/5 cursor-pointer shrink-0"
+          className="grid place-items-center size-11 rounded-full text-muted hover:bg-black/5 cursor-pointer shrink-0"
         >
           <Icon name={triggerIcon} size={18} />
         </button>
@@ -109,7 +109,7 @@ export function FormModal({
         <button
           onClick={openModal}
           className={cn(
-            "inline-flex items-center justify-center gap-1.5 min-h-9 rounded-full font-semibold text-sm cursor-pointer transition-colors active:scale-[0.97]",
+            "inline-flex items-center justify-center gap-1.5 min-h-11 rounded-full font-semibold text-sm cursor-pointer transition-colors active:scale-[0.97]",
             triggerTone === "ghost"
               ? "border border-black/10 text-ink hover:bg-black/5"
               : "bg-primary-soft text-primary hover:bg-primary/15",

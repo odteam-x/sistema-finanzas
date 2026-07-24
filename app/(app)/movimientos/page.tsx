@@ -197,19 +197,19 @@ export default async function MovimientosPage({
             <div className="glass rounded-2xl p-3 flex flex-col gap-2">
               <div className="grid grid-cols-3 gap-2 text-center">
                 <div>
-                  <p className="text-[0.7rem] text-muted">Ingresos</p>
+                  <p className="text-[0.775rem] text-muted">Ingresos</p>
                   <p className="text-sm font-bold text-primary">
                     <Money value={totalIngresos} decimals={false} />
                   </p>
                 </div>
                 <div>
-                  <p className="text-[0.7rem] text-muted">Egresos</p>
+                  <p className="text-[0.775rem] text-muted">Egresos</p>
                   <p className="text-sm font-bold text-danger">
                     <Money value={totalEgresos} decimals={false} />
                   </p>
                 </div>
                 <div>
-                  <p className="text-[0.7rem] text-muted">Neto</p>
+                  <p className="text-[0.775rem] text-muted">Neto</p>
                   <p className="text-sm font-bold text-ink">
                     <Money value={total} decimals={false} />
                   </p>

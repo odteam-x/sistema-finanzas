@@ -79,7 +79,7 @@ export function Modal({ open, onClose, title, children, footer, compact }: Modal
                     <Dialog.Close asChild>
                       <button
                         aria-label="Cerrar"
-                        className="grid place-items-center size-9 rounded-full hover:bg-black/5 text-muted cursor-pointer transition-colors active:scale-90"
+                        className="grid place-items-center size-11 rounded-full hover:bg-black/5 text-muted cursor-pointer transition-colors active:scale-90"
                       >
                         <Icon name="close" size={20} />
                       </button>

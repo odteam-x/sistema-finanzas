@@ -23,8 +23,8 @@ const variants: Record<Variant, string> = {
 };
 
 const sizes: Record<Size, string> = {
-  sm: "min-h-9 px-3 text-sm gap-1.5",
-  md: "min-h-11 px-4 text-[0.95rem] gap-2",
+  sm: "min-h-11 px-3 text-sm gap-1.5",
+  md: "min-h-11 px-4 text-[1.05rem] gap-2",
 };
 
 export function Button({

@@ -181,7 +181,7 @@ export default async function ReportesPage({
           action={
             <Link
               href="/presupuesto"
-              className="inline-flex items-center justify-center gap-2 rounded-full font-semibold min-h-11 px-4 text-[0.95rem] bg-gradient-brand text-white shadow-sm hover:brightness-[0.97] active:brightness-95"
+              className="inline-flex items-center justify-center gap-2 rounded-full font-semibold min-h-11 px-4 text-[1.05rem] bg-gradient-brand text-white shadow-sm hover:brightness-[0.97] active:brightness-95"
             >
               <Icon name="plus" size={18} />
               Registrar gasto

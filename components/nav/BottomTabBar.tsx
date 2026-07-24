@@ -115,7 +115,7 @@ export function BottomTabBar({
                     href={r.href}
                     aria-current={active ? "page" : undefined}
                     className={cn(
-                      "flex flex-col items-center justify-center gap-0.5 pt-2 pb-1.5 min-h-[52px] text-[0.68rem] font-semibold transition-colors active:scale-95",
+                      "flex flex-col items-center justify-center gap-0.5 pt-2 pb-1.5 min-h-[52px] text-[0.75rem] font-semibold transition-colors active:scale-95",
                       active ? "text-primary" : "text-muted",
                     )}
                   >
@@ -134,7 +134,7 @@ export function BottomTabBar({
                     href={r.href}
                     aria-current={active ? "page" : undefined}
                     className={cn(
-                      "flex flex-col items-center justify-center gap-0.5 pt-2 pb-1.5 min-h-[52px] text-[0.68rem] font-semibold transition-colors active:scale-95",
+                      "flex flex-col items-center justify-center gap-0.5 pt-2 pb-1.5 min-h-[52px] text-[0.75rem] font-semibold transition-colors active:scale-95",
                       active ? "text-primary" : "text-muted",
                     )}
                   >
@@ -149,7 +149,7 @@ export function BottomTabBar({
                 onClick={() => setMoreOpen(true)}
                 aria-label="Más secciones"
                 className={cn(
-                  "flex flex-col items-center justify-center gap-0.5 pt-2 pb-1.5 min-h-[52px] w-full text-[0.68rem] font-semibold transition-colors cursor-pointer active:scale-95",
+                  "flex flex-col items-center justify-center gap-0.5 pt-2 pb-1.5 min-h-[52px] w-full text-[0.75rem] font-semibold transition-colors cursor-pointer active:scale-95",
                   onSecondary ? "text-primary" : "text-muted",
                 )}
               >

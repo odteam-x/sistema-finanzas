@@ -171,7 +171,7 @@ export function BudgetBasisPicker({
             </p>
             <div className="grid grid-cols-7 gap-1">
               {WEEKDAY_LABELS.map((w, i) => (
-                <span key={i} className="text-center text-[0.65rem] font-bold text-muted py-1">
+                <span key={i} className="text-center text-[0.72rem] font-bold text-muted py-1">
                   {w}
                 </span>
               ))}

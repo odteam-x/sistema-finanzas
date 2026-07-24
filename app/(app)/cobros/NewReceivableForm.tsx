@@ -44,7 +44,7 @@ export function NewReceivableForm({
       {trigger === "pill" ? (
         <button
           onClick={openModal}
-          className="inline-flex items-center justify-center gap-1.5 min-h-9 rounded-full font-semibold text-sm cursor-pointer transition-colors active:scale-[0.97] bg-primary-soft text-primary hover:bg-primary/15 px-3"
+          className="inline-flex items-center justify-center gap-1.5 min-h-11 rounded-full font-semibold text-sm cursor-pointer transition-colors active:scale-[0.97] bg-primary-soft text-primary hover:bg-primary/15 px-3"
         >
           <Icon name="plus" size={16} />
           {triggerLabel}

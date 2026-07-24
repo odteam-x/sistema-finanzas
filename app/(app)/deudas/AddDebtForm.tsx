@@ -13,8 +13,8 @@ export function AddDebtForm({
   compact,
 }: {
   triggerLabel?: string;
-  /** Disparador en píldora (36px) en vez del botón sólido (44px) — para
-   *  usarlo en PageHeader sin competir con el isotipo centrado. */
+  /** Disparador en píldora (más angosto que el botón sólido) — para usarlo
+   *  en PageHeader sin competir visualmente con el título. */
   compact?: boolean;
 }) {
   const [open, setOpen] = useState(false);
@@ -44,7 +44,7 @@ export function AddDebtForm({
       {compact ? (
         <button
           onClick={openModal}
-          className="inline-flex items-center justify-center gap-1.5 min-h-9 rounded-full font-semibold text-sm cursor-pointer transition-colors active:scale-[0.97] bg-primary-soft text-primary hover:bg-primary/15"
+          className="inline-flex items-center justify-center gap-1.5 min-h-11 rounded-full font-semibold text-sm cursor-pointer transition-colors active:scale-[0.97] bg-primary-soft text-primary hover:bg-primary/15"
         >
           <Icon name="plus" size={16} />
           {triggerLabel}

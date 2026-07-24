@@ -37,7 +37,7 @@ export function Sidebar({ email }: { email: string | null }) {
               href={r.href}
               aria-current={active ? "page" : undefined}
               className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-2xl text-[0.95rem] font-semibold transition-colors",
+                "flex items-center gap-3 px-3 py-2.5 rounded-2xl text-[1.05rem] font-semibold transition-colors",
                 active
                   ? "bg-primary text-white shadow-sm"
                   : "text-ink/80 hover:bg-black/5",
