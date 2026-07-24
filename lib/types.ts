@@ -251,10 +251,18 @@ export interface Tag {
 
 /** Override manual de días trabajados para una quincena puntual (si el
  *  usuario no quiere depender del conteo automático del calendario). */
+/** R13: cómo se cuentan los días de una quincena.
+ *  'trabajados' = calendario laboral (Modo A) · 'personalizado' = fechas
+ *  elegidas a mano en un calendario multi-selección (Modo B). */
+export type BudgetBasisMode = "trabajados" | "personalizado";
+
 export interface BudgetPeriodOverride {
   user_id: string;
   period_key: string; // Period.key de lib/periods.ts, ej. "2026-07-Q2"
   workdays: number;
+  mode: BudgetBasisMode;
+  /** Solo en modo 'personalizado': las fechas exactas elegidas. */
+  custom_days: string[];
 }
 
 export interface UserProfileRow {

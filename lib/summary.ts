@@ -17,7 +17,8 @@ import {
   getSubscriptions,
   getTags,
 } from "./data";
-import { countWorkdays, exceptionsMap } from "./calendar";
+import { exceptionsMap } from "./calendar";
+import { resolveBudgetBasis } from "./budgetDays";
 import { balanceOfAccount, balanceOfAccounts, deltaForAccount } from "./balances";
 import { outstandingOfDebt } from "./debts";
 import { quincenaForDate, nextPayDateFrom, type Period } from "./periods";
@@ -168,8 +169,10 @@ export async function getFinanceSummary(): Promise<FinanceSummary> {
 
   // Presupuesto
   const exMap = exceptionsMap(exceptions);
-  const override = periodOverrides.find((o) => o.period_key === q.key);
-  const workedQuincena = override ? override.workdays : countWorkdays(q.start, q.end, exMap);
+  // Días del presupuesto: modo trabajados vs personalizado (lib/budgetDays.ts,
+  // fuente única compartida por las 3 pantallas que lo necesitan).
+  const basis = resolveBudgetBasis(q, periodOverrides, exMap);
+  const workedQuincena = basis.days;
   const activeCats = categories.filter((c) => c.active);
   const perDay = activeCats.reduce((s, c) => s + Number(c.amount_per_workday), 0);
   const estQuincena = perDay * workedQuincena;

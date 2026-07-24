@@ -5,7 +5,8 @@ import {
   getPeriodOverrides,
 } from "@/lib/data";
 import { todayISO, toISODate, clampPct } from "@/lib/format";
-import { countWorkdays, exceptionsMap } from "@/lib/calendar";
+import { exceptionsMap } from "@/lib/calendar";
+import { resolveBudgetBasis } from "@/lib/budgetDays";
 import { quincenaForDate } from "@/lib/periods";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { GlassCard } from "@/components/ui/GlassCard";
@@ -72,8 +73,10 @@ export default async function PresupuestoCategoriasPage() {
   ]);
 
   const exMap = exceptionsMap(exceptions);
-  const override = overrides.find((o) => o.period_key === q.key);
-  const workedQuincena = override ? override.workdays : countWorkdays(q.start, q.end, exMap);
+  // Días del presupuesto: modo trabajados vs personalizado (lib/budgetDays.ts,
+  // fuente única compartida por las 3 pantallas que lo necesitan).
+  const basis = resolveBudgetBasis(q, overrides, exMap);
+  const workedQuincena = basis.days;
 
   const activeCats = categories.filter((c) => c.active);
   const perDay = activeCats.reduce((s, c) => s + Number(c.amount_per_workday), 0);

@@ -10,9 +10,12 @@ import {
 } from "@/lib/data";
 import { formatDateLong, todayISO, toISODate } from "@/lib/format";
 import { countWorkdays, exceptionsMap } from "@/lib/calendar";
+import { resolveBudgetBasis } from "@/lib/budgetDays";
 import { quincenaForDate } from "@/lib/periods";
 import { groupByDate } from "@/lib/group";
 import { SearchBar } from "@/components/ui/SearchBar";
+import { BudgetBasisPicker } from "./BudgetBasisPicker";
+import { DailySpendCalculator } from "./DailySpendCalculator";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -30,12 +33,7 @@ import {
 } from "@/components/ui/DropdownMenu";
 import { BudgetRing } from "@/components/charts/BudgetRing";
 import { Money } from "@/components/ui/Money";
-import {
-  addExpense,
-  clearPeriodOverride,
-  deleteExpense,
-  setPeriodOverride,
-} from "./actions";
+import { addExpense, clearPeriodOverride, deleteExpense } from "./actions";
 import type { SavingsAccount, Tag } from "@/lib/types";
 
 export const metadata = { title: "Gastos · Cachin'" };
@@ -125,8 +123,10 @@ export default async function PresupuestoPage({
   const activeSubs = subscriptions.filter((s) => s.active);
 
   const exMap = exceptionsMap(exceptions);
-  const override = overrides.find((o) => o.period_key === q.key);
-  const workedQuincena = override ? override.workdays : countWorkdays(q.start, q.end, exMap);
+  // Días del presupuesto: modo trabajados vs personalizado (lib/budgetDays.ts,
+  // fuente única compartida por las 3 pantallas que lo necesitan).
+  const basis = resolveBudgetBasis(q, overrides, exMap);
+  const workedQuincena = basis.days;
   const workedMonth = countWorkdays(monthStart, monthEnd, exMap);
 
   const activeCats = categories.filter((c) => c.active);
@@ -175,42 +175,31 @@ export default async function PresupuestoPage({
         }
       />
 
-      {/* El número de días ya está en el subtítulo del header — aquí solo
-          va la acción para ajustarlo, sin repetir la cifra. */}
-      <div className="flex items-center gap-1.5 -mt-3 mb-4 px-1">
-        <FormModal
-          title="Días trabajados de esta quincena"
-          action={setPeriodOverride}
-          submitLabel="Guardar"
-          trigger="link"
-          triggerIcon="edit"
-          triggerLabel={override ? "Ajuste manual" : "Ajustar días"}
-        >
-          <input type="hidden" name="period_key" value={q.key} />
-          <Field
-            label="Días trabajados"
-            htmlFor="workdays"
-            hint="Reemplaza el conteo automático del calendario solo para esta quincena."
-          >
-            <Input
-              id="workdays"
-              name="workdays"
-              type="number"
-              min={0}
-              inputMode="numeric"
-              defaultValue={String(workedQuincena)}
-              required
-            />
-          </Field>
-        </FormModal>
-        {override && (
+      {/* R13: elegir la base de cálculo (días trabajados vs. personalizados).
+          El número ya está en el subtítulo del header, acá solo la acción. */}
+      <div className="flex items-center gap-2 -mt-3 mb-4 px-1 flex-wrap">
+        <BudgetBasisPicker
+          periodKey={q.key}
+          periodStart={q.start}
+          periodEnd={q.end}
+          periodLabel={q.label}
+          mode={basis.mode}
+          days={basis.days}
+          customDays={basis.customDays}
+        />
+        {(basis.manualCount || basis.mode === "personalizado") && (
           <DeleteButton
             action={clearPeriodOverride.bind(null, q.key)}
             label="Quitar"
-            title="¿Quitar el ajuste manual?"
-            message="Se volverá a calcular automáticamente desde el calendario laboral."
+            title="¿Volver al conteo automático?"
+            message="Se volverá a calcular desde el calendario laboral."
           />
         )}
+      </div>
+
+      {/* Calculadora independiente: no toca el límite mensual (R07). */}
+      <div className="mb-4">
+        <DailySpendCalculator />
       </div>
 
       {/* Anillo gastado vs. presupuesto — ya trae "gastado de presupuestado"

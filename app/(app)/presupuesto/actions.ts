@@ -147,9 +147,50 @@ export async function setPeriodOverride(formData: FormData): Promise<ActionResul
     return { ok: false, error: "Ingresa un número de días válido." };
   }
   const supabase = await createClient();
-  const { error } = await supabase
-    .from("budget_period_overrides")
-    .upsert({ user_id: user.id, period_key, workdays }, { onConflict: "user_id,period_key" });
+  const { error } = await supabase.from("budget_period_overrides").upsert(
+    { user_id: user.id, period_key, workdays, mode: "trabajados", custom_days: [] },
+    { onConflict: "user_id,period_key" },
+  );
+  if (error) return { ok: false, error: "No se pudo guardar." };
+  revalidateAll();
+  return { ok: true };
+}
+
+/** R13 Modo B: el usuario elige las fechas exactas que cuentan para el
+ *  presupuesto de esta quincena, en vez del conteo del calendario laboral.
+ *  Guardar con la lista vacía vuelve al Modo A. */
+export async function setCustomBudgetDays(
+  periodKey: string,
+  days: string[],
+): Promise<ActionResult> {
+  const user = await requireUser();
+  if (!periodKey) return { ok: false };
+  const supabase = await createClient();
+
+  if (days.length === 0) {
+    // Sin días elegidos no tiene sentido el modo personalizado: se quita el
+    // override entero y vuelve a mandar el calendario laboral.
+    await supabase
+      .from("budget_period_overrides")
+      .delete()
+      .eq("user_id", user.id)
+      .eq("period_key", periodKey);
+    revalidateAll();
+    return { ok: true };
+  }
+
+  const { error } = await supabase.from("budget_period_overrides").upsert(
+    {
+      user_id: user.id,
+      period_key: periodKey,
+      mode: "personalizado",
+      custom_days: days,
+      // `workdays` deja de mandar en este modo, pero se guarda coherente por
+      // si alguien lo lee sin mirar el modo.
+      workdays: days.length,
+    },
+    { onConflict: "user_id,period_key" },
+  );
   if (error) return { ok: false, error: "No se pudo guardar." };
   revalidateAll();
   return { ok: true };
