@@ -125,7 +125,7 @@ export default async function DeudasPage() {
       <PageHeader
         title="Deudas"
         subtitle="Acreedores, cuotas y vencimientos"
-        action={<AddDebtForm compact />}
+        action={<AddDebtForm compact accounts={accounts} />}
       />
 
       <div className="grid grid-cols-2 gap-3 mb-4">
@@ -156,7 +156,7 @@ export default async function DeudasPage() {
           icon="debt"
           title="Sin deudas registradas"
           message="Registra una deuda para llevar control de sus pagos y vencimientos."
-          action={<AddDebtForm triggerLabel="Registrar deuda" />}
+          action={<AddDebtForm triggerLabel="Registrar deuda" accounts={accounts} />}
         />
       ) : (
         <ul className="flex flex-col gap-3">
@@ -201,6 +201,9 @@ export default async function DeudasPage() {
                                 <p className="text-sm font-semibold text-ink truncate">
                                   <Money value={total} />
                                 </p>
+                                <Badge tone="neutral" className="shrink-0">
+                                  {d.kind === "prestamo" ? "Recibí el dinero" : "A crédito"}
+                                </Badge>
                                 {settled && (
                                   <Badge tone="neutral" className="shrink-0">
                                     Solo lectura

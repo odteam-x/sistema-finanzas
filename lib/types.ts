@@ -72,6 +72,9 @@ export type DebtPaymentType = "unico" | "cuotas";
 export type DebtFrequency = "semanal" | "quincenal" | "mensual";
 export type DebtStatus = "pendiente" | "parcial" | "pagada";
 
+/** ¿El dinero de la deuda pasó por tus manos? */
+export type DebtKind = "prestamo" | "credito";
+
 export interface Debt {
   id: string;
   user_id: string;
@@ -89,6 +92,11 @@ export interface Debt {
   /** R14: meta que avanza conforme pagas esta deuda (ej. compraste el
    *  celular prestado). El vínculo se crea desde la meta, no desde acá. */
   goal_id: string | null;
+  /** 'prestamo' = te dieron el dinero, entra a una cuenta al registrarla.
+   *  'credito' = compraste a crédito, nunca tocaste ese dinero.
+   *  Distinguirlos evita el doble conteo: sin esto, gastar dinero prestado
+   *  se contaba una vez al gastarlo y otra al pagar la deuda. */
+  kind: DebtKind;
 }
 
 export interface DebtInstallment {
@@ -197,7 +205,9 @@ export type MovementSource =
   | "subscription"
   | "debt_payment"
   | "goal_contribution"
-  | "receivable_collected";
+  | "receivable_collected"
+  /** Desembolso: el dinero que te prestaron entrando a tu cuenta. */
+  | "debt_disbursement";
 
 export interface SavingsMovement {
   id: string;

@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getOrCreateDefaultAccountId } from "@/lib/accounts";
 import { parseAmount, type ActionResult } from "@/lib/actions-shared";
 import { parseISODate, toISODate, todayISO } from "@/lib/format";
-import type { DebtFrequency } from "@/lib/types";
+import type { DebtFrequency, DebtKind } from "@/lib/types";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 function revalidateAll() {
@@ -98,6 +98,34 @@ export async function addDebt(formData: FormData): Promise<ActionResult> {
 
   const supabase = await createClient();
 
+  // ¿El dinero de esta deuda pasó por tus manos?
+  //   'prestamo' → te lo dieron: entra a una cuenta (depósito).
+  //   'credito'  → compraste a crédito: el proveedor pagó directo, nunca lo
+  //                tocaste, así que no entra nada.
+  // Sin esta distinción se contaba doble: gastar dinero prestado restaba una
+  // vez al gastarlo y otra al pagar la deuda, cuando en realidad solo te
+  // empobreciste al pagarla.
+  const rawKind = String(formData.get("kind") ?? "credito");
+  const kind: DebtKind = rawKind === "prestamo" ? "prestamo" : "credito";
+  const chosenAccount = String(formData.get("account_id") ?? "") || null;
+
+  /** Acredita el dinero recibido a la cuenta elegida (solo en 'prestamo'). */
+  async function creditDisbursement(debtId: string, amount: number) {
+    if (kind !== "prestamo") return;
+    const account_id = chosenAccount ?? (await getOrCreateDefaultAccountId(supabase, user.id));
+    if (!account_id) return;
+    await supabase.from("savings_movements").insert({
+      account_id,
+      user_id: user.id,
+      kind: "deposito",
+      amount,
+      date: acquired_date,
+      note: `Préstamo recibido: ${name}`,
+      source: "debt_disbursement",
+      source_ref_id: debtId,
+    });
+  }
+
   if (payment_type === "cuotas") {
     const count = Number(formData.get("installments_count"));
     const frequency = String(formData.get("frequency") ?? "mensual") as DebtFrequency;
@@ -123,6 +151,7 @@ export async function addDebt(formData: FormData): Promise<ActionResult> {
         frequency,
         status: "pendiente",
         note,
+        kind,
       })
       .select("id")
       .single();
@@ -140,19 +169,26 @@ export async function addDebt(formData: FormData): Promise<ActionResult> {
       .from("debt_installments")
       .insert(rows);
     if (instErr) return { ok: false, error: "No se pudieron crear las cuotas." };
+    await creditDisbursement(debt.id, total);
   } else {
     const due_date = String(formData.get("due_date") ?? "") || null;
-    const { error } = await supabase.from("debts").insert({
-      user_id: user.id,
-      name,
-      total_amount: total,
-      acquired_date,
-      payment_type: "unico",
-      due_date,
-      status: "pendiente",
-      note,
-    });
-    if (error) return { ok: false, error: "No se pudo crear la deuda." };
+    const { data: debt, error } = await supabase
+      .from("debts")
+      .insert({
+        user_id: user.id,
+        name,
+        total_amount: total,
+        acquired_date,
+        payment_type: "unico",
+        due_date,
+        status: "pendiente",
+        note,
+        kind,
+      })
+      .select("id")
+      .single();
+    if (error || !debt) return { ok: false, error: "No se pudo crear la deuda." };
+    await creditDisbursement(debt.id, total);
   }
 
   revalidateAll();
@@ -225,10 +261,37 @@ export async function addDebtIncrement(formData: FormData): Promise<ActionResult
   const blocked = await assertNotSettled(supabase, debt_id);
   if (blocked) return { ok: false, error: blocked };
 
-  const { error } = await supabase
+  const { data: increment, error } = await supabase
     .from("debt_increments")
-    .insert({ debt_id, user_id: user.id, amount, date, note });
-  if (error) return { ok: false, error: "No se pudo agregar el monto." };
+    .insert({ debt_id, user_id: user.id, amount, date, note })
+    .select("id")
+    .single();
+  if (error || !increment) return { ok: false, error: "No se pudo agregar el monto." };
+
+  // Si es una deuda tipo préstamo, volver a deberle a la misma persona
+  // significa que te dieron MÁS dinero — así que también entra a la cuenta.
+  // En una deuda a crédito no entra nada, igual que al crearla.
+  const { data: debt } = await supabase
+    .from("debts")
+    .select("kind, name")
+    .eq("id", debt_id)
+    .maybeSingle();
+  if (debt?.kind === "prestamo") {
+    const account_id = await getOrCreateDefaultAccountId(supabase, user.id);
+    if (account_id) {
+      await supabase.from("savings_movements").insert({
+        account_id,
+        user_id: user.id,
+        kind: "deposito",
+        amount,
+        date,
+        note: `Préstamo recibido: ${debt.name}`,
+        source: "debt_disbursement",
+        source_ref_id: increment.id,
+      });
+    }
+  }
+
   revalidateAll();
   return { ok: true };
 }
@@ -238,6 +301,14 @@ export async function addDebtIncrement(formData: FormData): Promise<ActionResult
 export async function deleteDebtIncrement(id: string): Promise<ActionResult> {
   await requireUser();
   const supabase = await createClient();
+  // Borrar el aumento es corregir una equivocación: si había acreditado
+  // dinero, ese depósito también se va (a diferencia de eliminar la deuda
+  // entera, donde el dinero que de verdad se movió se conserva).
+  await supabase
+    .from("savings_movements")
+    .delete()
+    .eq("source", "debt_disbursement")
+    .eq("source_ref_id", id);
   const { error } = await supabase.from("debt_increments").delete().eq("id", id);
   if (error) return { ok: false, error: "No se pudo eliminar." };
   revalidateAll();
@@ -411,10 +482,24 @@ export async function deleteDebt(id: string): Promise<ActionResult> {
     .from("debt_installments")
     .select("id")
     .eq("debt_id", id);
+  const { data: incs } = await supabase
+    .from("debt_increments")
+    .select("id")
+    .eq("debt_id", id);
   const refIds = [id, ...(insts ?? []).map((i) => i.id)];
+  const disbursementRefIds = [id, ...(incs ?? []).map((i) => i.id)];
   const nota = `Pago de deuda eliminada — ${debt?.name ?? "sin nombre"}`;
+  const notaEntrada = `Préstamo de deuda eliminada — ${debt?.name ?? "sin nombre"}`;
 
   await Promise.all([
+    // El dinero que te prestaron SÍ entró de verdad: mismo criterio que los
+    // pagos — se conserva re-etiquetado, no se borra (borrarlo restaría de
+    // tu balance dinero que sí recibiste).
+    supabase
+      .from("savings_movements")
+      .update({ source: "manual", source_ref_id: null, note: notaEntrada })
+      .eq("source", "debt_disbursement")
+      .in("source_ref_id", disbursementRefIds),
     supabase
       .from("savings_movements")
       .update({ source: "manual", source_ref_id: null, note: nota })

@@ -7,18 +7,22 @@ import { Icon } from "@/components/ui/Icon";
 import { Field, Input, Select, MoneyInput } from "@/components/ui/Field";
 import { todayISO } from "@/lib/format";
 import { addDebt } from "./actions";
+import type { SavingsAccount } from "@/lib/types";
 
 export function AddDebtForm({
   triggerLabel = "Deuda",
   compact,
+  accounts = [],
 }: {
   triggerLabel?: string;
+  accounts?: SavingsAccount[];
   /** Disparador en píldora (más angosto que el botón sólido) — para usarlo
    *  en PageHeader sin competir visualmente con el título. */
   compact?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [type, setType] = useState<"unico" | "cuotas">("unico");
+  const [kind, setKind] = useState<"prestamo" | "credito">("prestamo");
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const today = todayISO();
@@ -26,6 +30,7 @@ export function AddDebtForm({
   function openModal() {
     setError(null);
     setType("unico");
+    setKind("prestamo");
     setOpen(true);
   }
 
@@ -58,6 +63,26 @@ export function AddDebtForm({
 
       <Modal open={open} onClose={() => setOpen(false)} title="Nueva deuda">
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <Field
+            label="¿Qué tipo de deuda es?"
+            htmlFor="debt-kind"
+            hint={
+              kind === "prestamo"
+                ? "El monto entra a tu cuenta ahora, porque ese dinero ya está en tus manos."
+                : "No entra dinero a tu cuenta: el gasto ya lo hiciste al comprar, y solo lo pagarás después."
+            }
+          >
+            <Select
+              id="debt-kind"
+              name="kind"
+              value={kind}
+              onChange={(e) => setKind(e.target.value as "prestamo" | "credito")}
+            >
+              <option value="prestamo">Me prestaron dinero (lo recibí)</option>
+              <option value="credito">Compré a crédito / me fiaron</option>
+            </Select>
+          </Field>
+
           <Field label="Acreedor / nombre" htmlFor="name" required>
             <Input id="name" name="name" placeholder="Ej.: Préstamo banco" required />
           </Field>
@@ -132,6 +157,22 @@ export function AddDebtForm({
                 <MoneyInput id="installment_amount" name="installment_amount" />
               </Field>
             </div>
+          )}
+
+          {kind === "prestamo" && accounts.length > 0 && (
+            <Field
+              label="¿A qué cuenta entró el dinero?"
+              htmlFor="debt-account"
+              hint="Se registra como un ingreso en esa cuenta."
+            >
+              <Select id="debt-account" name="account_id" defaultValue={accounts[0]?.id}>
+                {accounts.map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.name}
+                  </option>
+                ))}
+              </Select>
+            </Field>
           )}
 
           <Field label="Nota" htmlFor="note">
