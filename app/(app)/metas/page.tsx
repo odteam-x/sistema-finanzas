@@ -23,6 +23,7 @@ import { IconBubble } from "@/components/ui/IconBubble";
 import { addAccount, addMovement, deleteAccount, updateAccount } from "../balance/actions";
 import { addGoal, addProgress, deleteGoal, updateGoal } from "./actions";
 import { LinkDebtButton, LinkedDebtsList } from "./GoalDebtLink";
+import { undoDelete } from "../undo-actions";
 
 export const metadata = { title: "Ahorros · Cachin'" };
 
@@ -400,6 +401,7 @@ export default async function MetasPage() {
 
                   <DeleteButton
                     action={deleteGoal.bind(null, g.id)}
+                        undoAction={undoDelete}
                     title="¿Eliminar meta?"
                     message="Se perderá el progreso registrado. Las deudas vinculadas no se borran, solo se desvinculan."
                   />

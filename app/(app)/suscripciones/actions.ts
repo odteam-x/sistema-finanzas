@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { parseAmount, type ActionResult } from "@/lib/actions-shared";
+import { softDeleteRows, type UndoableResult } from "@/lib/softDelete";
 import type { SubscriptionFrequency } from "@/lib/types";
 
 function revalidateAll() {
@@ -75,13 +76,14 @@ export async function updateSubscription(formData: FormData): Promise<ActionResu
   return { ok: true };
 }
 
-export async function deleteSubscription(id: string): Promise<ActionResult> {
+export async function deleteSubscription(id: string): Promise<UndoableResult> {
   await requireUser();
-  const supabase = await createClient();
-  const { error } = await supabase.from("subscriptions").delete().eq("id", id);
-  if (error) return { ok: false };
+  // R15: borrado suave, para poder deshacerlo desde el aviso.
+  const res = await softDeleteRows("subscriptions", [id]);
+  const error = res.ok ? null : true;
+  if (error) return { ok: false, error: "No se pudo eliminar." };
   revalidateAll();
-  return { ok: true };
+  return { ok: true, undo: res.undo };
 }
 
 export async function toggleSubscriptionActive(id: string, active: boolean): Promise<ActionResult> {

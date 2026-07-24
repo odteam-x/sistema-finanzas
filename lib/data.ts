@@ -43,7 +43,7 @@ export async function getSalarySettings(): Promise<
 
 export async function getSalaries(fromISO?: string, toISO?: string): Promise<Salary[]> {
   const supabase = await createClient();
-  let q = supabase.from("salaries").select("*");
+  let q = supabase.from("salaries").select("*").is("deleted_at", null);
   if (fromISO) q = q.gte("pay_date", fromISO);
   if (toISO) q = q.lte("pay_date", toISO);
   const { data } = await q.order("pay_date", { ascending: false });
@@ -55,7 +55,7 @@ export async function getExceptions(
   toISO?: string,
 ): Promise<WorkException[]> {
   const supabase = await createClient();
-  let q = supabase.from("work_calendar_exceptions").select("*");
+  let q = supabase.from("work_calendar_exceptions").select("*").is("deleted_at", null);
   if (fromISO) q = q.gte("date", fromISO);
   if (toISO) q = q.lte("date", toISO);
   const { data } = await q.order("date", { ascending: true });
@@ -67,6 +67,7 @@ export async function getBudgetCategories(): Promise<BudgetCategory[]> {
   const { data } = await supabase
     .from("budget_categories")
     .select("*")
+    .is("deleted_at", null)
     .order("sort_order", { ascending: true })
     .order("created_at", { ascending: true });
   return data ?? [];
@@ -77,6 +78,7 @@ export async function getGoals(): Promise<Goal[]> {
   const { data } = await supabase
     .from("goals")
     .select("*")
+    .is("deleted_at", null)
     .order("created_at", { ascending: false });
   return data ?? [];
 }
@@ -86,6 +88,7 @@ export async function getDebts(): Promise<Debt[]> {
   const { data } = await supabase
     .from("debts")
     .select("*")
+    .is("deleted_at", null)
     .order("created_at", { ascending: false });
   return data ?? [];
 }
@@ -104,6 +107,7 @@ export async function getDebtIncrements(): Promise<DebtIncrement[]> {
   const { data } = await supabase
     .from("debt_increments")
     .select("*")
+    .is("deleted_at", null)
     .order("date", { ascending: false });
   return data ?? [];
 }
@@ -152,6 +156,7 @@ export async function getReceivables(): Promise<Receivable[]> {
   const { data } = await supabase
     .from("receivables")
     .select("*")
+    .is("deleted_at", null)
     .order("created_at", { ascending: false });
   return data ?? [];
 }
@@ -170,7 +175,7 @@ export async function getExpenses(
   toISO?: string,
 ): Promise<Expense[]> {
   const supabase = await createClient();
-  let q = supabase.from("expenses").select("*");
+  let q = supabase.from("expenses").select("*").is("deleted_at", null);
   if (fromISO) q = q.gte("date", fromISO);
   if (toISO) q = q.lte("date", toISO);
   const { data } = await q.order("date", { ascending: false });
@@ -182,13 +187,14 @@ export async function getSavingsAccounts(): Promise<SavingsAccount[]> {
   const { data } = await supabase
     .from("savings_accounts")
     .select("*")
+    .is("deleted_at", null)
     .order("created_at", { ascending: true });
   return data ?? [];
 }
 
 export async function getSavingsMovements(fromISO?: string, toISO?: string): Promise<SavingsMovement[]> {
   const supabase = await createClient();
-  let q = supabase.from("savings_movements").select("*");
+  let q = supabase.from("savings_movements").select("*").is("deleted_at", null);
   if (fromISO) q = q.gte("date", fromISO);
   if (toISO) q = q.lte("date", toISO);
   const { data } = await q.order("date", { ascending: false }).order("created_at", { ascending: false });
@@ -200,13 +206,14 @@ export async function getSubscriptions(): Promise<Subscription[]> {
   const { data } = await supabase
     .from("subscriptions")
     .select("*")
+    .is("deleted_at", null)
     .order("next_charge_date", { ascending: true });
   return data ?? [];
 }
 
 export async function getTags(): Promise<Tag[]> {
   const supabase = await createClient();
-  const { data } = await supabase.from("tags").select("*").order("name", { ascending: true });
+  const { data } = await supabase.from("tags").select("*").is("deleted_at", null).order("name", { ascending: true });
   return data ?? [];
 }
 

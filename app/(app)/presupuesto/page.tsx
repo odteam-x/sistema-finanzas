@@ -35,6 +35,7 @@ import { BudgetRing } from "@/components/charts/BudgetRing";
 import { Money } from "@/components/ui/Money";
 import { addExpense, clearPeriodOverride, deleteExpense } from "./actions";
 import type { SavingsAccount, Tag } from "@/lib/types";
+import { undoDelete } from "../undo-actions";
 
 export const metadata = { title: "Gastos · Cachin'" };
 
@@ -352,6 +353,7 @@ export default async function PresupuestoPage({
                         {!isDebtPayment && (
                           <DeleteButton
                             action={deleteExpense.bind(null, e.id)}
+                        undoAction={undoDelete}
                             title="¿Eliminar gasto?"
                             message="Se quitará del historial de gastos."
                           />

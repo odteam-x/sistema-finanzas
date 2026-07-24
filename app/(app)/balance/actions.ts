@@ -5,6 +5,7 @@ import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { getOrCreateDefaultAccountId } from "@/lib/accounts";
 import { parseAmount, type ActionResult } from "@/lib/actions-shared";
+import { softDeleteRows, type UndoableResult } from "@/lib/softDelete";
 import { todayISO } from "@/lib/format";
 import type { AccountType, MovementKind } from "@/lib/types";
 
@@ -180,11 +181,12 @@ export async function addMovement(formData: FormData): Promise<ActionResult> {
   return { ok: true };
 }
 
-export async function deleteMovement(id: string): Promise<ActionResult> {
+export async function deleteMovement(id: string): Promise<UndoableResult> {
   await requireUser();
-  const supabase = await createClient();
-  const { error } = await supabase.from("savings_movements").delete().eq("id", id);
-  if (error) return { ok: false };
+  // R15: borrado suave — la fila se marca, no se destruye, para que
+  // "Deshacer" sea instantáneo y no haya que reconstruir nada.
+  const res = await softDeleteRows("savings_movements", [id]);
+  if (!res.ok) return { ok: false, error: "No se pudo eliminar." };
   revalidateAll();
-  return { ok: true };
+  return { ok: true, undo: res.undo };
 }

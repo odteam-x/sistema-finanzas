@@ -5,6 +5,7 @@ import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { getOrCreateDefaultAccountId } from "@/lib/accounts";
 import { parseAmount, type ActionResult } from "@/lib/actions-shared";
+import { softDeleteRows, type UndoableResult } from "@/lib/softDelete";
 
 function revalidateAll() {
   revalidatePath("/presupuesto");
@@ -124,16 +125,34 @@ export async function addExpense(formData: FormData): Promise<ActionResult> {
   return { ok: true };
 }
 
-export async function deleteExpense(id: string): Promise<ActionResult> {
+export async function deleteExpense(id: string): Promise<UndoableResult> {
   await requireUser();
   const supabase = await createClient();
-  // Limpia el movimiento espejo del ledger (manual o de suscripción) antes de
-  // borrar el gasto, para no dejar el saldo de la cuenta descuadrado.
-  await supabase.from("savings_movements").delete().eq("source_ref_id", id);
-  const { error } = await supabase.from("expenses").delete().eq("id", id);
-  if (error) return { ok: false };
+
+  // Un gasto son DOS filas: el gasto en sí y su espejo en el ledger (que es
+  // lo que baja el saldo de la cuenta). Se ocultan las dos y se devuelve un
+  // token que cubre ambas, para que "Deshacer" restaure el gasto Y el saldo
+  // — si solo se restaurara una, el balance quedaría descuadrado.
+  const { data: mirror } = await supabase
+    .from("savings_movements")
+    .select("id")
+    .eq("source_ref_id", id);
+
+  const [expenseRes, mirrorRes] = await Promise.all([
+    softDeleteRows("expenses", [id]),
+    softDeleteRows("savings_movements", (mirror ?? []).map((m) => m.id)),
+  ]);
+  if (!expenseRes.ok) return { ok: false, error: "No se pudo eliminar el gasto." };
+
   revalidateAll();
-  return { ok: true };
+  return {
+    ok: true,
+    undo: {
+      table: "expenses",
+      ids: [id],
+      also: mirrorRes.undo ? [mirrorRes.undo] : undefined,
+    },
+  };
 }
 
 /** Fija manualmente los días trabajados de una quincena puntual, en vez de

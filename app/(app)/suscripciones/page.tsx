@@ -14,6 +14,7 @@ import { MoneyValue } from "@/components/ui/MoneyValue";
 import { Money } from "@/components/ui/Money";
 import { addSubscription, deleteSubscription, updateSubscription } from "./actions";
 import type { SavingsAccount, Tag } from "@/lib/types";
+import { undoDelete } from "../undo-actions";
 
 export const metadata = { title: "Suscripciones · Cachin'" };
 
@@ -199,6 +200,7 @@ export default async function SuscripcionesPage() {
                 </FormModal>
                 <DeleteButton
                   action={deleteSubscription.bind(null, s.id)}
+                        undoAction={undoDelete}
                   title="¿Eliminar suscripción?"
                   message="Ya no se generarán gastos automáticos por este cobro."
                 />

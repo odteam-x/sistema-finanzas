@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/DropdownMenu";
 import { addMovement, deleteMovement } from "../balance/actions";
 import type { MovementSource, SavingsAccount } from "@/lib/types";
+import { undoDelete } from "../undo-actions";
 
 export const metadata = { title: "Movimientos · Cachin'" };
 
@@ -300,6 +301,7 @@ export default async function MovimientosPage({
                         {standalone && (
                           <DeleteButton
                             action={deleteMovement.bind(null, m.id)}
+                        undoAction={undoDelete}
                             title="¿Eliminar movimiento?"
                             message="Se recalculará el saldo de la cuenta."
                           />

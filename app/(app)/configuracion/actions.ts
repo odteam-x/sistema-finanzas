@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { parseAmount, type ActionResult } from "@/lib/actions-shared";
+import { softDeleteRows, type UndoableResult } from "@/lib/softDelete";
 
 function revalidateAll() {
   revalidatePath("/configuracion");
@@ -67,11 +68,12 @@ export async function updateTag(formData: FormData): Promise<ActionResult> {
   return { ok: true };
 }
 
-export async function deleteTag(id: string): Promise<ActionResult> {
+export async function deleteTag(id: string): Promise<UndoableResult> {
   await requireUser();
-  const supabase = await createClient();
-  const { error } = await supabase.from("tags").delete().eq("id", id);
-  if (error) return { ok: false };
+  // R15: borrado suave, para poder deshacerlo desde el aviso.
+  const res = await softDeleteRows("tags", [id]);
+  const error = res.ok ? null : true;
+  if (error) return { ok: false, error: "No se pudo eliminar." };
   revalidateAll();
-  return { ok: true };
+  return { ok: true, undo: res.undo };
 }

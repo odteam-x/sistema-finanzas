@@ -7,6 +7,7 @@ import { BottomTabBar } from "@/components/nav/BottomTabBar";
 import { PageTransition } from "@/components/PageTransition";
 import { PersonalizeProvider } from "@/components/theme/PersonalizeContext";
 import { OfflineBanner } from "@/components/OfflineBanner";
+import { ToastProvider } from "@/components/ui/Toast";
 import { AssistantWidget } from "@/components/assistant/AssistantWidget";
 
 export default async function AppLayout({
@@ -22,6 +23,7 @@ export default async function AppLayout({
 
   return (
     <PersonalizeProvider>
+      <ToastProvider>
       <OfflineBanner />
       <div className="lg:flex">
         <Sidebar email={email} />
@@ -31,6 +33,7 @@ export default async function AppLayout({
         <BottomTabBar email={email} accounts={accounts} />
       </div>
       <AssistantWidget />
+      </ToastProvider>
     </PersonalizeProvider>
   );
 }

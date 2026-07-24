@@ -14,6 +14,7 @@ import { NotificationToggle } from "@/components/NotificationToggle";
 import { DisplayNameForm } from "./DisplayNameForm";
 import { ExportCsvForm } from "./ExportCsvForm";
 import { addTag, deleteTag, updateTag } from "./actions";
+import { undoDelete } from "../undo-actions";
 
 export const metadata = { title: "Configuración · Cachin'" };
 
@@ -128,6 +129,7 @@ export default async function ConfiguracionPage() {
                     </FormModal>
                     <DeleteButton
                       action={deleteTag.bind(null, t.id)}
+                        undoAction={undoDelete}
                       title="¿Eliminar etiqueta?"
                       message="Los ingresos/gastos que la usaban quedarán sin etiqueta."
                     />
