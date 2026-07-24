@@ -22,7 +22,7 @@ import { balanceOfAccount, balanceOfAccounts, deltaForAccount } from "./balances
 import { outstandingOfDebt } from "./debts";
 import { quincenaForDate, nextPayDateFrom, type Period } from "./periods";
 import { addDaysISO, daysBetween, formatDOP, toISODate, todayISO } from "./format";
-import type { Goal, Salary, SavingsMovement } from "./types";
+import type { AccountType, Goal, Salary, SavingsMovement } from "./types";
 
 export interface Alert {
   tone: "warning" | "danger" | "info" | "success";
@@ -68,6 +68,15 @@ export interface FinanceSummary {
   totalTarget: number;
   generalSavings: number;
   savingsTotal: number;
+  /** Balance de cada cuenta por separado — alimenta las tarjetas "Balance
+   *  actual" (una cuenta) y "Balance total" (todas) del Inicio (R12). */
+  accountBalances: {
+    id: string;
+    name: string;
+    type: AccountType;
+    balance: number;
+    isSavings: boolean;
+  }[];
   netWorth: number;
   estByCategory: NamedValue[];
   realByCategory: NamedValue[];
@@ -130,6 +139,16 @@ export async function getFinanceSummary(): Promise<FinanceSummary> {
     savingsMovements,
     savingsAccounts.map((a) => a.id),
   );
+
+  // Balance de cada cuenta por separado — alimenta las tarjetas del Inicio
+  // (R12: una cuenta seleccionable vs. el total de todas).
+  const accountBalances = savingsAccounts.map((a) => ({
+    id: a.id,
+    name: a.name,
+    type: a.type,
+    balance: balanceOf(a.id),
+    isSavings: a.type === "ahorro",
+  }));
 
   // Ingreso quincenal: SOLO lo que ya se confirmó que llegó, no lo
   // configurado — antes se usaba `settings.default_amount` sin más, así que
@@ -386,6 +405,7 @@ export async function getFinanceSummary(): Promise<FinanceSummary> {
     totalTarget,
     generalSavings,
     savingsTotal,
+    accountBalances,
     netWorth: savingsTotal - outstandingDebt,
     estByCategory,
     realByCategory,

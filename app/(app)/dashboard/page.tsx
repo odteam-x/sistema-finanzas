@@ -6,7 +6,7 @@ import { runSalaryCatchUp } from "@/lib/salary";
 import { formatDateShort, daysBetween, clampPct } from "@/lib/format";
 import { GreetingHero } from "@/components/ui/GreetingHero";
 import { BalanceHero } from "@/components/ui/BalanceHero";
-import { AvailableHero } from "@/components/ui/AvailableHero";
+import { PendingSalaryNotice } from "@/components/ui/PendingSalaryNotice";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { StatTile } from "@/components/ui/StatTile";
 import { ProgressBar } from "@/components/ui/ProgressBar";
@@ -48,8 +48,6 @@ export default async function DashboardPage() {
   const [s, profile] = await Promise.all([getFinanceSummary(), getUserProfile()]);
 
   const budgetPct = clampPct(s.realQuincena, s.estQuincena || 1);
-  const daysLeft = Math.max(1, daysBetween(s.today, s.quincena.end) + 1);
-  const perDay = s.saldoReal / daysLeft;
 
   // Recordatorios locales al abrir el Inicio (ver NotificationTrigger.tsx):
   // reusa las alertas ya calculadas (deuda por vencer, presupuesto excedido)
@@ -70,14 +68,14 @@ export default async function DashboardPage() {
       <NotificationTrigger candidates={notifCandidates} />
       <GreetingHero subtitle={`Quincena ${s.quincena.label}`} displayName={profile?.display_name ?? undefined} />
 
-      <BalanceHero balance={s.savingsTotal} />
+      {/* R12: "Balance actual" (una cuenta, seleccionable) y "Balance total"
+          (todas, ahorros incluidos) — reemplazan a la vieja tarjeta única y a
+          "Disponible esta quincena", que mostraba un número negativo poco
+          accionable (R05). El aviso de confirmar el sueldo sobrevive aparte
+          porque evita contar dinero que todavía no ha llegado. */}
+      <BalanceHero accounts={s.accountBalances} />
 
-      <AvailableHero
-        disponible={s.saldoReal}
-        daysLeft={daysLeft}
-        perDay={perDay}
-        pendingSalary={s.pendingSalary}
-      />
+      {s.pendingSalary && <PendingSalaryNotice salary={s.pendingSalary} />}
 
       {/* Resumen (2x2) */}
       <div className="grid grid-cols-2 gap-3 mb-4">
