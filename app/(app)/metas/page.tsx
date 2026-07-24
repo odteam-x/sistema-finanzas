@@ -1,5 +1,12 @@
-import { getGoals, getSavingsAccounts, getSavingsMovements } from "@/lib/data";
+import {
+  getDebts,
+  getGoals,
+  getInstallments,
+  getSavingsAccounts,
+  getSavingsMovements,
+} from "@/lib/data";
 import { balanceOfAccount } from "@/lib/balances";
+import { goalProgress } from "@/lib/goals";
 import { formatDateShort, clampPct, todayISO, daysBetween } from "@/lib/format";
 import { quincenasUntil } from "@/lib/periods";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -15,6 +22,7 @@ import { Money } from "@/components/ui/Money";
 import { IconBubble } from "@/components/ui/IconBubble";
 import { addAccount, addMovement, deleteAccount, updateAccount } from "../balance/actions";
 import { addGoal, addProgress, deleteGoal, updateGoal } from "./actions";
+import { LinkDebtButton, LinkedDebtsList } from "./GoalDebtLink";
 
 export const metadata = { title: "Ahorros · Cachin'" };
 
@@ -66,23 +74,25 @@ function NewGoalForm({
 }
 
 export default async function MetasPage() {
-  const [goals, accounts, movements] = await Promise.all([
+  const [goals, accounts, movements, debts, installments] = await Promise.all([
     getGoals(),
     getSavingsAccounts(),
     getSavingsMovements(),
+    getDebts(),
+    getInstallments(),
   ]);
   const today = todayISO();
 
-  const currentAmountOf = (goalId: string, fallback: number) => {
-    const linked = accounts.find((a) => a.goal_id === goalId);
-    return linked ? balanceOfAccount(movements, linked.id) : fallback;
-  };
+  // R14: el progreso incluye aportes/ahorro Y lo abonado de deudas
+  // vinculadas — cálculo compartido en lib/goals.ts.
+  const progressOf = (goal: (typeof goals)[number]) =>
+    goalProgress(goal, accounts, movements, debts, installments);
+
+  // Deudas activas todavía sin meta — las que se pueden vincular.
+  const unlinkedDebts = debts.filter((d) => !d.goal_id && d.status !== "pagada");
 
   const totalTarget = goals.reduce((s, g) => s + Number(g.target_amount), 0);
-  const totalSaved = goals.reduce(
-    (s, g) => s + currentAmountOf(g.id, Number(g.current_amount)),
-    0,
-  );
+  const totalSaved = goals.reduce((s, g) => s + progressOf(g).total, 0);
 
   const generalSavings = accounts.filter((a) => a.type === "ahorro" && !a.goal_id);
 
@@ -222,7 +232,8 @@ export default async function MetasPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {goals.map((g) => {
             const linkedAccount = accounts.find((a) => a.goal_id === g.id);
-            const currentAmount = currentAmountOf(g.id, Number(g.current_amount));
+            const progress = progressOf(g);
+            const currentAmount = progress.total;
             const pct = clampPct(currentAmount, Number(g.target_amount));
             const done = currentAmount >= Number(g.target_amount);
             const daysLeft = g.deadline ? daysBetween(today, g.deadline) : null;
@@ -254,6 +265,26 @@ export default async function MetasPage() {
                   </div>
                   {done && <Badge tone="success">Lograda</Badge>}
                 </div>
+
+                {/* R14: de dónde viene el progreso — aportes vs. pago de
+                    deudas vinculadas, con enlace a la deuda. */}
+                {progress.fromDebts > 0 && (
+                  <div className="rounded-2xl bg-black/[0.03] p-2.5 text-xs">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-muted">De ahorros</span>
+                      <span className="font-semibold text-ink">
+                        <Money value={progress.fromSavings} decimals={false} />
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between gap-2 mt-0.5">
+                      <span className="text-muted">De pagar deudas</span>
+                      <span className="font-semibold text-ink">
+                        <Money value={progress.fromDebts} decimals={false} />
+                      </span>
+                    </div>
+                  </div>
+                )}
+                <LinkedDebtsList linked={progress.linkedDebts} />
 
                 <div>
                   <div className="flex items-end justify-between mb-1.5">
@@ -370,9 +401,11 @@ export default async function MetasPage() {
                   <DeleteButton
                     action={deleteGoal.bind(null, g.id)}
                     title="¿Eliminar meta?"
-                    message="Se perderá el progreso registrado."
+                    message="Se perderá el progreso registrado. Las deudas vinculadas no se borran, solo se desvinculan."
                   />
                 </div>
+
+                <LinkDebtButton goalId={g.id} available={unlinkedDebts} />
               </GlassCard>
             );
           })}

@@ -8,6 +8,32 @@ import { parseAmount, type ActionResult } from "@/lib/actions-shared";
 function revalidateAll() {
   revalidatePath("/metas");
   revalidatePath("/dashboard");
+  revalidatePath("/deudas");
+}
+
+/** R14: vincular una deuda existente a esta meta. El vínculo se crea SIEMPRE
+ *  desde la meta (nunca desde la deuda), y a partir de ahí el progreso de la
+ *  meta incluye lo que ya hayas abonado de esa deuda. */
+export async function linkDebtToGoal(goalId: string, debtId: string): Promise<ActionResult> {
+  await requireUser();
+  if (!goalId || !debtId) return { ok: false };
+  const supabase = await createClient();
+  const { error } = await supabase.from("debts").update({ goal_id: goalId }).eq("id", debtId);
+  if (error) return { ok: false, error: "No se pudo vincular la deuda." };
+  revalidateAll();
+  return { ok: true };
+}
+
+/** Desvincular. El progreso que aportaba esa deuda se descuenta de la meta
+ *  (por eso la UI pide confirmación antes) — no se "queda" el avance. */
+export async function unlinkDebtFromGoal(debtId: string): Promise<ActionResult> {
+  await requireUser();
+  if (!debtId) return { ok: false };
+  const supabase = await createClient();
+  const { error } = await supabase.from("debts").update({ goal_id: null }).eq("id", debtId);
+  if (error) return { ok: false, error: "No se pudo desvincular." };
+  revalidateAll();
+  return { ok: true };
 }
 
 export async function addGoal(formData: FormData): Promise<ActionResult> {

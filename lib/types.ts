@@ -86,6 +86,9 @@ export interface Debt {
   status: DebtStatus;
   note: string | null;
   created_at: string;
+  /** R14: meta que avanza conforme pagas esta deuda (ej. compraste el
+   *  celular prestado). El vínculo se crea desde la meta, no desde acá. */
+  goal_id: string | null;
 }
 
 export interface DebtInstallment {

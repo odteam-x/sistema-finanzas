@@ -21,6 +21,7 @@ import { exceptionsMap } from "./calendar";
 import { resolveBudgetBasis } from "./budgetDays";
 import { balanceOfAccount, balanceOfAccounts, deltaForAccount } from "./balances";
 import { outstandingOfDebt } from "./debts";
+import { goalProgress } from "./goals";
 import { quincenaForDate, nextPayDateFrom, type Period } from "./periods";
 import { addDaysISO, daysBetween, formatDOP, toISODate, todayISO } from "./format";
 import type { AccountType, Goal, Salary, SavingsMovement } from "./types";
@@ -302,14 +303,13 @@ export async function getFinanceSummary(): Promise<FinanceSummary> {
   // sola fuente de verdad: `realQuincena`.
   const saldoReal = ingresoQuincena - realQuincena - savingsContributedThisQuincena;
 
-  // Metas con una cuenta vinculada derivan su progreso del saldo real de
-  // esa cuenta en vez del current_amount manual (ver balance/page.tsx) — se
-  // parcha aquí una sola vez para que cualquier consumidor de s.goals
-  // (Dashboard, etc.) ya reciba el monto correcto sin repetir la lógica.
-  const goalsWithDerived: Goal[] = goals.map((g) => {
-    const linked = savingsAccounts.find((a) => a.goal_id === g.id);
-    return linked ? { ...g, current_amount: balanceOf(linked.id) } : g;
-  });
+  // Progreso de cada meta: aportes/ahorro vinculado MÁS lo abonado de las
+  // deudas vinculadas (R14). Se calcula con lib/goals.ts — la misma función
+  // que usa la pantalla de Ahorros, para que ambas coincidan siempre.
+  const goalsWithDerived: Goal[] = goals.map((g) => ({
+    ...g,
+    current_amount: goalProgress(g, savingsAccounts, savingsMovements, debts, installments).total,
+  }));
   const totalSaved = goalsWithDerived.reduce((s, g) => s + Number(g.current_amount), 0);
   const totalTarget = goalsWithDerived.reduce((s, g) => s + Number(g.target_amount), 0);
   // Ahorro general: cuentas tipo "ahorro" que no están atadas a ninguna
