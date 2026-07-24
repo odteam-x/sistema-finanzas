@@ -13,7 +13,7 @@ import { DeleteButton } from "@/components/ui/DeleteButton";
 import { MoneyValue } from "@/components/ui/MoneyValue";
 import { Money } from "@/components/ui/Money";
 import { IconBubble } from "@/components/ui/IconBubble";
-import { addAccount, addMovement } from "../balance/actions";
+import { addAccount, addMovement, deleteAccount, updateAccount } from "../balance/actions";
 import { addGoal, addProgress, deleteGoal, updateGoal } from "./actions";
 
 export const metadata = { title: "Ahorros · Cachin'" };
@@ -119,6 +119,30 @@ export default async function MetasPage() {
                   <div className="min-w-0 flex-1">
                     <p className="font-bold text-ink truncate">{a.name}</p>
                     <MoneyValue value={balance} decimals={false} className="text-lg font-extrabold text-primary" />
+                  </div>
+                  {/* R04: editar y eliminar el ahorro desde ESTA pantalla —
+                      antes solo se podía desde Balance, aunque la cuenta sea
+                      la misma. Reusa las mismas acciones. */}
+                  <div className="flex items-center gap-1 shrink-0">
+                    <FormModal
+                      title={`Editar “${a.name}”`}
+                      action={updateAccount}
+                      submitLabel="Guardar"
+                      trigger="icon"
+                      triggerIcon="edit"
+                      triggerAriaLabel={`Editar ${a.name}`}
+                    >
+                      <input type="hidden" name="id" value={a.id} />
+                      <input type="hidden" name="type" value="ahorro" />
+                      <Field label="Nombre" htmlFor={`saname-${a.id}`} required>
+                        <Input id={`saname-${a.id}`} name="name" defaultValue={a.name} required />
+                      </Field>
+                    </FormModal>
+                    <DeleteButton
+                      action={deleteAccount.bind(null, a.id)}
+                      title={`¿Eliminar “${a.name}”?`}
+                      message="Se eliminarán también sus movimientos, así que su saldo dejará de contar en tu balance. Los gastos e ingresos que apuntaban a esta cuenta se reasignan a tu cuenta por defecto."
+                    />
                   </div>
                 </div>
                 <div className="flex items-center gap-1">

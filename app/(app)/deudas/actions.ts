@@ -76,20 +76,12 @@ function stepDate(iso: string, freq: DebtFrequency, times: number): string {
   return toISODate(d);
 }
 
-async function recomputeStatus(
-  supabase: SupabaseClient,
-  debtId: string,
-): Promise<void> {
-  const { data } = await supabase
-    .from("debt_installments")
-    .select("paid")
-    .eq("debt_id", debtId);
-  if (!data || data.length === 0) return;
-  const paid = data.filter((d) => d.paid).length;
-  const status =
-    paid === 0 ? "pendiente" : paid === data.length ? "pagada" : "parcial";
-  await supabase.from("debts").update({ status }).eq("id", debtId);
-}
+// El estado de una deuda en cuotas (pendiente/parcial/pagada) YA NO se
+// escribe desde acá: lo recalcula solo un trigger de Postgres cada vez que
+// cambia una cuota (ver trg_recompute_debt_status en migration-v10.sql).
+// Antes era una columna cacheada que la app tenía que acordarse de
+// actualizar tras cada pago — si un pago entraba por otra vía, el estado
+// quedaba mintiendo.
 
 export async function addDebt(formData: FormData): Promise<ActionResult> {
   const user = await requireUser();
@@ -167,8 +159,28 @@ export async function addDebt(formData: FormData): Promise<ActionResult> {
   return { ok: true };
 }
 
+/** R03: una deuda liquidada es inmutable. Se verifica en el SERVIDOR (no
+ *  solo escondiendo el botón en la UI) para que no se pueda editar una
+ *  deuda pagada por otra vía. */
+async function assertNotSettled(
+  supabase: SupabaseClient,
+  debtId: string,
+): Promise<string | null> {
+  const { data: debt } = await supabase
+    .from("debts")
+    .select("status")
+    .eq("id", debtId)
+    .maybeSingle();
+  if (!debt) return "No se encontró la deuda.";
+  if (debt.status === "pagada") {
+    return "Esta deuda ya está pagada. Reábrela primero si necesitas cambiarla.";
+  }
+  return null;
+}
+
 /** Edita una deuda existente: monto total (súmale o réstale) y, si es de
- *  pago único, su fecha de vencimiento (aplázala). */
+ *  pago único, su fecha de vencimiento (aplázala). Bloqueada si ya está
+ *  liquidada (R03). */
 export async function updateDebt(formData: FormData): Promise<ActionResult> {
   await requireUser();
   const id = String(formData.get("id") ?? "");
@@ -182,11 +194,94 @@ export async function updateDebt(formData: FormData): Promise<ActionResult> {
     return { ok: false, error: "Ingresa un monto total válido." };
   }
   const supabase = await createClient();
+  const blocked = await assertNotSettled(supabase, id);
+  if (blocked) return { ok: false, error: blocked };
+
   const { error } = await supabase
     .from("debts")
     .update({ name, total_amount: total, due_date, note })
     .eq("id", id);
   if (error) return { ok: false, error: "No se pudo actualizar la deuda." };
+  revalidateAll();
+  return { ok: true };
+}
+
+/** R02: le vuelves a deber a la misma persona. Se guarda como historial
+ *  (debt_increments) en vez de sobreescribir el monto original, así el
+ *  desglose queda visible. NO mueve dinero — deber más no es gastar (R01). */
+export async function addDebtIncrement(formData: FormData): Promise<ActionResult> {
+  const user = await requireUser();
+  const debt_id = String(formData.get("debt_id") ?? "");
+  const amount = parseAmount(formData.get("amount"));
+  const date = String(formData.get("date") ?? "") || todayISO();
+  const note = String(formData.get("note") ?? "").trim() || null;
+
+  if (!debt_id) return { ok: false };
+  if (!Number.isFinite(amount) || amount <= 0) {
+    return { ok: false, error: "Ingresa un monto válido." };
+  }
+
+  const supabase = await createClient();
+  const blocked = await assertNotSettled(supabase, debt_id);
+  if (blocked) return { ok: false, error: blocked };
+
+  const { error } = await supabase
+    .from("debt_increments")
+    .insert({ debt_id, user_id: user.id, amount, date, note });
+  if (error) return { ok: false, error: "No se pudo agregar el monto." };
+  revalidateAll();
+  return { ok: true };
+}
+
+/** Borra un incremento del historial (corrige una equivocación). Tampoco
+ *  mueve dinero. */
+export async function deleteDebtIncrement(id: string): Promise<ActionResult> {
+  await requireUser();
+  const supabase = await createClient();
+  const { error } = await supabase.from("debt_increments").delete().eq("id", id);
+  if (error) return { ok: false, error: "No se pudo eliminar." };
+  revalidateAll();
+  return { ok: true };
+}
+
+/** R03: reabrir una deuda liquidada revirtiendo su último pago. Acción
+ *  explícita y confirmada — es la única forma de volver a editarla. */
+export async function reopenDebt(id: string): Promise<ActionResult> {
+  await requireUser();
+  const supabase = await createClient();
+
+  const { data: debt } = await supabase
+    .from("debts")
+    .select("payment_type")
+    .eq("id", id)
+    .maybeSingle();
+  if (!debt) return { ok: false, error: "No se encontró la deuda." };
+
+  if (debt.payment_type === "cuotas") {
+    // Revierte la última cuota pagada (la de fecha de pago más reciente):
+    // desmarcarla borra su movimiento del ledger y su gasto espejo, y el
+    // trigger recalcula el estado de la deuda solo.
+    const { data: last } = await supabase
+      .from("debt_installments")
+      .select("id")
+      .eq("debt_id", id)
+      .eq("paid", true)
+      .order("paid_date", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (!last) return { ok: false, error: "Esta deuda no tiene pagos que revertir." };
+
+    await supabase
+      .from("debt_installments")
+      .update({ paid: false, paid_date: null })
+      .eq("id", last.id);
+    await removeDebtPayment(supabase, last.id);
+  } else {
+    // Pago único: se revierte el pago completo.
+    await supabase.from("debts").update({ status: "pendiente" }).eq("id", id);
+    await removeDebtPayment(supabase, id);
+  }
+
   revalidateAll();
   return { ok: true };
 }
@@ -203,6 +298,19 @@ export async function updateInstallment(formData: FormData): Promise<ActionResul
   }
   if (!due_date) return { ok: false, error: "Selecciona la fecha." };
   const supabase = await createClient();
+  // El `.eq("paid", false)` ya impide tocar una cuota pagada; acá se agrega
+  // la guardia a nivel de deuda (R03): si la deuda entera está liquidada,
+  // ninguna de sus cuotas se edita.
+  const { data: inst } = await supabase
+    .from("debt_installments")
+    .select("debt_id")
+    .eq("id", id)
+    .maybeSingle();
+  if (inst) {
+    const blocked = await assertNotSettled(supabase, inst.debt_id);
+    if (blocked) return { ok: false, error: blocked };
+  }
+
   const { error } = await supabase
     .from("debt_installments")
     .update({ amount, due_date })
@@ -247,7 +355,8 @@ export async function toggleInstallment(
     await removeDebtPayment(supabase, installmentId);
   }
 
-  await recomputeStatus(supabase, debtId);
+  // El estado de la deuda lo recalcula el trigger de la base al cambiar la
+  // cuota — ya no hace falta escribirlo desde acá.
   revalidateAll();
   return { ok: true };
 }
@@ -285,20 +394,43 @@ export async function toggleDebtPaid(
 export async function deleteDebt(id: string): Promise<ActionResult> {
   await requireUser();
   const supabase = await createClient();
-  // Limpia los movimientos de pago del ledger Y los gastos espejo (de la
-  // deuda única y de sus cuotas) antes de borrar, para no dejar huérfanos.
+
+  // R03: eliminar una deuda NO devuelve dinero al balance. Antes acá se
+  // BORRABAN los movimientos de pago — y borrar un retiro le devuelve ese
+  // dinero al saldo, o sea que eliminar una deuda ya pagada "regalaba" de
+  // vuelta lo que en la vida real ya habías pagado. Ahora los pagos que de
+  // verdad ocurrieron se CONSERVAN, solo se les quita el vínculo con la
+  // deuda y se re-etiquetan como movimiento manual, con una nota que
+  // explica de dónde venían.
+  const { data: debt } = await supabase
+    .from("debts")
+    .select("name")
+    .eq("id", id)
+    .maybeSingle();
   const { data: insts } = await supabase
     .from("debt_installments")
     .select("id")
     .eq("debt_id", id);
   const refIds = [id, ...(insts ?? []).map((i) => i.id)];
+  const nota = `Pago de deuda eliminada — ${debt?.name ?? "sin nombre"}`;
+
   await Promise.all([
-    supabase.from("savings_movements").delete().eq("source", "debt_payment").in("source_ref_id", refIds),
-    supabase.from("expenses").delete().eq("source", "debt_payment").in("source_ref_id", refIds),
+    supabase
+      .from("savings_movements")
+      .update({ source: "manual", source_ref_id: null, note: nota })
+      .eq("source", "debt_payment")
+      .in("source_ref_id", refIds),
+    // En `expenses`, source solo admite 'debt_payment' o null (ver
+    // migration-v8) — null es justamente "registrado a mano".
+    supabase
+      .from("expenses")
+      .update({ source: null, source_ref_id: null, note: nota })
+      .eq("source", "debt_payment")
+      .in("source_ref_id", refIds),
   ]);
 
   const { error } = await supabase.from("debts").delete().eq("id", id);
-  if (error) return { ok: false };
+  if (error) return { ok: false, error: "No se pudo eliminar la deuda." };
   revalidateAll();
   return { ok: true };
 }

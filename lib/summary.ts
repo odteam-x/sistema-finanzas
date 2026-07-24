@@ -3,6 +3,7 @@
 // que cualquier dato nuevo se refleja al instante en todas las secciones.
 import {
   getBudgetCategories,
+  getDebtIncrements,
   getDebts,
   getExceptions,
   getExpenses,
@@ -18,6 +19,7 @@ import {
 } from "./data";
 import { countWorkdays, exceptionsMap } from "./calendar";
 import { balanceOfAccount, balanceOfAccounts, deltaForAccount } from "./balances";
+import { outstandingOfDebt } from "./debts";
 import { quincenaForDate, nextPayDateFrom, type Period } from "./periods";
 import { addDaysISO, daysBetween, formatDOP, toISODate, todayISO } from "./format";
 import type { Goal, Salary, SavingsMovement } from "./types";
@@ -92,6 +94,7 @@ export async function getFinanceSummary(): Promise<FinanceSummary> {
     expenses,
     debts,
     installments,
+    debtIncrements,
     goals,
     savingsAccounts,
     savingsMovements,
@@ -107,6 +110,7 @@ export async function getFinanceSummary(): Promise<FinanceSummary> {
     getExpenses(q.start, q.end),
     getDebts(),
     getInstallments(),
+    getDebtIncrements(),
     getGoals(),
     getSavingsAccounts(),
     getSavingsMovements(),
@@ -206,26 +210,28 @@ export async function getFinanceSummary(): Promise<FinanceSummary> {
     return results;
   })();
 
-  // Deudas
-  let outstandingDebt = 0;
+  // Deudas. El total adeudado sale de lib/debts.ts (misma implementación que
+  // usa la pantalla de Deudas), así incluye los aumentos posteriores (R02) —
+  // antes se sumaba a mano acá y se habría quedado con el monto original.
+  const outstandingDebt = debts.reduce(
+    (s, d) => s + outstandingOfDebt(d, installments, debtIncrements),
+    0,
+  );
   let cuotasPeriodo = 0;
   const upcoming: Commitment[] = [];
   for (const d of debts) {
     if (d.payment_type === "cuotas") {
       for (const i of installments.filter((x) => x.debt_id === d.id && !x.paid)) {
-        outstandingDebt += Number(i.amount);
         upcoming.push({ date: i.due_date, name: d.name, amount: Number(i.amount), kind: "debt" });
         if (i.due_date >= q.start && i.due_date <= q.end) {
           cuotasPeriodo += Number(i.amount);
         }
       }
-    } else if (d.status !== "pagada") {
-      outstandingDebt += Number(d.total_amount);
-      if (d.due_date) {
-        upcoming.push({ date: d.due_date, name: d.name, amount: Number(d.total_amount), kind: "debt" });
-        if (d.due_date >= q.start && d.due_date <= q.end) {
-          cuotasPeriodo += Number(d.total_amount);
-        }
+    } else if (d.status !== "pagada" && d.due_date) {
+      const pendiente = outstandingOfDebt(d, installments, debtIncrements);
+      upcoming.push({ date: d.due_date, name: d.name, amount: pendiente, kind: "debt" });
+      if (d.due_date >= q.start && d.due_date <= q.end) {
+        cuotasPeriodo += pendiente;
       }
     }
   }

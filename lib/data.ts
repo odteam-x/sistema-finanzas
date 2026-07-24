@@ -5,6 +5,7 @@ import type {
   BudgetCategory,
   BudgetPeriodOverride,
   Debt,
+  DebtIncrement,
   DebtInstallment,
   Expense,
   Goal,
@@ -93,6 +94,15 @@ export async function getInstallments(): Promise<DebtInstallment[]> {
     .from("debt_installments")
     .select("*")
     .order("due_date", { ascending: true });
+  return data ?? [];
+}
+
+export async function getDebtIncrements(): Promise<DebtIncrement[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("debt_increments")
+    .select("*")
+    .order("date", { ascending: false });
   return data ?? [];
 }
 

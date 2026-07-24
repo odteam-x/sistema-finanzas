@@ -1,4 +1,5 @@
-import { getDebts, getInstallments, getSavingsAccounts } from "@/lib/data";
+import { getDebtIncrements, getDebts, getInstallments, getSavingsAccounts } from "@/lib/data";
+import { isSettled, outstandingOfDebt, totalOfDebt } from "@/lib/debts";
 import {
   formatDateLong,
   formatDateShort,
@@ -17,6 +18,7 @@ import { Field, Input, MoneyInput } from "@/components/ui/Field";
 import { FormModal } from "@/components/ui/FormModal";
 import { AddDebtForm } from "./AddDebtForm";
 import { InstallmentRow, DebtPaidToggle } from "./DebtControls";
+import { AddIncrementButton, IncrementHistory, ReopenDebtButton } from "./DebtActions";
 import { deleteDebt, updateDebt } from "./actions";
 import type { Debt, DebtStatus } from "@/lib/types";
 
@@ -73,10 +75,11 @@ function EditDebtForm({ debt }: { debt: Debt }) {
 
 export default async function DeudasPage() {
   const today = todayISO();
-  const [debts, installments, accounts] = await Promise.all([
+  const [debts, installments, accounts, increments] = await Promise.all([
     getDebts(),
     getInstallments(),
     getSavingsAccounts(),
+    getDebtIncrements(),
   ]);
 
   const byDebt = new Map<string, typeof installments>();
@@ -85,22 +88,24 @@ export default async function DeudasPage() {
     arr.push(i);
     byDebt.set(i.debt_id, arr);
   }
+  const incrementsOf = (debtId: string) => increments.filter((i) => i.debt_id === debtId);
+
+  // Total/abonado/pendiente salen de lib/debts.ts — una sola implementación
+  // compartida con el resto de la app (antes cada pantalla lo sumaba aparte).
+  const outstandingOf = (d: (typeof debts)[number]) =>
+    outstandingOfDebt(d, installments, increments);
+  const isPaid = (d: (typeof debts)[number]) => isSettled(d, installments, increments);
 
   // Total adeudado + próximo vencimiento
-  let outstanding = 0;
+  const outstanding = debts.reduce((s, d) => s + outstandingOf(d), 0);
   const upcoming: string[] = [];
   for (const d of debts) {
     if (d.payment_type === "cuotas") {
-      const ins = byDebt.get(d.id) ?? [];
-      for (const i of ins) {
-        if (!i.paid) {
-          outstanding += Number(i.amount);
-          upcoming.push(i.due_date);
-        }
+      for (const i of byDebt.get(d.id) ?? []) {
+        if (!i.paid) upcoming.push(i.due_date);
       }
-    } else if (d.status !== "pagada") {
-      outstanding += Number(d.total_amount);
-      if (d.due_date) upcoming.push(d.due_date);
+    } else if (d.status !== "pagada" && d.due_date) {
+      upcoming.push(d.due_date);
     }
   }
   upcoming.sort();
@@ -114,19 +119,6 @@ export default async function DeudasPage() {
     arr.push(d);
     groups.set(d.name, arr);
   }
-  const outstandingOf = (d: (typeof debts)[number]) => {
-    if (d.payment_type === "cuotas") {
-      return (byDebt.get(d.id) ?? []).filter((i) => !i.paid).reduce((s, i) => s + Number(i.amount), 0);
-    }
-    return d.status !== "pagada" ? Number(d.total_amount) : 0;
-  };
-  const isPaid = (d: (typeof debts)[number]) => {
-    if (d.payment_type === "cuotas") {
-      const ins = byDebt.get(d.id) ?? [];
-      return ins.length > 0 && ins.every((i) => i.paid);
-    }
-    return d.status === "pagada";
-  };
 
   return (
     <>
@@ -195,29 +187,49 @@ export default async function DeudasPage() {
                     {group.map((d) => {
                       const ins = (byDebt.get(d.id) ?? []).sort((a, b) => a.seq - b.seq);
                       const paidCount = ins.filter((i) => i.paid).length;
+                      const incs = incrementsOf(d.id);
+                      const total = totalOfDebt(d, increments);
+                      const settled = isPaid(d);
                       return (
                         <div key={d.id} className="pt-3 first:pt-0 pb-1">
                           <div className="flex items-start justify-between gap-3">
                             <div className="min-w-0 flex-1">
-                              <div className="flex items-center gap-2 min-w-0">
+                              <div className="flex items-center gap-2 min-w-0 flex-wrap">
                                 <Badge tone={statusTone[d.status]} className="shrink-0">
                                   {statusLabel[d.status]}
                                 </Badge>
                                 <p className="text-sm font-semibold text-ink truncate">
-                                  <Money value={Number(d.total_amount)} />
+                                  <Money value={total} />
                                 </p>
+                                {settled && (
+                                  <Badge tone="neutral" className="shrink-0">
+                                    Solo lectura
+                                  </Badge>
+                                )}
                               </div>
                               <p className="text-xs text-muted mt-0.5">
                                 Adquirida el {formatDateLong(d.acquired_date)}
                                 {d.note ? ` · ${d.note}` : ""}
                               </p>
+                              <IncrementHistory
+                                originalAmount={Number(d.total_amount)}
+                                increments={incs}
+                              />
+                              {/* R03: liquidada = inmutable. Reabrir (que revierte
+                                  el último pago) es la única forma de editarla. */}
+                              {settled && (
+                                <div className="mt-2">
+                                  <ReopenDebtButton debtId={d.id} debtName={d.name} />
+                                </div>
+                              )}
                             </div>
                             <div className="flex items-center gap-1 shrink-0">
-                              <EditDebtForm debt={d} />
+                              {!settled && <AddIncrementButton debtId={d.id} today={today} />}
+                              {!settled && <EditDebtForm debt={d} />}
                               <DeleteButton
                                 action={deleteDebt.bind(null, d.id)}
                                 title="¿Eliminar deuda?"
-                                message="Se eliminará la deuda y sus cuotas."
+                                message="Se eliminará la deuda y sus cuotas. Los pagos que ya hiciste se conservan como movimientos manuales — tu balance no cambia."
                               />
                             </div>
                           </div>

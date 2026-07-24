@@ -99,6 +99,20 @@ export interface DebtInstallment {
   paid_date: string | null;
 }
 
+/** Aumento posterior de una deuda existente (le volviste a deber a la misma
+ *  persona). Se guarda como historial en vez de sobreescribir el monto
+ *  original, así el desglose queda visible. NO mueve dinero: deber más no
+ *  es gastar (ver R01 en PLAN.md). */
+export interface DebtIncrement {
+  id: string;
+  debt_id: string;
+  user_id: string;
+  amount: number;
+  date: string; // YYYY-MM-DD
+  note: string | null;
+  created_at: string;
+}
+
 export interface Expense {
   id: string;
   user_id: string;
