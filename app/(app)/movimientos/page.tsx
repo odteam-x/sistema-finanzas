@@ -1,5 +1,10 @@
 import Link from "next/link";
-import { getMovementStats, getSavingsAccounts, getSavingsMovements } from "@/lib/data";
+import {
+  getMovementDays,
+  getMovementStats,
+  getSavingsAccounts,
+  getSavingsMovements,
+} from "@/lib/data";
 import { runSubscriptionCatchUp } from "@/lib/subscriptions";
 import { runSalaryCatchUp } from "@/lib/salary";
 import { formatDateLong, formatDateShort, todayISO } from "@/lib/format";
@@ -104,12 +109,14 @@ export default async function MovimientosPage({
   const { from, to } = bounds;
   const search = (sp.q ?? "").trim().toLowerCase();
   const today = todayISO();
-  const [movements, accounts, stats] = await Promise.all([
+  const [movements, accounts, stats, availableDays] = await Promise.all([
     getSavingsMovements(from, to),
     getSavingsAccounts(),
     // Los totales los suma Postgres con los mismos filtros, no un .reduce()
     // sobre todo el historial traído a memoria.
     getMovementStats({ from, to, kind: kindFilter, search: sp.q ?? "" }),
+    // Días que sí tienen movimientos, para acotar el selector de fecha.
+    getMovementDays(),
   ]);
   const accountName = (id: string) => accounts.find((a) => a.id === id)?.name ?? "Cuenta";
 
@@ -182,17 +189,26 @@ export default async function MovimientosPage({
                 </Link>
               ))}
             </div>
-            {/* R06: ver un solo día. Gana sobre el preset de rango. */}
-            <DayPicker value={day} />
-            {day && (
-              <Link
-                href={hrefFor({ dia: null })}
-                className="text-xs font-semibold text-primary"
-              >
-                Quitar día
-              </Link>
-            )}
+            {/* R06: ver un solo día. Gana sobre el preset de rango. Los demás
+                controles (búsqueda, tipo, rango) se quedan visibles: elegir
+                un día no debe obligar a perderlos de vista. */}
+            <DayPicker value={day} availableDays={availableDays} />
           </div>
+
+          {/* El filtro por día es el más restrictivo de todos: se anuncia
+              aparte y con su propia salida, en vez de quedar mezclado con
+              el resto de los controles de arriba. */}
+          {day && (
+            <div className="flex items-center gap-2 rounded-2xl bg-primary-soft px-3 py-2">
+              <Icon name="calendar" size={16} className="text-primary shrink-0" />
+              <p className="text-sm text-ink min-w-0 flex-1">
+                Viendo solo el <span className="font-bold capitalize">{formatDateLong(day)}</span>
+              </p>
+              <Link href={hrefFor({ dia: null })} className="shrink-0 text-sm font-bold text-primary">
+                Ver todos
+              </Link>
+            </div>
+          )}
 
           {/* Analítica del filtro activo (R06). Se calcula en Postgres. */}
           {(stats?.cantidad ?? visible.length) > 0 && (

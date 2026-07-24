@@ -59,9 +59,9 @@ export function GreetingHero({ subtitle, action, displayName }: GreetingHeroProp
         <Image
           src="/icons/logo-mark-white.png"
           alt="Cachin'"
-          width={40}
-          height={40}
-          className="rounded-full bg-gradient-brand p-2 shadow-md shadow-black/15"
+          width={52}
+          height={52}
+          className="rounded-full bg-gradient-brand p-2.5 shadow-md shadow-black/15"
           priority
         />
       </div>

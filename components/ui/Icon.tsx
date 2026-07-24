@@ -142,7 +142,10 @@ interface IconProps {
   "aria-label"?: string;
 }
 
-export function Icon({ name, size = 22, className, weight = "bold", ...props }: IconProps) {
+// "regular" da un trazo más fino y redondeado que el "bold" anterior — look
+// más minimalista sin cambiar de librería (Phosphor ya cubre esto con un
+// prop de peso). Se propaga solo a las ~40 llamadas existentes sin tocarlas.
+export function Icon({ name, size = 22, className, weight = "regular", ...props }: IconProps) {
   const Component = icons[name];
   return <Component size={size} weight={weight} className={className} aria-hidden="true" {...props} />;
 }

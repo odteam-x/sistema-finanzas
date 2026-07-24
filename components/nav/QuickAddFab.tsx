@@ -260,7 +260,11 @@ export function QuickAddFab({ accounts }: { accounts: SavingsAccount[] }) {
         <Field label="Monto total" htmlFor="qa-debt-amount" required>
           <MoneyInput id="qa-debt-amount" name="total_amount" required />
         </Field>
-        <Field label="Fecha de pago" htmlFor="qa-debt-due" hint="Opcional.">
+        {/* Un <input type="date"> vacío en un campo w-full se ve como una
+            caja enorme casi sin contenido, todo el aire a la derecha del
+            "dd/mm/aaaa" — se limita el ancho al del propio campo, no al del
+            modal entero. */}
+        <Field label="Fecha de pago" htmlFor="qa-debt-due" hint="Opcional." className="max-w-[180px]">
           <Input id="qa-debt-due" name="due_date" type="date" />
         </Field>
         <Field label="Nota" htmlFor="qa-debt-note">

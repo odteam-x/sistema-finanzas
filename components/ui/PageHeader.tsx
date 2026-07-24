@@ -30,7 +30,13 @@ export function PageHeader({ title, subtitle, action, showBack = true }: PageHea
           <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-ink truncate">
             {title}
           </h1>
-          {subtitle && <p className="text-sm text-muted mt-0.5 truncate">{subtitle}</p>}
+          {/* Antes truncaba a 1 línea: en subtítulos largos (ej. "Quincena
+              15-30 jul · 12 días laborables") se cortaba a mitad de palabra
+              y perdía información. Ahora envuelve hasta 2 líneas — se ve
+              completo, y el header sigue siendo compacto. */}
+          {subtitle && (
+            <p className="text-sm text-muted mt-0.5 line-clamp-2 leading-snug">{subtitle}</p>
+          )}
         </div>
       </div>
       {/* grid (no flex): el trigger="pill" de FormModal trae su propia clase

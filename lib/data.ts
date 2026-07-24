@@ -112,6 +112,19 @@ export async function getDebtIncrements(): Promise<DebtIncrement[]> {
   return data ?? [];
 }
 
+/** Días que tienen al menos un movimiento. Trae solo la columna `date`
+ *  (no las filas completas) para que sea barato: alimenta el selector de
+ *  día, que no debe dejar elegir fechas garantizadamente vacías. */
+export async function getMovementDays(): Promise<string[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("savings_movements")
+    .select("date")
+    .is("deleted_at", null)
+    .order("date", { ascending: true });
+  return Array.from(new Set((data ?? []).map((r) => r.date as string)));
+}
+
 export interface MovementStats {
   total_ingresos: number;
   total_egresos: number;
