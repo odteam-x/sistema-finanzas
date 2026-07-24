@@ -73,10 +73,16 @@ export async function addSalary(formData: FormData): Promise<ActionResult> {
   // El ledger es autoritativo: todo ingreso entra a una cuenta — la elegida
   // explícitamente, o la que corresponde al método de cobro (efectivo,
   // banco, tarjeta…), o la de por defecto si no se especificó nada.
+  // Si no se puede resolver una cuenta, se ABORTA — antes se insertaba el
+  // ingreso igual y el movimiento espejo se saltaba con un `if (account_id)`
+  // silencioso, dejando el ingreso fuera del ledger.
   const account_id =
     chosenAccount ??
     (paymentMethod ? await getOrCreateAccountByType(supabase, user.id, paymentMethod) : null) ??
     (await getOrCreateDefaultAccountId(supabase, user.id));
+  if (!account_id) {
+    return { ok: false, error: "No se pudo determinar la cuenta. Crea una cuenta primero." };
+  }
 
   const { data: salary, error } = await supabase
     .from("salaries")
@@ -85,17 +91,21 @@ export async function addSalary(formData: FormData): Promise<ActionResult> {
     .single();
   if (error || !salary) return { ok: false, error: "No se pudo registrar el pago." };
 
-  if (account_id) {
-    await supabase.from("savings_movements").insert({
-      account_id,
-      user_id: user.id,
-      kind: "deposito",
-      amount,
-      date: pay_date,
-      note: note ? `Ingreso: ${note}` : "Ingreso",
-      source: "salary",
-      source_ref_id: salary.id,
-    });
+  const { error: movErr } = await supabase.from("savings_movements").insert({
+    account_id,
+    user_id: user.id,
+    kind: "deposito",
+    amount,
+    date: pay_date,
+    note: note ? `Ingreso: ${note}` : "Ingreso",
+    source: "salary",
+    source_ref_id: salary.id,
+  });
+  // Si el espejo falla, se revierte el ingreso: mejor no registrar nada que
+  // dejar el ingreso y el balance en desacuerdo.
+  if (movErr) {
+    await supabase.from("salaries").delete().eq("id", salary.id);
+    return { ok: false, error: "No se pudo acreditar el ingreso a la cuenta." };
   }
 
   revalidateAll();

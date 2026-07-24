@@ -1,4 +1,5 @@
 import { getGoals, getSavingsAccounts, getSavingsMovements } from "@/lib/data";
+import { balanceOfAccount } from "@/lib/balances";
 import { formatDateShort, clampPct, todayISO, daysBetween } from "@/lib/format";
 import { quincenasUntil } from "@/lib/periods";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -72,14 +73,9 @@ export default async function MetasPage() {
   ]);
   const today = todayISO();
 
-  const balanceOfAccount = (accountId: string) =>
-    movements
-      .filter((m) => m.account_id === accountId)
-      .reduce((s, m) => s + (m.kind === "deposito" ? 1 : -1) * Number(m.amount), 0);
-
   const currentAmountOf = (goalId: string, fallback: number) => {
     const linked = accounts.find((a) => a.goal_id === goalId);
-    return linked ? balanceOfAccount(linked.id) : fallback;
+    return linked ? balanceOfAccount(movements, linked.id) : fallback;
   };
 
   const totalTarget = goals.reduce((s, g) => s + Number(g.target_amount), 0);
@@ -115,7 +111,7 @@ export default async function MetasPage() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
           {generalSavings.map((a) => {
-            const balance = balanceOfAccount(a.id);
+            const balance = balanceOfAccount(movements, a.id);
             return (
               <GlassCard key={a.id} className="flex flex-col gap-3 min-w-0">
                 <div className="flex items-center gap-3">

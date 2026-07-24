@@ -134,7 +134,10 @@ export interface SavingsAccount {
   created_at: string;
 }
 
-export type MovementKind = "deposito" | "retiro";
+/** 'transferencia' = movida entre dos cuentas propias: UNA fila la
+ *  representa entera (sale de account_id, entra a to_account_id). No cuenta
+ *  como ingreso ni como gasto — el dinero no entró ni salió del sistema. */
+export type MovementKind = "deposito" | "retiro" | "transferencia";
 
 /** Qué generó un movimiento del ledger. 'manual' = registrado a mano. */
 export type MovementSource =
@@ -156,6 +159,8 @@ export interface SavingsMovement {
   /** Id de la fila origen (gasto/sueldo/suscripción/deuda) — para limpiar el
    *  movimiento espejo al borrarla. */
   source_ref_id: string | null;
+  /** Solo en kind='transferencia': cuenta que RECIBE el dinero. */
+  to_account_id: string | null;
   created_at: string;
 }
 

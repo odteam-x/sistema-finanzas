@@ -1,4 +1,5 @@
 import { getGoals, getSavingsAccounts, getSavingsMovements } from "@/lib/data";
+import { balanceOfAccount, balanceOfAccounts } from "@/lib/balances";
 import { formatDateShort, todayISO } from "@/lib/format";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { GlassCard } from "@/components/ui/GlassCard";
@@ -16,10 +17,12 @@ import type { AccountType, Goal } from "@/lib/types";
 import {
   addAccount,
   addMovement,
+  addTransfer,
   deleteAccount,
   deleteMovement,
   updateAccount,
 } from "./actions";
+import type { SavingsAccount } from "@/lib/types";
 
 export const metadata = { title: "Balance · Cachin'" };
 
@@ -45,6 +48,51 @@ function TypeField({ defaultValue }: { defaultValue?: AccountType }) {
         ))}
       </Select>
     </Field>
+  );
+}
+
+/** Mover dinero entre dos cuentas propias. Una sola fila en el ledger
+ *  (kind='transferencia'), así que no se cuenta como ingreso ni como gasto
+ *  y el "Total en cuentas" no cambia — solo se redistribuye. */
+function TransferForm({ accounts, today }: { accounts: SavingsAccount[]; today: string }) {
+  return (
+    <FormModal
+      title="Mover entre cuentas"
+      action={addTransfer}
+      submitLabel="Transferir"
+      trigger="pill"
+      triggerIcon="plus"
+      triggerLabel="Mover entre cuentas"
+      triggerFull
+    >
+      <Field label="Desde" htmlFor="tr-from" required>
+        <Select id="tr-from" name="from_account_id" required>
+          {accounts.map((a) => (
+            <option key={a.id} value={a.id}>
+              {a.name}
+            </option>
+          ))}
+        </Select>
+      </Field>
+      <Field label="Hacia" htmlFor="tr-to" required hint="Tiene que ser una cuenta distinta.">
+        <Select id="tr-to" name="to_account_id" defaultValue={accounts[1]?.id} required>
+          {accounts.map((a) => (
+            <option key={a.id} value={a.id}>
+              {a.name}
+            </option>
+          ))}
+        </Select>
+      </Field>
+      <Field label="Monto" htmlFor="tr-amount" required>
+        <MoneyInput id="tr-amount" name="amount" required />
+      </Field>
+      <Field label="Fecha" htmlFor="tr-date" required>
+        <Input id="tr-date" name="date" type="date" defaultValue={today} required />
+      </Field>
+      <Field label="Nota" htmlFor="tr-note">
+        <Input id="tr-note" name="note" placeholder="Opcional" />
+      </Field>
+    </FormModal>
   );
 }
 
@@ -118,12 +166,11 @@ export default async function BalancePage() {
     getGoals(),
   ]);
 
-  const balanceOf = (accountId: string) =>
-    movements
-      .filter((m) => m.account_id === accountId)
-      .reduce((s, m) => s + (m.kind === "deposito" ? 1 : -1) * Number(m.amount), 0);
+  const balanceOf = (accountId: string) => balanceOfAccount(movements, accountId);
 
-  const totalSaved = accounts.reduce((s, a) => s + balanceOf(a.id), 0);
+  // Suma cuenta por cuenta (lib/balances.ts) para que una transferencia
+  // entre dos cuentas propias no infle el total.
+  const totalSaved = balanceOfAccounts(movements, accounts.map((a) => a.id));
   const accountName = (id: string) =>
     accounts.find((a) => a.id === id)?.name ?? "Cuenta";
   const recentMovements = movements.slice(0, 12);
@@ -149,6 +196,14 @@ export default async function BalancePage() {
           <Icon name="wallet" size={28} />
         </span>
       </div>
+
+      {/* Mover dinero entre cuentas propias: no es ingreso ni gasto, así que
+          no infla los totales de Movimientos (ver lib/balances.ts). */}
+      {accounts.length > 1 && (
+        <div className="mb-4">
+          <TransferForm accounts={accounts} today={today} />
+        </div>
+      )}
 
       {/* Cuentas */}
       {accounts.length === 0 ? (

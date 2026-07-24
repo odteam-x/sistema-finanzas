@@ -4,6 +4,7 @@ import { runSubscriptionCatchUp } from "@/lib/subscriptions";
 import { runSalaryCatchUp } from "@/lib/salary";
 import { formatDateLong, formatDateShort, todayISO } from "@/lib/format";
 import { groupByDate } from "@/lib/group";
+import { isExpense, isIncome } from "@/lib/balances";
 import { RANGE_LABEL, parseRangePreset, rangeBounds, type RangePreset } from "@/lib/range";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { GlassCard } from "@/components/ui/GlassCard";
@@ -105,7 +106,11 @@ export default async function MovimientosPage({
   const filterLabel =
     sp.tipo === "ingresos" ? "Ingresos" : sp.tipo === "gastos" ? "Gastos" : "Todos";
 
-  const total = visible.reduce((s, m) => s + (m.kind === "deposito" ? 1 : -1) * Number(m.amount), 0);
+  // Las transferencias entre cuentas propias no son ingreso ni gasto (el
+  // dinero no entró ni salió del sistema), así que no inflan estos totales.
+  const totalIngresos = visible.filter(isIncome).reduce((s, m) => s + Number(m.amount), 0);
+  const totalEgresos = visible.filter(isExpense).reduce((s, m) => s + Number(m.amount), 0);
+  const total = totalIngresos - totalEgresos;
   const grouped = groupByDate(visible, (m) => m.date);
 
   function hrefFor(next: { tipo?: string; range?: RangePreset }) {
@@ -199,26 +204,34 @@ export default async function MovimientosPage({
               <ul className="flex flex-col gap-2">
                 {group.items.map((m) => {
                   const isDep = m.kind === "deposito";
+                  const isTransfer = m.kind === "transferencia";
                   const standalone = m.source === "manual" && !m.source_ref_id;
                   return (
                     <li key={m.id}>
                       <GlassCard className="flex items-center gap-3 py-2.5">
                         <IconBubble
-                          icon={isDep ? "arrowDownLeft" : "arrowUpRight"}
-                          tone={isDep ? "neutral" : "danger"}
+                          icon={isTransfer ? "movements" : isDep ? "arrowDownLeft" : "arrowUpRight"}
+                          tone={isTransfer ? "info" : isDep ? "neutral" : "danger"}
                           size="sm"
                         />
                         <div className="min-w-0 flex-1">
                           <p className="font-semibold text-ink truncate">
-                            {m.note ?? (isDep ? "Ingreso" : "Gasto")}
+                            {m.note ?? (isTransfer ? "Transferencia" : isDep ? "Ingreso" : "Gasto")}
                           </p>
                           <p className="text-xs text-muted truncate">
-                            {accountName(m.account_id)} · {formatDateShort(m.date)}
+                            {isTransfer && m.to_account_id
+                              ? `${accountName(m.account_id)} → ${accountName(m.to_account_id)}`
+                              : accountName(m.account_id)}{" "}
+                            · {formatDateShort(m.date)}
                           </p>
                         </div>
-                        <Badge tone={isDep ? "primary" : "neutral"}>{sourceLabel[m.source]}</Badge>
+                        <Badge tone={isTransfer ? "info" : isDep ? "primary" : "neutral"}>
+                          {isTransfer ? "Entre cuentas" : sourceLabel[m.source]}
+                        </Badge>
                         <p className="font-semibold text-ink shrink-0">
-                          {isDep ? "+" : "−"}
+                          {/* Una transferencia no suma ni resta al total: el
+                              dinero solo cambió de cuenta. */}
+                          {isTransfer ? "" : isDep ? "+" : "−"}
                           <Money value={Number(m.amount)} />
                         </p>
                         {standalone && (

@@ -17,6 +17,7 @@ import {
   getTags,
 } from "./data";
 import { countWorkdays, exceptionsMap } from "./calendar";
+import { balanceOfAccount, balanceOfAccounts, deltaForAccount } from "./balances";
 import { quincenaForDate, nextPayDateFrom, type Period } from "./periods";
 import { addDaysISO, daysBetween, formatDOP, toISODate, todayISO } from "./format";
 import type { Goal, Salary, SavingsMovement } from "./types";
@@ -115,14 +116,15 @@ export async function getFinanceSummary(): Promise<FinanceSummary> {
     getSubscriptions(),
   ]);
 
-  const balanceOfAccount = (accountId: string) =>
-    savingsMovements
-      .filter((m) => m.account_id === accountId)
-      .reduce((s, m) => s + (m.kind === "deposito" ? 1 : -1) * Number(m.amount), 0);
+  // Balance por cuenta: una sola implementación compartida (lib/balances.ts),
+  // ya no una closure local repetida en cada pantalla.
+  const balanceOf = (accountId: string) => balanceOfAccount(savingsMovements, accountId);
 
-  const savingsTotal = savingsMovements.reduce(
-    (s, m) => s + (m.kind === "deposito" ? 1 : -1) * Number(m.amount),
-    0,
+  // Suma cuenta por cuenta (no un reduce plano sobre los montos) para que una
+  // transferencia entre dos cuentas propias se cancele sola en vez de contarse.
+  const savingsTotal = balanceOfAccounts(
+    savingsMovements,
+    savingsAccounts.map((a) => a.id),
   );
 
   // Ingreso quincenal: SOLO lo que ya se confirmó que llegó, no lo
@@ -250,12 +252,19 @@ export async function getFinanceSummary(): Promise<FinanceSummary> {
   // Aportes netos a cuentas de ahorro (generales o de meta) esta quincena:
   // ese dinero ya no está "disponible para gastar" — está apartado en otra
   // cuenta con otro destino — así que se resta aparte del gasto normal.
-  // Neto (depósitos - retiros) para que sacar plata de un ahorro sí la
-  // devuelva al disponible.
-  const ahorroAccountIds = new Set(savingsAccounts.filter((a) => a.type === "ahorro").map((a) => a.id));
-  const savingsContributedThisQuincena = savingsMovements
-    .filter((m) => ahorroAccountIds.has(m.account_id) && m.date >= q.start && m.date <= q.end)
-    .reduce((s, m) => s + (m.kind === "deposito" ? 1 : -1) * Number(m.amount), 0);
+  // Neto, para que sacar plata de un ahorro sí la devuelva al disponible.
+  // Se calcula con deltaForAccount (no con un reduce propio) para que una
+  // transferencia HACIA un ahorro cuente como aporte y una que sale de él
+  // lo devuelva, con la misma regla que usa el balance de esa cuenta.
+  const ahorroAccountIds = savingsAccounts.filter((a) => a.type === "ahorro").map((a) => a.id);
+  const movementsThisQuincena = savingsMovements.filter(
+    (m) => m.date >= q.start && m.date <= q.end,
+  );
+  const savingsContributedThisQuincena = ahorroAccountIds.reduce(
+    (total, id) =>
+      total + movementsThisQuincena.reduce((s, m) => s + deltaForAccount(m, id), 0),
+    0,
+  );
 
   // Balance real: ingreso confirmado menos el gasto REAL registrado (que ya
   // incluye los pagos de deuda de esta quincena, contados como gasto desde
@@ -271,7 +280,7 @@ export async function getFinanceSummary(): Promise<FinanceSummary> {
   // (Dashboard, etc.) ya reciba el monto correcto sin repetir la lógica.
   const goalsWithDerived: Goal[] = goals.map((g) => {
     const linked = savingsAccounts.find((a) => a.goal_id === g.id);
-    return linked ? { ...g, current_amount: balanceOfAccount(linked.id) } : g;
+    return linked ? { ...g, current_amount: balanceOf(linked.id) } : g;
   });
   const totalSaved = goalsWithDerived.reduce((s, g) => s + Number(g.current_amount), 0);
   const totalTarget = goalsWithDerived.reduce((s, g) => s + Number(g.target_amount), 0);
@@ -280,7 +289,7 @@ export async function getFinanceSummary(): Promise<FinanceSummary> {
   // saved/target) para no inflar ese porcentaje con dinero sin objetivo.
   const generalSavings = savingsAccounts
     .filter((a) => a.type === "ahorro" && !a.goal_id)
-    .reduce((s, a) => s + balanceOfAccount(a.id), 0);
+    .reduce((s, a) => s + balanceOf(a.id), 0);
 
   // ---- Alertas derivadas de los datos ----
   const alerts: Alert[] = [];

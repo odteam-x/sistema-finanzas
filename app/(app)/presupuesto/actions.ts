@@ -87,7 +87,14 @@ export async function addExpense(formData: FormData): Promise<ActionResult> {
   const supabase = await createClient();
   // El ledger es autoritativo: todo gasto sale de una cuenta (la elegida o
   // la de por defecto), para que el saldo en Balance sea siempre real.
+  // Si no se puede resolver una cuenta, se ABORTA la operación completa —
+  // antes se insertaba el gasto igual y el movimiento espejo se saltaba con
+  // un `if (account_id)` silencioso, dejando el gasto fuera del ledger
+  // (justo la inconsistencia de "una sección no se entera de la otra").
   const account_id = chosenAccount ?? (await getOrCreateDefaultAccountId(supabase, user.id));
+  if (!account_id) {
+    return { ok: false, error: "No se pudo determinar la cuenta. Crea una cuenta primero." };
+  }
 
   const { data: expense, error } = await supabase
     .from("expenses")
@@ -96,17 +103,21 @@ export async function addExpense(formData: FormData): Promise<ActionResult> {
     .single();
   if (error || !expense) return { ok: false, error: "No se pudo registrar el gasto." };
 
-  if (account_id) {
-    await supabase.from("savings_movements").insert({
-      account_id,
-      user_id: user.id,
-      kind: "retiro",
-      amount,
-      date,
-      note: note ? `Gasto: ${note}` : "Gasto",
-      source: "manual",
-      source_ref_id: expense.id,
-    });
+  const { error: movErr } = await supabase.from("savings_movements").insert({
+    account_id,
+    user_id: user.id,
+    kind: "retiro",
+    amount,
+    date,
+    note: note ? `Gasto: ${note}` : "Gasto",
+    source: "manual",
+    source_ref_id: expense.id,
+  });
+  // Si el espejo falla, se revierte el gasto: mejor no registrar nada que
+  // dejar el gasto y el balance en desacuerdo.
+  if (movErr) {
+    await supabase.from("expenses").delete().eq("id", expense.id);
+    return { ok: false, error: "No se pudo registrar el gasto en la cuenta." };
   }
 
   revalidateAll();
