@@ -113,6 +113,40 @@ export interface DebtIncrement {
   created_at: string;
 }
 
+/** Espejo de Deuda pero al revés: dinero que te deben a TI.
+ *  'cobro' = alguien te quedó debiendo · 'prestamo' = tú prestaste dinero.
+ *  Un cobro pendiente NO suma al balance; solo al recibirlo se acredita. */
+export type ReceivableKind = "cobro" | "prestamo";
+export type ReceivableStatus = "pendiente" | "parcial" | "cobrada";
+
+export interface Receivable {
+  id: string;
+  user_id: string;
+  kind: ReceivableKind;
+  name: string;
+  total_amount: number;
+  acquired_date: string; // YYYY-MM-DD
+  due_date: string | null; // pago único
+  payment_type: DebtPaymentType;
+  installments_count: number | null;
+  installment_amount: number | null;
+  frequency: DebtFrequency | null;
+  status: ReceivableStatus;
+  note: string | null;
+  created_at: string;
+}
+
+export interface ReceivableInstallment {
+  id: string;
+  receivable_id: string;
+  user_id: string;
+  seq: number;
+  due_date: string; // YYYY-MM-DD
+  amount: number;
+  paid: boolean; // "cobrada"
+  paid_date: string | null;
+}
+
 export interface Expense {
   id: string;
   user_id: string;
@@ -159,7 +193,8 @@ export type MovementSource =
   | "salary"
   | "subscription"
   | "debt_payment"
-  | "goal_contribution";
+  | "goal_contribution"
+  | "receivable_collected";
 
 export interface SavingsMovement {
   id: string;

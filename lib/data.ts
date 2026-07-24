@@ -9,6 +9,8 @@ import type {
   DebtInstallment,
   Expense,
   Goal,
+  Receivable,
+  ReceivableInstallment,
   Salary,
   SalarySettings,
   SavingsAccount,
@@ -103,6 +105,24 @@ export async function getDebtIncrements(): Promise<DebtIncrement[]> {
     .from("debt_increments")
     .select("*")
     .order("date", { ascending: false });
+  return data ?? [];
+}
+
+export async function getReceivables(): Promise<Receivable[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("receivables")
+    .select("*")
+    .order("created_at", { ascending: false });
+  return data ?? [];
+}
+
+export async function getReceivableInstallments(): Promise<ReceivableInstallment[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("receivable_installments")
+    .select("*")
+    .order("due_date", { ascending: true });
   return data ?? [];
 }
 

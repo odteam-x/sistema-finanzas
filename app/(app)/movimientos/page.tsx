@@ -34,6 +34,7 @@ const sourceLabel: Record<MovementSource, string> = {
   subscription: "Suscripción",
   debt_payment: "Deuda",
   goal_contribution: "Meta",
+  receivable_collected: "Cobro",
 };
 
 function NewMovementForm({
