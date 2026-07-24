@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getSavingsAccounts, getSavingsMovements } from "@/lib/data";
+import { getMovementStats, getSavingsAccounts, getSavingsMovements } from "@/lib/data";
 import { runSubscriptionCatchUp } from "@/lib/subscriptions";
 import { runSalaryCatchUp } from "@/lib/salary";
 import { formatDateLong, formatDateShort, todayISO } from "@/lib/format";
@@ -15,6 +15,7 @@ import { Icon } from "@/components/ui/Icon";
 import { DeleteButton } from "@/components/ui/DeleteButton";
 import { Money } from "@/components/ui/Money";
 import { SearchBar } from "@/components/ui/SearchBar";
+import { DayPicker } from "@/components/ui/DayPicker";
 import { Field, Input, Select, MoneyInput } from "@/components/ui/Field";
 import { FormModal } from "@/components/ui/FormModal";
 import {
@@ -87,17 +88,27 @@ function NewMovementForm({
 export default async function MovimientosPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tipo?: string; range?: string; q?: string }>;
+  searchParams: Promise<{ tipo?: string; range?: string; q?: string; dia?: string }>;
 }) {
   await Promise.all([runSubscriptionCatchUp(), runSalaryCatchUp()]);
 
   const sp = await searchParams;
   const kindFilter = sp.tipo === "ingresos" ? "deposito" : sp.tipo === "gastos" ? "retiro" : null;
   const range = parseRangePreset(sp.range);
-  const { from, to } = rangeBounds(range);
+  // R06: un día específico gana sobre el preset de rango — es el filtro más
+  // preciso, no tiene sentido combinarlo con "últimos 3 meses".
+  const day = (sp.dia ?? "").trim();
+  const bounds = day ? { from: day, to: day } : rangeBounds(range);
+  const { from, to } = bounds;
   const search = (sp.q ?? "").trim().toLowerCase();
   const today = todayISO();
-  const [movements, accounts] = await Promise.all([getSavingsMovements(from, to), getSavingsAccounts()]);
+  const [movements, accounts, stats] = await Promise.all([
+    getSavingsMovements(from, to),
+    getSavingsAccounts(),
+    // Los totales los suma Postgres con los mismos filtros, no un .reduce()
+    // sobre todo el historial traído a memoria.
+    getMovementStats({ from, to, kind: kindFilter, search: sp.q ?? "" }),
+  ]);
   const accountName = (id: string) => accounts.find((a) => a.id === id)?.name ?? "Cuenta";
 
   const visible = movements
@@ -107,19 +118,21 @@ export default async function MovimientosPage({
   const filterLabel =
     sp.tipo === "ingresos" ? "Ingresos" : sp.tipo === "gastos" ? "Gastos" : "Todos";
 
-  // Las transferencias entre cuentas propias no son ingreso ni gasto (el
-  // dinero no entró ni salió del sistema), así que no inflan estos totales.
-  const totalIngresos = visible.filter(isIncome).reduce((s, m) => s + Number(m.amount), 0);
-  const totalEgresos = visible.filter(isExpense).reduce((s, m) => s + Number(m.amount), 0);
-  const total = totalIngresos - totalEgresos;
+  // Si la RPC no está disponible todavía (migración v12 sin correr), se cae
+  // al cálculo en memoria para no romper la pantalla.
+  const totalIngresos = stats?.total_ingresos ?? visible.filter(isIncome).reduce((s, m) => s + Number(m.amount), 0);
+  const totalEgresos = stats?.total_egresos ?? visible.filter(isExpense).reduce((s, m) => s + Number(m.amount), 0);
+  const total = stats?.neto ?? totalIngresos - totalEgresos;
   const grouped = groupByDate(visible, (m) => m.date);
 
-  function hrefFor(next: { tipo?: string; range?: RangePreset }) {
+  function hrefFor(next: { tipo?: string; range?: RangePreset; dia?: string | null }) {
     const params = new URLSearchParams();
     const tipo = next.tipo ?? sp.tipo;
     const r = next.range ?? range;
+    const d = next.dia === null ? "" : (next.dia ?? day);
     if (tipo) params.set("tipo", tipo);
-    if (r !== "todo") params.set("range", r);
+    if (d) params.set("dia", d);
+    else if (r !== "todo") params.set("range", r);
     if (sp.q) params.set("q", sp.q);
     const qs = params.toString();
     return qs ? `/movimientos?${qs}` : "/movimientos";
@@ -158,20 +171,69 @@ export default async function MovimientosPage({
               {(Object.keys(RANGE_LABEL) as RangePreset[]).map((r) => (
                 <Link
                   key={r}
-                  href={hrefFor({ range: r })}
+                  href={hrefFor({ range: r, dia: null })}
                   className={`rounded-xl px-2.5 py-1 text-xs font-semibold transition-colors ${
-                    r === range ? "bg-primary text-white" : "text-ink/70"
+                    !day && r === range ? "bg-primary text-white" : "text-ink/70"
                   }`}
                 >
                   {RANGE_LABEL[r]}
                 </Link>
               ))}
             </div>
+            {/* R06: ver un solo día. Gana sobre el preset de rango. */}
+            <DayPicker value={day} />
+            {day && (
+              <Link
+                href={hrefFor({ dia: null })}
+                className="text-xs font-semibold text-primary"
+              >
+                Quitar día
+              </Link>
+            )}
           </div>
+
+          {/* Analítica del filtro activo (R06). Se calcula en Postgres. */}
+          {(stats?.cantidad ?? visible.length) > 0 && (
+            <div className="glass rounded-2xl p-3 flex flex-col gap-2">
+              <div className="grid grid-cols-3 gap-2 text-center">
+                <div>
+                  <p className="text-[0.7rem] text-muted">Ingresos</p>
+                  <p className="text-sm font-bold text-primary">
+                    <Money value={totalIngresos} decimals={false} />
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[0.7rem] text-muted">Egresos</p>
+                  <p className="text-sm font-bold text-danger">
+                    <Money value={totalEgresos} decimals={false} />
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[0.7rem] text-muted">Neto</p>
+                  <p className="text-sm font-bold text-ink">
+                    <Money value={total} decimals={false} />
+                  </p>
+                </div>
+              </div>
+              {stats?.busiest_date && (stats.busiest_count ?? 0) > 0 && (
+                <p className="text-xs text-muted border-t border-black/5 pt-2">
+                  Día con más movimientos:{" "}
+                  <Link href={hrefFor({ dia: stats.busiest_date })} className="font-semibold text-primary">
+                    {formatDateLong(stats.busiest_date)}
+                  </Link>{" "}
+                  · {stats.busiest_count}{" "}
+                  {stats.busiest_count === 1 ? "movimiento" : "movimientos"} · neto{" "}
+                  <Money value={stats.busiest_neto ?? 0} decimals={false} className="font-semibold text-ink" />
+                </p>
+              )}
+            </div>
+          )}
+
           {visible.length > 0 && (
             <p className="text-xs text-muted px-1">
-              {visible.length} {visible.length === 1 ? "movimiento" : "movimientos"} · Neto{" "}
-              <Money value={total} decimals={false} className="font-semibold text-ink" />
+              {stats?.cantidad ?? visible.length}{" "}
+              {(stats?.cantidad ?? visible.length) === 1 ? "movimiento" : "movimientos"}
+              {day ? ` · ${formatDateLong(day)}` : ""}
             </p>
           )}
         </div>

@@ -108,6 +108,45 @@ export async function getDebtIncrements(): Promise<DebtIncrement[]> {
   return data ?? [];
 }
 
+export interface MovementStats {
+  total_ingresos: number;
+  total_egresos: number;
+  neto: number;
+  cantidad: number;
+  busiest_date: string | null;
+  busiest_count: number | null;
+  busiest_neto: number | null;
+}
+
+/** R06: agregados de Movimientos calculados en Postgres (no con .reduce()
+ *  sobre todo el historial traído a memoria). Respeta los mismos filtros
+ *  que la lista. Ver get_movement_stats en supabase/migration-v12.sql. */
+export async function getMovementStats(params: {
+  from?: string;
+  to?: string;
+  kind?: "deposito" | "retiro" | null;
+  search?: string;
+}): Promise<MovementStats | null> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("get_movement_stats", {
+    p_from: params.from ?? null,
+    p_to: params.to ?? null,
+    p_kind: params.kind ?? null,
+    p_search: params.search ?? null,
+  });
+  if (error || !data || data.length === 0) return null;
+  const row = data[0];
+  return {
+    total_ingresos: Number(row.total_ingresos ?? 0),
+    total_egresos: Number(row.total_egresos ?? 0),
+    neto: Number(row.neto ?? 0),
+    cantidad: Number(row.cantidad ?? 0),
+    busiest_date: row.busiest_date ?? null,
+    busiest_count: row.busiest_count != null ? Number(row.busiest_count) : null,
+    busiest_neto: row.busiest_neto != null ? Number(row.busiest_neto) : null,
+  };
+}
+
 export async function getReceivables(): Promise<Receivable[]> {
   const supabase = await createClient();
   const { data } = await supabase
