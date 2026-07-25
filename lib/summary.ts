@@ -308,7 +308,13 @@ export async function getFinanceSummary(): Promise<FinanceSummary> {
   // que usa la pantalla de Ahorros, para que ambas coincidan siempre.
   const goalsWithDerived: Goal[] = goals.map((g) => ({
     ...g,
-    current_amount: goalProgress(g, savingsAccounts, savingsMovements, debts, installments).total,
+    current_amount: goalProgress(
+      g,
+      savingsAccounts,
+      (id) => balanceOfAccount(savingsMovements, id),
+      debts,
+      installments,
+    ).total,
   }));
   const totalSaved = goalsWithDerived.reduce((s, g) => s + Number(g.current_amount), 0);
   const totalTarget = goalsWithDerived.reduce((s, g) => s + Number(g.target_amount), 0);

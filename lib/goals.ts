@@ -7,8 +7,7 @@
 // Antes (1) y (2) se combinaban en dos closures separadas (lib/summary.ts y
 // metas/page.tsx); al agregar (3) se habrían desincronizado.
 import { paidOfDebt } from "./debts";
-import { balanceOfAccount } from "./balances";
-import type { Debt, DebtInstallment, Goal, SavingsAccount, SavingsMovement } from "./types";
+import type { Debt, DebtInstallment, Goal, SavingsAccount } from "./types";
 
 export interface GoalProgress {
   /** Total acumulado hacia la meta (las tres fuentes juntas). */
@@ -24,7 +23,10 @@ export interface GoalProgress {
 export function goalProgress(
   goal: Goal,
   accounts: SavingsAccount[],
-  movements: SavingsMovement[],
+  /** Balance de UNA cuenta. Cada llamador decide cómo lo resuelve — desde
+   *  el ledger completo ya cargado (lib/summary.ts) o desde la vista SQL
+   *  v_account_balances sin traer el historial entero (metas/page.tsx). */
+  accountBalance: (accountId: string) => number,
   debts: Debt[],
   installments: DebtInstallment[],
 ): GoalProgress {
@@ -32,7 +34,7 @@ export function goalProgress(
   // current_amount manual (ese es el criterio que ya existía).
   const linkedAccount = accounts.find((a) => a.goal_id === goal.id);
   const fromSavings = linkedAccount
-    ? balanceOfAccount(movements, linkedAccount.id)
+    ? accountBalance(linkedAccount.id)
     : Number(goal.current_amount);
 
   const linkedDebts = debts

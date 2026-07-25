@@ -1,4 +1,5 @@
 import {
+  getAccountBalances,
   getDebts,
   getGoals,
   getInstallments,
@@ -75,19 +76,31 @@ function NewGoalForm({
 }
 
 export default async function MetasPage() {
-  const [goals, accounts, movements, debts, installments] = await Promise.all([
+  const [goals, accounts, viewBalances, debts, installments] = await Promise.all([
     getGoals(),
     getSavingsAccounts(),
-    getSavingsMovements(),
+    // Balance por cuenta desde Postgres (v_account_balances) — esta pantalla
+    // solo necesita el SALDO de un puñado de cuentas (las vinculadas a una
+    // meta + el ahorro general), no el ledger completo de todas las cuentas
+    // del usuario.
+    getAccountBalances(),
     getDebts(),
     getInstallments(),
   ]);
   const today = todayISO();
 
+  // Si la vista aún no existe (migration-v17 sin correr), se cae al cálculo
+  // de siempre sobre el historial completo — mismo patrón que en Balance.
+  const fallbackMovements = viewBalances === null ? await getSavingsMovements() : null;
+  const accountBalance = (accountId: string) =>
+    viewBalances !== null
+      ? (viewBalances[accountId] ?? 0)
+      : balanceOfAccount(fallbackMovements!, accountId);
+
   // R14: el progreso incluye aportes/ahorro Y lo abonado de deudas
   // vinculadas — cálculo compartido en lib/goals.ts.
   const progressOf = (goal: (typeof goals)[number]) =>
-    goalProgress(goal, accounts, movements, debts, installments);
+    goalProgress(goal, accounts, accountBalance, debts, installments);
 
   // Deudas activas todavía sin meta — las que se pueden vincular.
   const unlinkedDebts = debts.filter((d) => !d.goal_id && d.status !== "pagada");
@@ -122,7 +135,7 @@ export default async function MetasPage() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
           {generalSavings.map((a) => {
-            const balance = balanceOfAccount(movements, a.id);
+            const balance = accountBalance(a.id);
             return (
               <GlassCard key={a.id} className="flex flex-col gap-3 min-w-0">
                 <div className="flex items-center gap-3">

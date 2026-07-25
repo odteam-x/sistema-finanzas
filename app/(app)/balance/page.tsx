@@ -1,4 +1,11 @@
-import { getGoals, getSavingsAccounts, getSavingsMovements } from "@/lib/data";
+import {
+  getAccountBalances,
+  getGoals,
+  getMovementCountsByAccount,
+  getRecentMovements,
+  getSavingsAccounts,
+  getSavingsMovements,
+} from "@/lib/data";
 import { balanceOfAccount, balanceOfAccounts } from "@/lib/balances";
 import { formatDateShort, todayISO } from "@/lib/format";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -160,20 +167,35 @@ function GoalField({
 
 export default async function BalancePage() {
   const today = todayISO();
-  const [accounts, movements, goals] = await Promise.all([
+  const [accounts, goals, viewBalances, recentMovements, movementCounts] = await Promise.all([
     getSavingsAccounts(),
-    getSavingsMovements(),
     getGoals(),
+    // Balance por cuenta calculado en Postgres (vista v_account_balances):
+    // evita traer el historial COMPLETO de movimientos solo para sumarlo acá.
+    getAccountBalances(),
+    // Las tarjetas de cuenta y "últimos movimientos" solo muestran unos
+    // pocos, así que el fetch se acota — no hace falta el ledger entero.
+    getRecentMovements(12),
+    getMovementCountsByAccount(),
   ]);
 
-  const balanceOf = (accountId: string) => balanceOfAccount(movements, accountId);
+  // Si la vista todavía no existe (migration-v17 sin correr), se cae al
+  // cálculo en JS de siempre sobre el historial completo — mismo patrón de
+  // degradación que getMovementStats().
+  const fallbackMovements = viewBalances === null ? await getSavingsMovements() : null;
+  const balanceOf = (accountId: string) =>
+    viewBalances !== null
+      ? (viewBalances[accountId] ?? 0)
+      : balanceOfAccount(fallbackMovements!, accountId);
 
   // Suma cuenta por cuenta (lib/balances.ts) para que una transferencia
   // entre dos cuentas propias no infle el total.
-  const totalSaved = balanceOfAccounts(movements, accounts.map((a) => a.id));
+  const totalSaved =
+    viewBalances !== null
+      ? accounts.reduce((s, a) => s + (viewBalances[a.id] ?? 0), 0)
+      : balanceOfAccounts(fallbackMovements!, accounts.map((a) => a.id));
   const accountName = (id: string) =>
     accounts.find((a) => a.id === id)?.name ?? "Cuenta";
-  const recentMovements = movements.slice(0, 12);
 
   return (
     <>
@@ -218,7 +240,7 @@ export default async function BalancePage() {
         <PeekCarousel>
           {accounts.map((a) => {
             const balance = balanceOf(a.id);
-            const count = movements.filter((m) => m.account_id === a.id).length;
+            const count = movementCounts[a.id] ?? 0;
             const info = typeInfo(a.type);
             return (
               <GlassCard key={a.id}>

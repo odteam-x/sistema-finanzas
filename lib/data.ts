@@ -214,6 +214,70 @@ export async function getSavingsMovements(fromISO?: string, toISO?: string): Pro
   return data ?? [];
 }
 
+/** Los N movimientos más recientes (para listas cortas tipo "Últimos
+ *  movimientos" en Balance) — a diferencia de `getSavingsMovements()`, no
+ *  trae el historial completo, solo lo que de verdad se va a mostrar. */
+export async function getRecentMovements(limit: number): Promise<SavingsMovement[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("savings_movements")
+    .select("*")
+    .is("deleted_at", null)
+    .order("date", { ascending: false })
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  return data ?? [];
+}
+
+/** Solo las cuentas dadas — para cuando se necesita el ledger de un
+ *  subconjunto chico de cuentas (ej. las vinculadas a una meta) y no tiene
+ *  sentido traer el historial de TODAS las cuentas del usuario. */
+export async function getSavingsMovementsForAccounts(
+  accountIds: string[],
+): Promise<SavingsMovement[]> {
+  if (accountIds.length === 0) return [];
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("savings_movements")
+    .select("*")
+    .is("deleted_at", null)
+    .in("account_id", accountIds);
+  return data ?? [];
+}
+
+/** Cuántos movimientos tiene cada cuenta (para el "N movimientos" de
+ *  Balance). Trae solo `account_id` — un octavo del peso de `select("*")`
+ *  sobre potencialmente miles de filas, solo para contar. */
+export async function getMovementCountsByAccount(): Promise<Record<string, number>> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("savings_movements")
+    .select("account_id")
+    .is("deleted_at", null);
+  const out: Record<string, number> = {};
+  for (const row of data ?? []) {
+    const id = row.account_id as string;
+    out[id] = (out[id] ?? 0) + 1;
+  }
+  return out;
+}
+
+/** Balance por cuenta calculado en Postgres (vista `v_account_balances`,
+ *  ver supabase/migration-v9.sql + migration-v17.sql) en vez de traer el
+ *  historial completo de movimientos y sumarlo en JS — la diferencia
+ *  importa conforme crece el historial. Si la vista todavía no existe
+ *  (migración no corrida) devuelve `null` y el que llama cae de vuelta a
+ *  sumar en JS con `getSavingsMovements()`, mismo patrón de degradación que
+ *  `getMovementStats()`. */
+export async function getAccountBalances(): Promise<Record<string, number> | null> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("v_account_balances").select("account_id, balance");
+  if (error || !data) return null;
+  const out: Record<string, number> = {};
+  for (const row of data) out[row.account_id as string] = Number(row.balance);
+  return out;
+}
+
 export async function getSubscriptions(): Promise<Subscription[]> {
   const supabase = await createClient();
   const { data } = await supabase
