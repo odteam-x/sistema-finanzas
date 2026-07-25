@@ -7,7 +7,9 @@ const tones: Record<Tone, string> = {
   neutral: "bg-black/6 text-muted",
   danger: "bg-danger-soft text-danger",
   warning: "bg-warning-soft text-warning",
-  success: "bg-primary-soft text-primary",
+  // Bloque 4: caía en bg-primary-soft/text-primary (teal) — el semántico
+  // verde ya existe (ProgressBar/StatTile lo usan bien), Badge no lo leía.
+  success: "bg-success-soft text-success",
   info: "bg-info-soft text-info",
 };
 

@@ -26,11 +26,18 @@
   --color-primary-soft: #dceeee;
   --color-accent: #1d9498;
 
-  --color-ink: #0f2426;
-  --color-muted: #5a7375;
-  /* Texto terciario (fechas, metadatos) — pensado para tamaño ≥14px/bold o
-     mayor; a vs. blanco da 3.87:1 (AA "texto grande", no normal). */
-  --color-subtle: #71898a;
+  /* Bloque 4 — gris neutro real, no teal apagado. Antes ink/muted/subtle
+     tenían un tinte teal deliberado, así que TODO lo que los usa (texto
+     secundario, bordes, íconos "neutral") heredaba ese tinte — resultado
+     percibido: "solo hay 2 colores", aunque el sistema de tokens ya tenía
+     4 semánticos (abajo). Cada valor nuevo es la versión gris pura (R=G=B)
+     de MISMA LUMINANCIA que el original — no un gris cualquiera: preserva
+     exactamente los contrastes AA ya verificados (ink ~16:1, muted 4.80:1,
+     subtle 3.87:1 vs. blanco), solo le quita el tinte. El teal queda
+     reservado a marca/CTAs (--color-primary/accent, sin tocar). */
+  --color-ink: #212121;
+  --color-muted: #727272;
+  --color-subtle: #848484;
 
   /* Semánticos: fijos siempre (verde=bien, rojo=mal, sin importar el modo).
      Terracota/ámbar/verde cercanos a los valores originales del sitio —
@@ -43,6 +50,11 @@
   --color-success-soft: #dff0e6;
   --color-info: #5c7690;
   --color-info-soft: #e6ebee;
+
+  /* Relleno de ícono "neutral" (IconBubble) — mismo cálculo de luminancia
+     que arriba, esta vez igualado a --color-primary-soft para conservar el
+     mismo peso visual pero en gris, no en teal. */
+  --color-neutral-soft: #eaeaea;
 
   --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, -apple-system,
     "Segoe UI", Roboto, sans-serif;
@@ -122,9 +134,12 @@
 [data-mode="dark"] {
   color-scheme: dark;
   --color-bg: #0a1213;
-  --color-ink: #e8f2f2;
-  --color-muted: #93aeae;
-  --color-subtle: #6b8788;
+  /* Mismo criterio que en claro: gris real de igual luminancia al teal-gris
+     original, no un valor elegido a ojo. */
+  --color-ink: #f0f0f0;
+  --color-muted: #a9a9a9;
+  --color-subtle: #828282;
+  --color-neutral-soft: #313131;
 
   --color-primary: #148185;
   --color-primary-hover: #106669;

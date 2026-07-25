@@ -23,7 +23,11 @@ const tones = {
   warning: "icon-badge bg-gradient-warning",
   info: "icon-badge bg-gradient-info",
   danger: "bg-danger-soft text-danger",
-  neutral: "bg-primary-soft text-primary",
+  // Bloque 4: "neutral" usaba bg-primary-soft/text-primary — teal, pese a
+  // que el comentario de arriba ya decía "fondo plano". Es el tono por
+  // defecto de IconBubble, así que decenas de filas de lista en toda la
+  // app terminaban en teal sin que nadie lo pidiera. Gris real ahora.
+  neutral: "bg-[var(--color-neutral-soft)] text-muted",
 };
 
 /** Círculo de ícono consistente en toda la app — antes cada página lo
