@@ -68,6 +68,74 @@ async function removeDebtPayment(supabase: SupabaseClient, refId: string): Promi
   ]);
 }
 
+/** Marca pagada una cuota (o, si installmentId es null, una deuda de pago
+ *  único) y registra el retiro + el gasto espejo — todo en UNA transacción
+ *  vía pay_debt() (migration-v18, la primera función RPC del proyecto).
+ *  Antes esto eran 2-3 escrituras sueltas desde TypeScript: si la marca de
+ *  "pagada" tenía éxito y el insert del ledger fallaba a medias, quedaba
+ *  una cuota marcada pagada sin que el dinero se hubiera movido de verdad.
+ *
+ *  Si la función todavía no existe (migración sin correr), cae al camino
+ *  anterior — mismo resultado, sin la atomicidad — mismo patrón de
+ *  degradación que getAccountBalances()/getMovementStats(). */
+async function payDebt(
+  supabase: SupabaseClient,
+  userId: string,
+  debtId: string,
+  installmentId: string | null,
+  amount: number,
+  label: string,
+  accountId?: string,
+): Promise<boolean> {
+  const account_id = accountId || (await getOrCreateDefaultAccountId(supabase, userId));
+  if (!account_id) return false;
+
+  const { error } = await supabase.rpc("pay_debt", {
+    p_debt_id: debtId,
+    p_installment_id: installmentId,
+    p_amount: amount,
+    p_account_id: account_id,
+    p_label: label,
+  });
+  if (!error) return true;
+
+  if (installmentId) {
+    await supabase
+      .from("debt_installments")
+      .update({ paid: true, paid_date: todayISO() })
+      .eq("id", installmentId);
+  } else {
+    await supabase.from("debts").update({ status: "pagada" }).eq("id", debtId);
+  }
+  await recordDebtPayment(supabase, userId, installmentId ?? debtId, amount, label, account_id);
+  return true;
+}
+
+/** Reverso de payDebt(): desmarca la cuota/deuda Y quita el retiro + el
+ *  gasto, atómico vía unpay_debt() — mismo riesgo de estado a medias que el
+ *  camino de ida, así que se cubre igual (no solo "pagar" queda atómico). */
+async function unpayDebt(
+  supabase: SupabaseClient,
+  debtId: string,
+  installmentId: string | null,
+): Promise<void> {
+  const { error } = await supabase.rpc("unpay_debt", {
+    p_debt_id: debtId,
+    p_installment_id: installmentId,
+  });
+  if (!error) return;
+
+  if (installmentId) {
+    await supabase
+      .from("debt_installments")
+      .update({ paid: false, paid_date: null })
+      .eq("id", installmentId);
+  } else {
+    await supabase.from("debts").update({ status: "pendiente" }).eq("id", debtId);
+  }
+  await removeDebtPayment(supabase, installmentId ?? debtId);
+}
+
 /** Suma "times" periodos de la frecuencia dada a una fecha ISO. */
 function stepDate(iso: string, freq: DebtFrequency, times: number): string {
   const d = parseISODate(iso);
@@ -330,8 +398,8 @@ export async function reopenDebt(id: string): Promise<ActionResult> {
 
   if (debt.payment_type === "cuotas") {
     // Revierte la última cuota pagada (la de fecha de pago más reciente):
-    // desmarcarla borra su movimiento del ledger y su gasto espejo, y el
-    // trigger recalcula el estado de la deuda solo.
+    // desmarcarla borra su movimiento del ledger y su gasto espejo — atómico
+    // vía unpayDebt() — y el trigger recalcula el estado de la deuda solo.
     const { data: last } = await supabase
       .from("debt_installments")
       .select("id")
@@ -342,15 +410,10 @@ export async function reopenDebt(id: string): Promise<ActionResult> {
       .maybeSingle();
     if (!last) return { ok: false, error: "Esta deuda no tiene pagos que revertir." };
 
-    await supabase
-      .from("debt_installments")
-      .update({ paid: false, paid_date: null })
-      .eq("id", last.id);
-    await removeDebtPayment(supabase, last.id);
+    await unpayDebt(supabase, id, last.id);
   } else {
     // Pago único: se revierte el pago completo.
-    await supabase.from("debts").update({ status: "pendiente" }).eq("id", id);
-    await removeDebtPayment(supabase, id);
+    await unpayDebt(supabase, id, null);
   }
 
   revalidateAll();
@@ -400,14 +463,12 @@ export async function toggleInstallment(
 ): Promise<ActionResult> {
   const user = await requireUser();
   const supabase = await createClient();
-  const { error } = await supabase
-    .from("debt_installments")
-    .update({ paid, paid_date: paid ? todayISO() : null })
-    .eq("id", installmentId);
-  if (error) return { ok: false };
 
   // Pagar una cuota mueve dinero: sale de la cuenta (ledger) y cuenta como
-  // gasto real. Desmarcar lo revierte.
+  // gasto real. Desmarcar lo revierte. Ambos casos, atómicos vía
+  // payDebt()/unpayDebt() (migration-v18) — el estado de la deuda lo
+  // recalcula el trigger de la base al cambiar la cuota, dentro de la
+  // misma transacción.
   if (paid) {
     const { data: inst } = await supabase
       .from("debt_installments")
@@ -419,15 +480,21 @@ export async function toggleInstallment(
       .select("name")
       .eq("id", debtId)
       .maybeSingle();
-    if (inst) {
-      await recordDebtPayment(supabase, user.id, installmentId, Number(inst.amount), debt?.name ?? "", accountId);
-    }
+    if (!inst) return { ok: false };
+    const ok = await payDebt(
+      supabase,
+      user.id,
+      debtId,
+      installmentId,
+      Number(inst.amount),
+      debt?.name ?? "",
+      accountId,
+    );
+    if (!ok) return { ok: false, error: "No se pudo registrar el pago." };
   } else {
-    await removeDebtPayment(supabase, installmentId);
+    await unpayDebt(supabase, debtId, installmentId);
   }
 
-  // El estado de la deuda lo recalcula el trigger de la base al cambiar la
-  // cuota — ya no hace falta escribirlo desde acá.
   revalidateAll();
   return { ok: true };
 }
@@ -439,11 +506,6 @@ export async function toggleDebtPaid(
 ): Promise<ActionResult> {
   const user = await requireUser();
   const supabase = await createClient();
-  const { error } = await supabase
-    .from("debts")
-    .update({ status: paid ? "pagada" : "pendiente" })
-    .eq("id", id);
-  if (error) return { ok: false };
 
   if (paid) {
     const { data: debt } = await supabase
@@ -451,11 +513,11 @@ export async function toggleDebtPaid(
       .select("name, total_amount")
       .eq("id", id)
       .maybeSingle();
-    if (debt) {
-      await recordDebtPayment(supabase, user.id, id, Number(debt.total_amount), debt.name, accountId);
-    }
+    if (!debt) return { ok: false };
+    const ok = await payDebt(supabase, user.id, id, null, Number(debt.total_amount), debt.name, accountId);
+    if (!ok) return { ok: false, error: "No se pudo registrar el pago." };
   } else {
-    await removeDebtPayment(supabase, id);
+    await unpayDebt(supabase, id, null);
   }
 
   revalidateAll();
