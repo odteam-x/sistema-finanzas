@@ -2,6 +2,7 @@
 // sus métricas de aquí, calculadas en vivo desde la base de datos, de modo
 // que cualquier dato nuevo se refleja al instante en todas las secciones.
 import {
+  getAccountBalances,
   getBudgetCategories,
   getDebtIncrements,
   getDebts,
@@ -10,6 +11,7 @@ import {
   getGoals,
   getInstallments,
   getPeriodOverrides,
+  getRecentMovements,
   getSalaries,
   getSalarySettings,
   getSavingsAccounts,
@@ -108,7 +110,9 @@ export async function getFinanceSummary(): Promise<FinanceSummary> {
     debtIncrements,
     goals,
     savingsAccounts,
-    savingsMovements,
+    viewBalances,
+    movementsThisQuincena,
+    recentMovements,
     tags,
     periodOverrides,
     trailingExpenses,
@@ -124,23 +128,39 @@ export async function getFinanceSummary(): Promise<FinanceSummary> {
     getDebtIncrements(),
     getGoals(),
     getSavingsAccounts(),
-    getSavingsMovements(),
+    // Balance por cuenta calculado en Postgres (v_account_balances) en vez
+    // de traer el ledger COMPLETO del usuario y sumarlo acá — este resumen
+    // corre en cada carga del Inicio, la pantalla más visitada.
+    getAccountBalances(),
+    // Ya viene acotado a la quincena — antes se traía todo el historial y
+    // se filtraba en JS después.
+    getSavingsMovements(q.start, q.end),
+    // "Últimos movimientos" del Inicio solo muestra 5.
+    getRecentMovements(5),
     getTags(),
     getPeriodOverrides(),
     getExpenses(anomalyStart, monthEnd),
     getSubscriptions(),
   ]);
 
-  // Balance por cuenta: una sola implementación compartida (lib/balances.ts),
-  // ya no una closure local repetida en cada pantalla.
-  const balanceOf = (accountId: string) => balanceOfAccount(savingsMovements, accountId);
+  // Si la vista aún no existe (migration-v17 sin correr), se cae al ledger
+  // completo de siempre — mismo patrón de degradación que getMovementStats().
+  const fallbackMovements = viewBalances === null ? await getSavingsMovements() : null;
+
+  // Balance por cuenta: con la vista disponible no hace falta ledger alguno;
+  // sin ella, se cae a la misma implementación compartida de siempre
+  // (lib/balances.ts).
+  const balanceOf = (accountId: string) =>
+    viewBalances !== null
+      ? (viewBalances[accountId] ?? 0)
+      : balanceOfAccount(fallbackMovements!, accountId);
 
   // Suma cuenta por cuenta (no un reduce plano sobre los montos) para que una
   // transferencia entre dos cuentas propias se cancele sola en vez de contarse.
-  const savingsTotal = balanceOfAccounts(
-    savingsMovements,
-    savingsAccounts.map((a) => a.id),
-  );
+  const savingsTotal =
+    viewBalances !== null
+      ? savingsAccounts.reduce((s, a) => s + (viewBalances[a.id] ?? 0), 0)
+      : balanceOfAccounts(fallbackMovements!, savingsAccounts.map((a) => a.id));
 
   // Balance de cada cuenta por separado — alimenta las tarjetas del Inicio
   // (R12: una cuenta seleccionable vs. el total de todas).
@@ -286,9 +306,6 @@ export async function getFinanceSummary(): Promise<FinanceSummary> {
   // transferencia HACIA un ahorro cuente como aporte y una que sale de él
   // lo devuelva, con la misma regla que usa el balance de esa cuenta.
   const ahorroAccountIds = savingsAccounts.filter((a) => a.type === "ahorro").map((a) => a.id);
-  const movementsThisQuincena = savingsMovements.filter(
-    (m) => m.date >= q.start && m.date <= q.end,
-  );
   const savingsContributedThisQuincena = ahorroAccountIds.reduce(
     (total, id) =>
       total + movementsThisQuincena.reduce((s, m) => s + deltaForAccount(m, id), 0),
@@ -308,13 +325,7 @@ export async function getFinanceSummary(): Promise<FinanceSummary> {
   // que usa la pantalla de Ahorros, para que ambas coincidan siempre.
   const goalsWithDerived: Goal[] = goals.map((g) => ({
     ...g,
-    current_amount: goalProgress(
-      g,
-      savingsAccounts,
-      (id) => balanceOfAccount(savingsMovements, id),
-      debts,
-      installments,
-    ).total,
+    current_amount: goalProgress(g, savingsAccounts, balanceOf, debts, installments).total,
   }));
   const totalSaved = goalsWithDerived.reduce((s, g) => s + Number(g.current_amount), 0);
   const totalTarget = goalsWithDerived.reduce((s, g) => s + Number(g.target_amount), 0);
@@ -420,6 +431,6 @@ export async function getFinanceSummary(): Promise<FinanceSummary> {
     realByCategory,
     alerts,
     upcomingCommitments,
-    recentMovements: savingsMovements.slice(0, 5),
+    recentMovements,
   };
 }
