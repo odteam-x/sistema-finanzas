@@ -112,6 +112,7 @@ export default async function PresupuestoCategoriasPage() {
       {categories.length === 0 ? (
         <EmptyState
           icon="budget"
+          illustration="calculator"
           title="Sin categorías"
           message="Agrega categorías como pasaje, desayuno o almuerzo con su monto por día trabajado."
           action={<NewCategoryForm triggerLabel="Agregar categoría" />}

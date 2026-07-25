@@ -176,6 +176,7 @@ export default async function CobrosPage({
       {receivables.length === 0 ? (
         <EmptyState
           icon="arrowDownLeft"
+          illustration="make-it-rain"
           title="Nada por cobrar"
           message="Registra el dinero que te deben o un préstamo que hiciste. No suma a tu balance hasta que lo recibas."
           action={<NewReceivableForm today={today} triggerLabel="Registrar" />}

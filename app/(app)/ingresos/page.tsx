@@ -343,6 +343,7 @@ export default async function IngresosPage({
       {visibleSalaries.length === 0 && salaries.length === 0 ? (
         <EmptyState
           icon="wallet"
+          illustration="savings"
           title="Sin ingresos registrados"
           message="Registra tu primer sueldo o ingreso extra."
           action={

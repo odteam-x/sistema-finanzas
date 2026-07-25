@@ -154,6 +154,7 @@ export default async function DeudasPage() {
       {debts.length === 0 ? (
         <EmptyState
           icon="debt"
+          illustration="receipt"
           title="Sin deudas registradas"
           message="Registra una deuda para llevar control de sus pagos y vencimientos."
           action={<AddDebtForm triggerLabel="Registrar deuda" accounts={accounts} />}

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getExpenses, getTags } from "@/lib/data";
+import { getExpenses, getSalaries, getTags } from "@/lib/data";
 import { formatDOP, formatMonthShort, todayISO, toISODate } from "@/lib/format";
 import { cn } from "@/lib/cn";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -46,8 +46,9 @@ export default async function ReportesPage({
   });
   const widestFromISO = toISODate(new Date(allMonths[0].year, allMonths[0].month, 1, 12));
 
-  const [widestExpenses, tags] = await Promise.all([
+  const [widestExpenses, widestSalaries, tags] = await Promise.all([
     getExpenses(widestFromISO, today),
+    getSalaries(widestFromISO, today),
     getTags(),
   ]);
 
@@ -72,12 +73,28 @@ export default async function ReportesPage({
   const expenses = tagFilter ? allExpenses.filter((e) => e.tag_id === tagFilter) : allExpenses;
   const activeTagName = tagFilter ? tags.find((t) => t.id === tagFilter)?.name : null;
 
+  // El ingreso NO se filtra por etiqueta: el dropdown de arriba filtra
+  // categorías de gasto, mezclarlo con ingresos confundiría qué significa
+  // "Filtrado por X". Mismo criterio que el resto de la app: un sueldo sin
+  // confirmar no cuenta como ingreso real todavía (ver lib/summary.ts).
+  const salaries = widestSalaries.filter((s) => s.confirmed && s.pay_date >= fromISO);
+
   const totalsByMonth = new Map<string, number>();
-  for (const m of months) totalsByMonth.set(monthKey(m.year, m.month), 0);
+  const incomeByMonth = new Map<string, number>();
+  for (const m of months) {
+    totalsByMonth.set(monthKey(m.year, m.month), 0);
+    incomeByMonth.set(monthKey(m.year, m.month), 0);
+  }
   for (const e of expenses) {
     const key = e.date.slice(0, 7);
     if (totalsByMonth.has(key)) {
       totalsByMonth.set(key, (totalsByMonth.get(key) ?? 0) + Number(e.amount));
+    }
+  }
+  for (const s of salaries) {
+    const key = s.pay_date.slice(0, 7);
+    if (incomeByMonth.has(key)) {
+      incomeByMonth.set(key, (incomeByMonth.get(key) ?? 0) + Number(s.amount));
     }
   }
 
@@ -97,6 +114,21 @@ export default async function ReportesPage({
       : currentTotal > 0
         ? 100
         : 0;
+
+  const currentIncome = incomeByMonth.get(monthKey(current.year, current.month)) ?? 0;
+  const currentNet = currentIncome - currentTotal;
+  const hasIncomeHistory = salaries.length > 0;
+  // Meses con ingreso vs gasto lado a lado. No se reutiliza BarCompare acá:
+  // esa barra dibuja el ancho proporcional al valor, y un mes en déficit
+  // (neto negativo) rompería el ancho — el signo tiene que verse explícito,
+  // no perderse detrás de un valor absoluto.
+  const netByMonth = months.map((m) => {
+    const key = monthKey(m.year, m.month);
+    const income = incomeByMonth.get(key) ?? 0;
+    const expense = totalsByMonth.get(key) ?? 0;
+    return { name: formatMonthShort(m.year, m.month), income, expense, net: income - expense };
+  });
+  const maxFlow = Math.max(1, ...netByMonth.flatMap((m) => [m.income, m.expense]));
 
   const currentMonthExpenses = expenses.filter(
     (e) => e.date.slice(0, 7) === monthKey(current.year, current.month),
@@ -176,6 +208,7 @@ export default async function ReportesPage({
       {expenses.length === 0 ? (
         <EmptyState
           icon="chart"
+          illustration="data-reports"
           title="Aún no hay meses para comparar"
           message="Registra gastos en Presupuesto para ver reportes comparativos de tus últimos meses."
           action={
@@ -204,6 +237,23 @@ export default async function ReportesPage({
               icon={change > 0 ? "trendUp" : "trendDown"}
               tone={change > 0 ? "danger" : "primary"}
             />
+            {hasIncomeHistory && (
+              <>
+                <StatTile
+                  label="Ingreso este mes"
+                  value={<Money value={currentIncome} decimals={false} />}
+                  icon="arrowDownLeft"
+                  tone="primary"
+                />
+                <StatTile
+                  label="Neto este mes"
+                  value={<Money value={currentNet} decimals={false} />}
+                  sub={currentNet >= 0 ? "Ahorraste" : "Gastaste de más"}
+                  icon={currentNet >= 0 ? "trendUp" : "trendDown"}
+                  tone={currentNet >= 0 ? "primary" : "danger"}
+                />
+              </>
+            )}
             {topCategory && (
               <StatTile
                 className="col-span-2"
@@ -220,6 +270,56 @@ export default async function ReportesPage({
             <h2 className="font-bold text-ink mb-3">Gasto total por mes</h2>
             <BarCompare bars={bars} />
           </GlassCard>
+
+          {/* Ingresos vs gastos: solo si hay al menos un sueldo confirmado en
+              la ventana — si nunca se ha usado Ingresos, esta sección se
+              vería vacía sin explicar por qué. */}
+          {hasIncomeHistory && (
+            <GlassCard className="mb-4">
+              <h2 className="font-bold text-ink mb-1">Ingresos vs. gastos</h2>
+              <p className="text-sm text-muted mb-3">
+                Verde = te sobró dinero ese mes · Rojo = gastaste más de lo que entró.
+              </p>
+              <div className="flex flex-col gap-4">
+                {netByMonth.map((m) => (
+                  <div key={m.name}>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-sm text-ink capitalize">{m.name}</span>
+                      <span
+                        className={cn(
+                          "text-sm font-bold tabular",
+                          m.net >= 0 ? "text-primary" : "text-danger",
+                        )}
+                      >
+                        {m.net >= 0 ? "+" : "−"}
+                        {formatDOP(Math.abs(m.net), false)}
+                      </span>
+                    </div>
+                    <div className="flex gap-1">
+                      <div
+                        className="h-2.5 rounded-full bg-primary"
+                        style={{ width: `${(m.income / maxFlow) * 100}%` }}
+                        title={`Ingreso: ${formatDOP(m.income, false)}`}
+                      />
+                      <div
+                        className="h-2.5 rounded-full bg-danger/70"
+                        style={{ width: `${(m.expense / maxFlow) * 100}%` }}
+                        title={`Gasto: ${formatDOP(m.expense, false)}`}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="flex items-center gap-4 mt-3 pt-3 border-t border-black/5 text-xs text-muted">
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="size-2.5 rounded-full bg-primary" /> Ingreso
+                </span>
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="size-2.5 rounded-full bg-danger/70" /> Gasto
+                </span>
+              </div>
+            </GlassCard>
+          )}
 
           {donutData.length > 0 && (
             <GlassCard>

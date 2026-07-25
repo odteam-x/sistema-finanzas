@@ -304,6 +304,7 @@ export default async function PresupuestoPage({
       {visibleExpenses.length === 0 && expenses.length === 0 ? (
         <EmptyState
           icon="wallet"
+          illustration="target"
           title="Sin gastos aún"
           message="Registra tus gastos reales para compararlos con el presupuesto."
           action={

@@ -121,6 +121,7 @@ export default async function SuscripcionesPage() {
       {subs.length === 0 ? (
         <EmptyState
           icon="repeat"
+          illustration="subscriptions"
           title="Sin suscripciones"
           message="Añade un cobro recurrente y lo generamos solo cada mes."
           action={<NewSubscriptionForm tags={tags} accounts={accounts} today={today} triggerLabel="Añadir suscripción" />}

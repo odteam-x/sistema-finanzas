@@ -68,10 +68,17 @@ export default async function CalendarioPage({
   }
   for (const i of installments) {
     if (i.paid) continue;
+    // `debt_installments` no tiene su propia marca de borrado suave — vive y
+    // muere con su deuda por diseño (ver migration-v15). Pero `installments`
+    // trae TODAS las cuotas sin filtrar, incluidas las de deudas ya
+    // eliminadas: sin este chequeo, la cuota pendiente de una deuda borrada
+    // seguía apareciendo en el calendario para siempre, con el nombre del
+    // acreedor perdido ("Cuota" genérico).
     const debt = debts.find((d) => d.id === i.debt_id);
+    if (!debt) continue;
     pushEvent(i.due_date, {
       type: "deuda",
-      label: debt?.name ?? "Cuota",
+      label: debt.name,
       amount: Number(i.amount),
     });
   }

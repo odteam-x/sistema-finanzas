@@ -209,6 +209,7 @@ export default async function BalancePage() {
       {accounts.length === 0 ? (
         <EmptyState
           icon="piggy"
+          illustration="wallet"
           title="Sin cuentas todavía"
           message="Crea tu primera cuenta y registra depósitos y retiros."
           action={<NewAccountForm goals={goals} accounts={accounts} triggerLabel="Crear cuenta" />}

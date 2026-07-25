@@ -225,6 +225,7 @@ export default async function MetasPage() {
       {goals.length === 0 ? (
         <EmptyState
           icon="goal"
+          illustration="goals"
           title="Sin metas todavía"
           message="Crea tu primera meta de ahorro y sigue su progreso visualmente."
           action={<NewGoalForm triggerLabel="Crear meta" />}

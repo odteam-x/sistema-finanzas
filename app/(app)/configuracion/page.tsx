@@ -83,6 +83,7 @@ export default async function ConfiguracionPage() {
       {tags.length === 0 ? (
         <EmptyState
           icon="budget"
+          illustration="preferences"
           title="Sin etiquetas todavía"
           message="Crea etiquetas generales (Comida, Transporte, Ocio…) para categorizar tus ingresos y gastos, sin depender de las líneas del presupuesto."
           action={<NewTagForm triggerLabel="Crear etiqueta" />}

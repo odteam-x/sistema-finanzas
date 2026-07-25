@@ -260,6 +260,7 @@ export default async function MovimientosPage({
       {visible.length === 0 && movements.length === 0 ? (
         <EmptyState
           icon="movements"
+          illustration="finance"
           title="Sin movimientos"
           message="Registra un ingreso, un gasto o un movimiento manual para verlo aquí."
           action={<NewMovementForm accounts={accounts} today={today} triggerLabel="Registrar movimiento" />}
