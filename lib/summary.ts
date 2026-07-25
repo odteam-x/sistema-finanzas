@@ -135,8 +135,10 @@ export async function getFinanceSummary(): Promise<FinanceSummary> {
     // Ya viene acotado a la quincena — antes se traía todo el historial y
     // se filtraba en JS después.
     getSavingsMovements(q.start, q.end),
-    // "Últimos movimientos" del Inicio solo muestra 5.
-    getRecentMovements(5),
+    // "Últimos movimientos" del Inicio solo muestra 3 (Bloque 3: antes eran
+    // 5, competían por atención con el resto de tarjetas de la pantalla más
+    // visitada — el detalle completo sigue a un tap en "Ver todos").
+    getRecentMovements(3),
     getTags(),
     getPeriodOverrides(),
     getExpenses(anomalyStart, monthEnd),

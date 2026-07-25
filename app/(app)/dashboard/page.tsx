@@ -8,6 +8,7 @@ import { GreetingHero } from "@/components/ui/GreetingHero";
 import { BalanceHero } from "@/components/ui/BalanceHero";
 import { PendingSalaryNotice } from "@/components/ui/PendingSalaryNotice";
 import { GlassCard } from "@/components/ui/GlassCard";
+import { CollapsibleCard } from "@/components/ui/CollapsibleCard";
 import { StatTile } from "@/components/ui/StatTile";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { IconBubble } from "@/components/ui/IconBubble";
@@ -77,6 +78,35 @@ export default async function DashboardPage() {
 
       {s.pendingSalary && <PendingSalaryNotice salary={s.pendingSalary} />}
 
+      {/* Alertas: sube justo debajo del balance — es lo más accionable de
+          toda la pantalla (algo que necesita atención ahora), antes vivía al
+          final del todo, que es donde menos se nota (Bloque 3). */}
+      {s.alerts.length > 0 && (
+        <GlassCard className="mb-4">
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="font-bold text-ink">Alertas</h2>
+            <Link href="/sugerencias" className="text-sm font-semibold text-primary">
+              Ver consejos
+            </Link>
+          </div>
+          <ul className="flex flex-col gap-2">
+            {s.alerts.slice(0, 3).map((a, i) => (
+              <li key={i} className="flex items-start gap-2.5">
+                <Icon
+                  name={(a.tone === "info" ? "bulb" : a.tone === "success" ? "check" : "alert") as IconName}
+                  size={18}
+                  className={cn("mt-0.5 shrink-0", alertTone[a.tone])}
+                />
+                <p className="text-sm text-ink">
+                  <span className="font-semibold">{a.title}.</span>{" "}
+                  <span className="text-muted">{a.message}</span>
+                </p>
+              </li>
+            ))}
+          </ul>
+        </GlassCard>
+      )}
+
       {/* Resumen (2x2) */}
       <div className="grid grid-cols-2 gap-3 mb-4">
         <StatTile
@@ -107,15 +137,21 @@ export default async function DashboardPage() {
         />
       </div>
 
-      {/* Compromisos próximos */}
+      {/* Compromisos próximos: colapsado por defecto — el próximo pago y la
+          próxima deuda ya están arriba en el resumen 2x2; esto es el detalle
+          completo (incluye suscripciones), no la primera lectura de la
+          pantalla (Bloque 3). */}
       {s.upcomingCommitments.length > 0 && (
-        <GlassCard className="mb-4">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="font-bold text-ink">Compromisos próximos</h2>
+        <CollapsibleCard
+          className="mb-4"
+          title="Compromisos próximos"
+          summary={`${s.upcomingCommitments.length} pendientes · el más próximo: ${s.upcomingCommitments[0].name}`}
+          action={
             <Link href="/calendario" className="text-sm font-semibold text-primary">
               Calendario
             </Link>
-          </div>
+          }
+        >
           <ul className="flex flex-col gap-3">
             {s.upcomingCommitments.map((c, i) => (
               <li key={i} className="flex items-center gap-3">
@@ -134,7 +170,7 @@ export default async function DashboardPage() {
               </li>
             ))}
           </ul>
-        </GlassCard>
+        </CollapsibleCard>
       )}
 
       {/* Últimos movimientos */}
@@ -219,32 +255,6 @@ export default async function DashboardPage() {
         </GlassCard>
       )}
 
-      {/* Alertas */}
-      {s.alerts.length > 0 && (
-        <GlassCard>
-          <div className="flex items-center justify-between mb-2">
-            <h2 className="font-bold text-ink">Alertas</h2>
-            <Link href="/sugerencias" className="text-sm font-semibold text-primary">
-              Ver consejos
-            </Link>
-          </div>
-          <ul className="flex flex-col gap-2">
-            {s.alerts.slice(0, 3).map((a, i) => (
-              <li key={i} className="flex items-start gap-2.5">
-                <Icon
-                  name={(a.tone === "info" ? "bulb" : a.tone === "success" ? "check" : "alert") as IconName}
-                  size={18}
-                  className={cn("mt-0.5 shrink-0", alertTone[a.tone])}
-                />
-                <p className="text-sm text-ink">
-                  <span className="font-semibold">{a.title}.</span>{" "}
-                  <span className="text-muted">{a.message}</span>
-                </p>
-              </li>
-            ))}
-          </ul>
-        </GlassCard>
-      )}
     </>
   );
 }

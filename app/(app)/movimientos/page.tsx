@@ -13,6 +13,7 @@ import { isExpense, isIncome } from "@/lib/balances";
 import { RANGE_LABEL, parseRangePreset, rangeBounds, type RangePreset } from "@/lib/range";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { GlassCard } from "@/components/ui/GlassCard";
+import { CollapsibleCard } from "@/components/ui/CollapsibleCard";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Badge } from "@/components/ui/Badge";
 import { IconBubble } from "@/components/ui/IconBubble";
@@ -160,7 +161,7 @@ export default async function MovimientosPage({
           <SearchBar placeholder="Buscar por nota o cuenta…" />
           <div className="flex items-center gap-2 flex-wrap">
             <DropdownMenu>
-              <DropdownMenuTrigger className="glass inline-flex items-center gap-1.5 rounded-2xl px-3 py-1.5 text-sm font-semibold text-ink cursor-pointer">
+              <DropdownMenuTrigger className="glass inline-flex items-center gap-1.5 rounded-2xl px-3 min-h-11 text-sm font-semibold text-ink cursor-pointer">
                 <Icon name="chevronDown" size={14} />
                 {filterLabel}
               </DropdownMenuTrigger>
@@ -181,7 +182,7 @@ export default async function MovimientosPage({
                 <Link
                   key={r}
                   href={hrefFor({ range: r, dia: null })}
-                  className={`rounded-xl px-2.5 py-1 text-xs font-semibold transition-colors ${
+                  className={`flex items-center rounded-xl px-2.5 min-h-9 text-xs font-semibold transition-colors ${
                     !day && r === range ? "bg-primary text-white" : "text-ink/70"
                   }`}
                 >
@@ -210,9 +211,21 @@ export default async function MovimientosPage({
             </div>
           )}
 
-          {/* Analítica del filtro activo (R06). Se calcula en Postgres. */}
+          {/* Analítica del filtro activo (R06), colapsada por defecto: es
+              detalle que responde "¿cuánto entró/salió?", no la primera
+              lectura de la pantalla — que es la lista misma (Bloque 3). El
+              resumen de una línea ya adelanta el neto sin tener que abrirla. */}
           {(stats?.cantidad ?? visible.length) > 0 && (
-            <div className="glass rounded-2xl p-3 flex flex-col gap-2">
+            <CollapsibleCard
+              title="Análisis del período"
+              summary={
+                <>
+                  Ingresos <Money value={totalIngresos} decimals={false} /> · Egresos{" "}
+                  <Money value={totalEgresos} decimals={false} /> · Neto{" "}
+                  <Money value={total} decimals={false} />
+                </>
+              }
+            >
               <div className="grid grid-cols-3 gap-2 text-center">
                 <div>
                   <p className="text-[0.775rem] text-muted">Ingresos</p>
@@ -234,7 +247,7 @@ export default async function MovimientosPage({
                 </div>
               </div>
               {stats?.busiest_date && (stats.busiest_count ?? 0) > 0 && (
-                <p className="text-xs text-muted border-t border-black/5 pt-2">
+                <p className="text-xs text-muted border-t border-black/5 pt-2 mt-2">
                   Día con más movimientos:{" "}
                   <Link href={hrefFor({ dia: stats.busiest_date })} className="font-semibold text-primary">
                     {formatDateLong(stats.busiest_date)}
@@ -244,7 +257,7 @@ export default async function MovimientosPage({
                   <Money value={stats.busiest_neto ?? 0} decimals={false} className="font-semibold text-ink" />
                 </p>
               )}
-            </div>
+            </CollapsibleCard>
           )}
 
           {visible.length > 0 && (

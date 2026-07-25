@@ -18,6 +18,7 @@ import { BudgetBasisPicker } from "./BudgetBasisPicker";
 import { DailySpendCalculator } from "./DailySpendCalculator";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { GlassCard } from "@/components/ui/GlassCard";
+import { CollapsibleCard } from "@/components/ui/CollapsibleCard";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Badge } from "@/components/ui/Badge";
 import { Field, Input, Select, MoneyInput } from "@/components/ui/Field";
@@ -224,17 +225,35 @@ export default async function PresupuestoPage({
         </p>
       </GlassCard>
 
-      {/* Cargos fijos: suscripciones activas, visibles aquí pero gestionadas
-          en Suscripciones (no duplica el CRUD, solo da contexto). */}
+      {/* Cargos fijos: suscripciones activas, visibles aquí solo como
+          contexto (se gestionan en Suscripciones, no se duplica el CRUD).
+          Colapsado por defecto — el detalle de cada suscripción no es la
+          primera lectura de la pantalla de Gastos (Bloque 3); el resumen ya
+          adelanta cuánto suman al mes. */}
       {activeSubs.length > 0 && (
-        <>
-          <div className="flex items-center justify-between px-1 mb-2">
-            <h2 className="text-sm font-bold text-ink">Cargos fijos</h2>
+        <CollapsibleCard
+          className="mb-6"
+          title="Cargos fijos"
+          summary={
+            <>
+              {activeSubs.length} {activeSubs.length === 1 ? "activo" : "activos"} ·{" "}
+              <Money
+                value={activeSubs.reduce(
+                  (s, sub) => s + (sub.frequency === "anual" ? Number(sub.amount) / 12 : Number(sub.amount)),
+                  0,
+                )}
+                decimals={false}
+              />{" "}
+              / mes
+            </>
+          }
+          action={
             <Link href="/suscripciones" className="text-sm font-semibold text-primary">
               Gestionar
             </Link>
-          </div>
-          <ul className="flex flex-col gap-2 mb-6">
+          }
+        >
+          <ul className="flex flex-col gap-2">
             {activeSubs.map((sub) => (
               <li key={sub.id}>
                 <GlassCard className="flex items-center gap-3 py-2.5">
@@ -253,7 +272,7 @@ export default async function PresupuestoPage({
               </li>
             ))}
           </ul>
-        </>
+        </CollapsibleCard>
       )}
 
       {/* Gastos reales */}
@@ -275,7 +294,7 @@ export default async function PresupuestoPage({
           <div className="flex items-center justify-between gap-2 flex-wrap px-1">
             {tags.length > 0 && (
               <DropdownMenu>
-                <DropdownMenuTrigger className="glass inline-flex items-center gap-1.5 rounded-2xl px-3 py-1.5 text-xs font-semibold text-ink cursor-pointer">
+                <DropdownMenuTrigger className="glass inline-flex items-center gap-1.5 rounded-2xl px-3 min-h-11 text-xs font-semibold text-ink cursor-pointer">
                   <Icon name="chevronDown" size={12} />
                   {tagFilter ? (tags.find((t) => t.id === tagFilter)?.name ?? "Filtrar") : "Todas las categorías"}
                 </DropdownMenuTrigger>
