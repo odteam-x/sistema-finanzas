@@ -7,6 +7,7 @@ import type {
   Debt,
   DebtIncrement,
   DebtInstallment,
+  ExchangeRate,
   Expense,
   Goal,
   ImportProfile,
@@ -310,5 +311,11 @@ export async function getUserProfile(): Promise<UserProfileRow | null> {
 export async function getImportProfiles(): Promise<ImportProfile[]> {
   const supabase = await createClient();
   const { data } = await supabase.from("import_profiles").select("*").order("name", { ascending: true });
+  return data ?? [];
+}
+
+export async function getExchangeRates(): Promise<ExchangeRate[]> {
+  const supabase = await createClient();
+  const { data } = await supabase.from("exchange_rates").select("*");
   return data ?? [];
 }

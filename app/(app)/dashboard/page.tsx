@@ -74,7 +74,7 @@ export default async function DashboardPage() {
           "Disponible esta quincena", que mostraba un número negativo poco
           accionable (R05). El aviso de confirmar el sueldo sobrevive aparte
           porque evita contar dinero que todavía no ha llegado. */}
-      <BalanceHero accounts={s.accountBalances} />
+      <BalanceHero accounts={s.accountBalances} rates={s.rates} />
 
       {s.pendingSalary && <PendingSalaryNotice salary={s.pendingSalary} />}
 

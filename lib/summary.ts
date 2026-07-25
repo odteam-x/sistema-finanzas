@@ -7,6 +7,7 @@ import {
   getDebtIncrements,
   getDebts,
   getExceptions,
+  getExchangeRates,
   getExpenses,
   getGoals,
   getInstallments,
@@ -21,12 +22,13 @@ import {
 } from "./data";
 import { exceptionsMap } from "./calendar";
 import { resolveBudgetBasis } from "./budgetDays";
-import { balanceOfAccount, balanceOfAccounts, deltaForAccount } from "./balances";
+import { balanceOfAccount, deltaForAccount } from "./balances";
+import { ratesMap, toDOP } from "./currency";
 import { outstandingOfDebt } from "./debts";
 import { goalProgress } from "./goals";
 import { quincenaForDate, nextPayDateFrom, type Period } from "./periods";
 import { addDaysISO, daysBetween, formatDOP, toISODate, todayISO } from "./format";
-import type { AccountType, Goal, Salary, SavingsMovement } from "./types";
+import type { AccountType, Currency, Goal, Salary, SavingsMovement } from "./types";
 
 export interface Alert {
   tone: "warning" | "danger" | "info" | "success";
@@ -80,8 +82,15 @@ export interface FinanceSummary {
     type: AccountType;
     balance: number;
     isSavings: boolean;
+    /** Moneda propia de la cuenta — el balance de arriba ya está en esta
+     *  moneda, no en RD$ (ver lib/currency.ts). */
+    currency: Currency;
   }[];
   netWorth: number;
+  /** Tasas de cambio a RD$ (DOP siempre 1) — se exponen junto al resumen
+   *  para que la UI pueda convertir/formatear cuentas en moneda extranjera
+   *  sin volver a consultar exchange_rates. */
+  rates: Record<Currency, number>;
   estByCategory: NamedValue[];
   realByCategory: NamedValue[];
   alerts: Alert[];
@@ -117,6 +126,7 @@ export async function getFinanceSummary(): Promise<FinanceSummary> {
     periodOverrides,
     trailingExpenses,
     subscriptions,
+    exchangeRates,
   ] = await Promise.all([
     getSalarySettings(),
     getSalaries(),
@@ -143,7 +153,9 @@ export async function getFinanceSummary(): Promise<FinanceSummary> {
     getPeriodOverrides(),
     getExpenses(anomalyStart, monthEnd),
     getSubscriptions(),
+    getExchangeRates(),
   ]);
+  const rates = ratesMap(exchangeRates);
 
   // Si la vista aún no existe (migration-v17 sin correr), se cae al ledger
   // completo de siempre — mismo patrón de degradación que getMovementStats().
@@ -158,20 +170,25 @@ export async function getFinanceSummary(): Promise<FinanceSummary> {
       : balanceOfAccount(fallbackMovements!, accountId);
 
   // Suma cuenta por cuenta (no un reduce plano sobre los montos) para que una
-  // transferencia entre dos cuentas propias se cancele sola en vez de contarse.
-  const savingsTotal =
-    viewBalances !== null
-      ? savingsAccounts.reduce((s, a) => s + (viewBalances[a.id] ?? 0), 0)
-      : balanceOfAccounts(fallbackMovements!, savingsAccounts.map((a) => a.id));
+  // transferencia entre dos cuentas propias se cancele sola en vez de
+  // contarse. Cada saldo se convierte a RD$ según la moneda de su cuenta
+  // antes de sumar (ver lib/currency.ts) — sumar montos crudos de monedas
+  // distintas produciría un total sin sentido.
+  const savingsTotal = savingsAccounts.reduce(
+    (s, a) => s + toDOP(balanceOf(a.id), a.currency, rates),
+    0,
+  );
 
   // Balance de cada cuenta por separado — alimenta las tarjetas del Inicio
-  // (R12: una cuenta seleccionable vs. el total de todas).
+  // (R12: una cuenta seleccionable vs. el total de todas). El balance queda
+  // en la moneda propia de la cuenta; quien lo consuma decide si convertir.
   const accountBalances = savingsAccounts.map((a) => ({
     id: a.id,
     name: a.name,
     type: a.type,
     balance: balanceOf(a.id),
     isSavings: a.type === "ahorro",
+    currency: a.currency,
   }));
 
   // Ingreso quincenal: SOLO lo que ya se confirmó que llegó, no lo
@@ -336,7 +353,7 @@ export async function getFinanceSummary(): Promise<FinanceSummary> {
   // saved/target) para no inflar ese porcentaje con dinero sin objetivo.
   const generalSavings = savingsAccounts
     .filter((a) => a.type === "ahorro" && !a.goal_id)
-    .reduce((s, a) => s + balanceOf(a.id), 0);
+    .reduce((s, a) => s + toDOP(balanceOf(a.id), a.currency, rates), 0);
 
   // ---- Alertas derivadas de los datos ----
   const alerts: Alert[] = [];
@@ -429,6 +446,7 @@ export async function getFinanceSummary(): Promise<FinanceSummary> {
     savingsTotal,
     accountBalances,
     netWorth: savingsTotal - outstandingDebt,
+    rates,
     estByCategory,
     realByCategory,
     alerts,

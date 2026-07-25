@@ -179,6 +179,10 @@ export interface Expense {
 
 export type AccountType = "ahorro" | "banco" | "efectivo" | "tarjeta_credito" | "tarjeta_debito";
 
+/** DOP es la moneda por defecto y la única que no necesita tasa de cambio
+ *  (todo el resto de la app ya asume RD$). USD/EUR son secundarias. */
+export type Currency = "DOP" | "USD" | "EUR";
+
 export interface SavingsAccount {
   id: string;
   user_id: string;
@@ -191,6 +195,21 @@ export interface SavingsAccount {
   /** Cuenta a la que van los movimientos cuando no se elige una explícita. */
   is_default: boolean;
   created_at: string;
+  /** La moneda la define la CUENTA, no cada movimiento — el monto de cada
+   *  movimiento de esta cuenta ya está en esta moneda. */
+  currency: Currency;
+}
+
+/** Tasa de cambio a RD$, editable por el usuario — RD no tiene un feed
+ *  automático confiable, así que no se inventa ni se consulta un servicio
+ *  externo. Una fila por moneda que el usuario use, no una columna fija por
+ *  moneda. */
+export interface ExchangeRate {
+  id: string;
+  user_id: string;
+  currency: Currency;
+  rate_to_dop: number;
+  updated_at: string;
 }
 
 /** 'transferencia' = movida entre dos cuentas propias: UNA fila la

@@ -5,7 +5,8 @@ import { MoneyValue } from "./MoneyValue";
 import { Money } from "./Money";
 import { Icon } from "./Icon";
 import { readPrimaryAccount, writePrimaryAccount } from "@/lib/preferences";
-import type { SavingsAccount } from "@/lib/types";
+import { formatMoneyIn, toDOP } from "@/lib/currency";
+import type { Currency, SavingsAccount } from "@/lib/types";
 
 export interface AccountBalance {
   id: string;
@@ -13,6 +14,7 @@ export interface AccountBalance {
   type: SavingsAccount["type"];
   balance: number;
   isSavings: boolean;
+  currency: Currency;
 }
 
 /** R12: dos tarjetas con propósitos distintos.
@@ -22,7 +24,15 @@ export interface AccountBalance {
  *     desglose. Es el "¿cuánto tengo en total?".
  *  La distinción se dice explícita en cada tarjeta para que no se lea como
  *  una inconsistencia entre dos números que no cuadran. */
-export function BalanceHero({ accounts }: { accounts: AccountBalance[] }) {
+export function BalanceHero({
+  accounts,
+  rates,
+}: {
+  accounts: AccountBalance[];
+  /** Tasas de cambio a RD$ (DOP = 1) — de lib/summary.ts, para convertir
+   *  cuentas en moneda extranjera al totalizar (ver lib/currency.ts). */
+  rates: Record<Currency, number>;
+}) {
   const [selectedId, setSelectedId] = useState<string>(() => {
     const saved = readPrimaryAccount();
     if (saved && accounts.some((a) => a.id === saved)) return saved;
@@ -32,8 +42,13 @@ export function BalanceHero({ accounts }: { accounts: AccountBalance[] }) {
   const [expanded, setExpanded] = useState(false);
 
   const selected = accounts.find((a) => a.id === selectedId) ?? accounts[0];
-  const total = accounts.reduce((s, a) => s + a.balance, 0);
-  const savingsPart = accounts.filter((a) => a.isSavings).reduce((s, a) => s + a.balance, 0);
+  const selectedIsForeign = selected && selected.currency !== "DOP";
+  // El total y el desglose de ahorros son un monto ÚNICO en RD$ — cada
+  // cuenta se convierte según su propia moneda antes de sumar.
+  const total = accounts.reduce((s, a) => s + toDOP(a.balance, a.currency, rates), 0);
+  const savingsPart = accounts
+    .filter((a) => a.isSavings)
+    .reduce((s, a) => s + toDOP(a.balance, a.currency, rates), 0);
 
   function pick(id: string) {
     setSelectedId(id);
@@ -50,13 +65,25 @@ export function BalanceHero({ accounts }: { accounts: AccountBalance[] }) {
           <Icon name="wallet" size={15} />
           Balance actual
         </p>
-        <MoneyValue
-          value={selected?.balance ?? 0}
-          decimals={false}
-          className="block text-4xl sm:text-5xl font-extrabold text-white mt-1 tracking-tight"
-        />
+        {selectedIsForeign ? (
+          <p className="block text-4xl sm:text-5xl font-extrabold text-white mt-1 tracking-tight tabular">
+            {formatMoneyIn(selected.balance, selected.currency, false)}
+          </p>
+        ) : (
+          <MoneyValue
+            value={selected?.balance ?? 0}
+            decimals={false}
+            className="block text-4xl sm:text-5xl font-extrabold text-white mt-1 tracking-tight"
+          />
+        )}
         <p className="text-xs text-white/70 mt-1">
           Solo {selected?.name ?? "esta cuenta"} · no incluye ahorros de otras cuentas
+          {selectedIsForeign && (
+            <>
+              {" "}
+              · ≈ <Money value={toDOP(selected.balance, selected.currency, rates)} decimals={false} />
+            </>
+          )}
         </p>
 
         {accounts.length > 1 && (
@@ -120,7 +147,9 @@ export function BalanceHero({ accounts }: { accounts: AccountBalance[] }) {
                   {a.isSavings && <span className="text-xs"> · ahorro</span>}
                 </span>
                 <span className="font-semibold text-ink shrink-0">
-                  <Money value={a.balance} decimals={false} />
+                  {a.currency !== "DOP" ? formatMoneyIn(a.balance, a.currency, false) : (
+                    <Money value={a.balance} decimals={false} />
+                  )}
                 </span>
               </li>
             ))}

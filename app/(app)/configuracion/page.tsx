@@ -1,4 +1,4 @@
-import { getExpenses, getTags, getUserProfile } from "@/lib/data";
+import { getExchangeRates, getExpenses, getSavingsAccounts, getTags, getUserProfile } from "@/lib/data";
 import { todayISO, toISODate, clampPct } from "@/lib/format";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { GlassCard } from "@/components/ui/GlassCard";
@@ -13,6 +13,7 @@ import { ThemeButton } from "@/components/theme/ThemeButton";
 import { NotificationToggle } from "@/components/NotificationToggle";
 import { DisplayNameForm } from "./DisplayNameForm";
 import { ExportCsvForm } from "./ExportCsvForm";
+import { ExchangeRateForm } from "./ExchangeRateForm";
 import { addTag, deleteTag, updateTag } from "./actions";
 import { undoDelete } from "../undo-actions";
 import { seedDefaultTagsIfEmpty } from "@/lib/tags";
@@ -56,10 +57,12 @@ export default async function ConfiguracionPage() {
   const today = todayISO();
   const monthStart = toISODate(new Date(Number(today.slice(0, 4)), Number(today.slice(5, 7)) - 1, 1, 12));
 
-  const [profile, tags, monthExpenses] = await Promise.all([
+  const [profile, tags, monthExpenses, accounts, exchangeRates] = await Promise.all([
     getUserProfile(),
     getTags(),
     getExpenses(monthStart, today),
+    getSavingsAccounts(),
+    getExchangeRates(),
   ]);
 
   const spentByTag = new Map<string, number>();
@@ -67,6 +70,13 @@ export default async function ConfiguracionPage() {
     if (!e.tag_id) continue;
     spentByTag.set(e.tag_id, (spentByTag.get(e.tag_id) ?? 0) + Number(e.amount));
   }
+
+  // Solo se ofrecen tasas de las monedas que el usuario realmente usa en
+  // alguna cuenta — no tiene sentido pedir una tasa de una moneda sin cuentas.
+  const foreignCurrencies = Array.from(
+    new Set(accounts.map((a) => a.currency).filter((c): c is "USD" | "EUR" => c !== "DOP")),
+  );
+  const rateByCurrency = new Map(exchangeRates.map((r) => [r.currency, r]));
 
   return (
     <>
@@ -156,6 +166,20 @@ export default async function ConfiguracionPage() {
             );
           })}
         </ul>
+      )}
+
+      {foreignCurrencies.length > 0 && (
+        <GlassCard className="mt-4 mb-4">
+          <h2 className="font-bold text-ink mb-1">Tasas de cambio</h2>
+          <p className="text-xs text-muted mb-3">
+            RD no tiene un feed automático confiable — actualiza la tasa tú mismo cuando cambie.
+          </p>
+          <div className="flex flex-col gap-3">
+            {foreignCurrencies.map((c) => (
+              <ExchangeRateForm key={c} currency={c} rate={rateByCurrency.get(c)} />
+            ))}
+          </div>
+        </GlassCard>
       )}
 
       <GlassCard className="mt-4 mb-4">

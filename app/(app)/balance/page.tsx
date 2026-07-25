@@ -1,12 +1,14 @@
 import {
   getAccountBalances,
+  getExchangeRates,
   getGoals,
   getMovementCountsByAccount,
   getRecentMovements,
   getSavingsAccounts,
   getSavingsMovements,
 } from "@/lib/data";
-import { balanceOfAccount, balanceOfAccounts } from "@/lib/balances";
+import { balanceOfAccount } from "@/lib/balances";
+import { formatMoneyIn, ratesMap, toDOP } from "@/lib/currency";
 import { formatDateShort, todayISO } from "@/lib/format";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { GlassCard } from "@/components/ui/GlassCard";
@@ -53,6 +55,24 @@ function TypeField({ defaultValue }: { defaultValue?: AccountType }) {
             {t.label}
           </option>
         ))}
+      </Select>
+    </Field>
+  );
+}
+
+/** Solo al CREAR la cuenta — cambiarla después reinterpretaría todo el
+ *  historial de movimientos como si fuera de otra moneda. */
+function CurrencyField() {
+  return (
+    <Field
+      label="Moneda"
+      htmlFor="currency"
+      hint="RD no tiene tasa de cambio automática — la configuras tú en Configuración."
+    >
+      <Select id="currency" name="currency" defaultValue="DOP">
+        <option value="DOP">Peso dominicano (RD$)</option>
+        <option value="USD">Dólar (US$)</option>
+        <option value="EUR">Euro (€)</option>
       </Select>
     </Field>
   );
@@ -126,7 +146,8 @@ function NewAccountForm({
         <Input id="name" name="name" placeholder="Ej.: Banco BHD, Efectivo…" required />
       </Field>
       <TypeField />
-      <Field label="Saldo inicial" htmlFor="initial_amount" hint="Opcional.">
+      <CurrencyField />
+      <Field label="Saldo inicial" htmlFor="initial_amount" hint="Opcional. En la moneda de esta cuenta.">
         <MoneyInput id="initial_amount" name="initial_amount" />
       </Field>
       <GoalField
@@ -167,17 +188,20 @@ function GoalField({
 
 export default async function BalancePage() {
   const today = todayISO();
-  const [accounts, goals, viewBalances, recentMovements, movementCounts] = await Promise.all([
-    getSavingsAccounts(),
-    getGoals(),
-    // Balance por cuenta calculado en Postgres (vista v_account_balances):
-    // evita traer el historial COMPLETO de movimientos solo para sumarlo acá.
-    getAccountBalances(),
-    // Las tarjetas de cuenta y "últimos movimientos" solo muestran unos
-    // pocos, así que el fetch se acota — no hace falta el ledger entero.
-    getRecentMovements(12),
-    getMovementCountsByAccount(),
-  ]);
+  const [accounts, goals, viewBalances, recentMovements, movementCounts, exchangeRates] =
+    await Promise.all([
+      getSavingsAccounts(),
+      getGoals(),
+      // Balance por cuenta calculado en Postgres (vista v_account_balances):
+      // evita traer el historial COMPLETO de movimientos solo para sumarlo acá.
+      getAccountBalances(),
+      // Las tarjetas de cuenta y "últimos movimientos" solo muestran unos
+      // pocos, así que el fetch se acota — no hace falta el ledger entero.
+      getRecentMovements(12),
+      getMovementCountsByAccount(),
+      getExchangeRates(),
+    ]);
+  const rates = ratesMap(exchangeRates);
 
   // Si la vista todavía no existe (migration-v17 sin correr), se cae al
   // cálculo en JS de siempre sobre el historial completo — mismo patrón de
@@ -189,11 +213,10 @@ export default async function BalancePage() {
       : balanceOfAccount(fallbackMovements!, accountId);
 
   // Suma cuenta por cuenta (lib/balances.ts) para que una transferencia
-  // entre dos cuentas propias no infle el total.
-  const totalSaved =
-    viewBalances !== null
-      ? accounts.reduce((s, a) => s + (viewBalances[a.id] ?? 0), 0)
-      : balanceOfAccounts(fallbackMovements!, accounts.map((a) => a.id));
+  // entre dos cuentas propias no infle el total. Cada saldo se convierte a
+  // RD$ según su propia moneda antes de sumar — sumar montos crudos de
+  // monedas distintas produciría un total sin sentido.
+  const totalSaved = accounts.reduce((s, a) => s + toDOP(balanceOf(a.id), a.currency, rates), 0);
   const accountName = (id: string) =>
     accounts.find((a) => a.id === id)?.name ?? "Cuenta";
 
@@ -242,6 +265,8 @@ export default async function BalancePage() {
             const balance = balanceOf(a.id);
             const count = movementCounts[a.id] ?? 0;
             const info = typeInfo(a.type);
+            const isForeign = a.currency !== "DOP";
+            const rateKnown = !isForeign || rates[a.currency] > 0;
             return (
               <GlassCard key={a.id}>
                   <div className="flex items-start gap-3">
@@ -250,11 +275,27 @@ export default async function BalancePage() {
                       <div className="flex items-center gap-2 flex-wrap">
                         <p className="font-bold text-ink truncate">{a.name}</p>
                         <Badge tone="neutral">{info.label}</Badge>
+                        {isForeign && <Badge tone="neutral">{a.currency}</Badge>}
                       </div>
-                      <MoneyValue
-                        value={balance}
-                        className="block text-money-sm font-extrabold text-primary leading-tight tabular"
-                      />
+                      {isForeign ? (
+                        <>
+                          <p className="text-money-sm font-extrabold text-primary leading-tight tabular">
+                            {formatMoneyIn(balance, a.currency)}
+                          </p>
+                          <p className="text-xs text-muted">
+                            {rateKnown ? (
+                              <>≈ <Money value={toDOP(balance, a.currency, rates)} /></>
+                            ) : (
+                              "Sin tasa configurada — ajústala en Configuración."
+                            )}
+                          </p>
+                        </>
+                      ) : (
+                        <MoneyValue
+                          value={balance}
+                          className="block text-money-sm font-extrabold text-primary leading-tight tabular"
+                        />
+                      )}
                       <p className="text-xs text-muted">
                         {count} {count === 1 ? "movimiento" : "movimientos"}
                         {a.goal_id &&

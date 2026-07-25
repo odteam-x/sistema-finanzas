@@ -7,7 +7,7 @@ import { getOrCreateDefaultAccountId } from "@/lib/accounts";
 import { parseAmount, type ActionResult } from "@/lib/actions-shared";
 import { softDeleteRows, type UndoableResult } from "@/lib/softDelete";
 import { todayISO } from "@/lib/format";
-import type { AccountType, MovementKind } from "@/lib/types";
+import type { AccountType, Currency, MovementKind } from "@/lib/types";
 
 const ACCOUNT_TYPE_VALUES: AccountType[] = [
   "ahorro",
@@ -16,10 +16,16 @@ const ACCOUNT_TYPE_VALUES: AccountType[] = [
   "tarjeta_credito",
   "tarjeta_debito",
 ];
+const CURRENCY_VALUES: Currency[] = ["DOP", "USD", "EUR"];
 
 function parseAccountType(value: FormDataEntryValue | null): AccountType {
   const v = String(value ?? "");
   return (ACCOUNT_TYPE_VALUES as string[]).includes(v) ? (v as AccountType) : "ahorro";
+}
+
+function parseCurrency(value: FormDataEntryValue | null): Currency {
+  const v = String(value ?? "");
+  return (CURRENCY_VALUES as string[]).includes(v) ? (v as Currency) : "DOP";
 }
 
 function revalidateAll() {
@@ -35,6 +41,7 @@ export async function addAccount(formData: FormData): Promise<ActionResult> {
   const user = await requireUser();
   const name = String(formData.get("name") ?? "").trim();
   const type = parseAccountType(formData.get("type"));
+  const currency = parseCurrency(formData.get("currency"));
   const initial = parseAmount(formData.get("initial_amount"));
   const goal_id = String(formData.get("goal_id") ?? "") || null;
   if (!name) return { ok: false, error: "Escribe un nombre para la cuenta." };
@@ -42,7 +49,7 @@ export async function addAccount(formData: FormData): Promise<ActionResult> {
   const supabase = await createClient();
   const { data: account, error } = await supabase
     .from("savings_accounts")
-    .insert({ user_id: user.id, name, type, goal_id })
+    .insert({ user_id: user.id, name, type, goal_id, currency })
     .select("id")
     .single();
   if (error || !account) return { ok: false, error: "No se pudo crear la cuenta." };
@@ -139,6 +146,21 @@ export async function addTransfer(formData: FormData): Promise<ActionResult> {
   }
 
   const supabase = await createClient();
+
+  // Una transferencia es UNA fila con UN monto para las dos cuentas — si
+  // fueran de monedas distintas, ese monto significaría cosas diferentes en
+  // cada lado (¿500 qué?). Hasta que haya conversión automática acá, se
+  // exige que ambas cuentas compartan moneda.
+  const { data: pair } = await supabase
+    .from("savings_accounts")
+    .select("id, currency")
+    .in("id", [from_account_id, to_account_id]);
+  const fromCur = pair?.find((a) => a.id === from_account_id)?.currency;
+  const toCur = pair?.find((a) => a.id === to_account_id)?.currency;
+  if (fromCur && toCur && fromCur !== toCur) {
+    return { ok: false, error: "Ambas cuentas deben ser de la misma moneda para transferir entre ellas." };
+  }
+
   const { error } = await supabase.from("savings_movements").insert({
     account_id: from_account_id,
     to_account_id,

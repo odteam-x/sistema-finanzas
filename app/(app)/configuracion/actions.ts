@@ -77,3 +77,29 @@ export async function deleteTag(id: string): Promise<UndoableResult> {
   revalidateAll();
   return { ok: true, undo: res.undo };
 }
+
+/** Tasa editable por el usuario — RD no tiene un feed automático confiable
+ *  (ver lib/currency.ts). Upsert por (user_id, currency): una fila por
+ *  moneda, no una columna fija por moneda. */
+export async function setExchangeRate(formData: FormData): Promise<ActionResult> {
+  const user = await requireUser();
+  const currency = String(formData.get("currency") ?? "");
+  if (currency !== "USD" && currency !== "EUR") {
+    return { ok: false, error: "Moneda no válida." };
+  }
+  const rate = parseAmount(formData.get("rate_to_dop"));
+  if (!Number.isFinite(rate) || rate <= 0) {
+    return { ok: false, error: "Ingresa una tasa válida." };
+  }
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("exchange_rates")
+    .upsert(
+      { user_id: user.id, currency, rate_to_dop: rate, updated_at: new Date().toISOString() },
+      { onConflict: "user_id,currency" },
+    );
+  if (error) return { ok: false, error: "No se pudo guardar la tasa." };
+  revalidateAll();
+  revalidatePath("/balance");
+  return { ok: true };
+}
