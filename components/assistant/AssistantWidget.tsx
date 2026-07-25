@@ -7,12 +7,17 @@ import { Icon } from "@/components/ui/Icon";
 interface Message {
   role: "user" | "model";
   text: string;
+  /** true = no es una respuesta del asistente, es la explicación de por qué
+   *  no pudo responder — se pinta como aviso, no como mensaje de chat. */
+  failed?: boolean;
 }
 
 /** Burbuja flotante de chat con el asistente (Gemini, ver
- *  app/api/assistant/route.ts) — funciona igual sin API key configurada,
- *  solo que la primera respuesta explica cómo activarlo (degradación
- *  consistente con getFinanceAdvice en lib/ai/gemini.ts). */
+ *  app/api/assistant/route.ts). Cuando la llamada falla, la respuesta llega
+ *  con `failed: true` y se pinta como aviso ámbar con el motivo concreto
+ *  (clave inválida, modelo retirado, cuota…) en vez de un mensaje de chat
+ *  normal — el usuario tiene que poder distinguir "el asistente te está
+ *  contestando" de "el asistente está roto y esto es por qué". */
 export function AssistantWidget() {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -37,9 +42,12 @@ export function AssistantWidget() {
       });
       const data = await res.json();
       const reply = typeof data.reply === "string" ? data.reply : "No pude responder justo ahora.";
-      setMessages((prev) => [...prev, { role: "model", text: reply }]);
+      setMessages((prev) => [...prev, { role: "model", text: reply, failed: data.failed === true }]);
     } catch {
-      setMessages((prev) => [...prev, { role: "model", text: "No pude conectar. Intenta de nuevo." }]);
+      setMessages((prev) => [
+        ...prev,
+        { role: "model", text: "No pude conectar. Revisa tu conexión e intenta de nuevo.", failed: true },
+      ]);
     } finally {
       setSending(false);
       requestAnimationFrame(() => {
@@ -94,18 +102,29 @@ export function AssistantWidget() {
                   Pregúntame sobre tu disponible, presupuesto, deudas o metas.
                 </p>
               )}
-              {messages.map((m, i) => (
-                <div
-                  key={i}
-                  className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm ${
-                    m.role === "user"
-                      ? "self-end bg-primary text-white"
-                      : "self-start bg-black/5 text-ink"
-                  }`}
-                >
-                  {m.text}
-                </div>
-              ))}
+              {messages.map((m, i) =>
+                m.failed ? (
+                  <div
+                    key={i}
+                    role="alert"
+                    className="self-start max-w-[92%] rounded-2xl bg-warning-soft px-3 py-2 text-sm text-ink flex items-start gap-2"
+                  >
+                    <Icon name="alert" size={17} className="text-warning shrink-0 mt-0.5" />
+                    <span>{m.text}</span>
+                  </div>
+                ) : (
+                  <div
+                    key={i}
+                    className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm ${
+                      m.role === "user"
+                        ? "self-end bg-primary text-white"
+                        : "self-start bg-black/5 text-ink"
+                    }`}
+                  >
+                    {m.text}
+                  </div>
+                ),
+              )}
               {sending && (
                 <div className="self-start rounded-2xl px-3 py-2 text-sm bg-black/5 text-muted">
                   Pensando…

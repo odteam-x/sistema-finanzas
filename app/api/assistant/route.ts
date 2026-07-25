@@ -4,7 +4,7 @@
 import { getUser } from "@/lib/auth";
 import { getUserProfile } from "@/lib/data";
 import { getFinanceSummary } from "@/lib/summary";
-import { chatWithAssistant, isGeminiConfigured, type ChatTurn } from "@/lib/ai/gemini";
+import { chatWithAssistant, failureMessage, type ChatTurn } from "@/lib/ai/gemini";
 
 const MAX_MESSAGE_LENGTH = 2000;
 const MAX_HISTORY_TURNS = 10;
@@ -14,14 +14,6 @@ export async function POST(request: Request) {
   // tiene sentido en un Route Handler — acá el 401 lo maneja el cliente.
   const user = await getUser();
   if (!user) return Response.json({ error: "No autenticado." }, { status: 401 });
-
-  if (!isGeminiConfigured) {
-    return Response.json({
-      reply:
-        "El asistente todavía no está configurado. Para activarlo, agrega tu GEMINI_API_KEY " +
-        "gratis (aistudio.google.com/apikey) en las variables de entorno del proyecto.",
-    });
-  }
 
   let body: { message?: unknown; history?: unknown };
   try {
@@ -47,12 +39,15 @@ export async function POST(request: Request) {
     .map((h) => ({ role: h.role, text: h.text.slice(0, MAX_MESSAGE_LENGTH) }));
 
   const [summary, profile] = await Promise.all([getFinanceSummary(), getUserProfile()]);
-  const reply = await chatWithAssistant(message, summary, history, profile?.display_name ?? undefined);
+  const result = await chatWithAssistant(message, summary, history, profile?.display_name ?? undefined);
 
-  if (reply == null) {
-    return Response.json({
-      reply: "No pude responder justo ahora. Intenta de nuevo en un momento.",
-    });
+  // Al fallar se responde con el motivo concreto (clave inválida, modelo
+  // retirado, cuota agotada…) en vez de un "intenta más tarde" que no dice
+  // nada — este asistente ya se rompió dos veces en silencio por falta de
+  // esta señal. `failed: true` deja que la UI lo pinte distinto a una
+  // respuesta normal.
+  if (!result.ok) {
+    return Response.json({ reply: failureMessage(result.reason), failed: true });
   }
-  return Response.json({ reply });
+  return Response.json({ reply: result.text });
 }
