@@ -73,8 +73,15 @@ const money = (n) => `RD$${Number(n).toFixed(2)}`;
 // de punto flotante que no es un descuadre real.
 const closeEnough = (a, b) => Math.abs(Number(a) - Number(b)) < 0.01;
 
+// debt_installments y receivable_installments NO tienen deleted_at a
+// propósito (migration-v15): viven y mueren con su deuda/cobro, así que no
+// necesitan su propia marca de borrado suave.
+const NO_SOFT_DELETE = new Set(["debt_installments", "receivable_installments"]);
+
 async function all(table, columns = "*") {
-  const { data, error } = await supabase.from(table).select(columns).is("deleted_at", null);
+  let q = supabase.from(table).select(columns);
+  if (!NO_SOFT_DELETE.has(table)) q = q.is("deleted_at", null);
+  const { data, error } = await q;
   if (error) throw new Error(`No se pudo leer ${table}: ${error.message}`);
   return data ?? [];
 }
@@ -118,21 +125,32 @@ async function checkAccountBalances() {
 
 // ─────────────────────────────────────────────────────────────────────────
 // 2 y 3. Gastos ↔ movimientos espejo (1 a 1, ambos sentidos).
+//
+// OJO — dos convenciones DISTINTAS de source_ref_id conviven en el código:
+//   · Gasto manual (addExpense, presupuesto/actions.ts): el MOVIMIENTO
+//     apunta al gasto (movement.source_ref_id === expense.id) — padre-hijo.
+//   · Pago de deuda (recordDebtPayment, deudas/actions.ts): el gasto Y el
+//     movimiento son HERMANOS — los dos reciben el mismo source_ref_id, que
+//     es el id de la CUOTA (o de la deuda, si es pago único), no el id del
+//     otro. Cruzar movement.source_ref_id contra expense.id acá SIEMPRE da
+//     "no encontrado", aunque el par exista y esté perfecto — confundir
+//     esto una vez ya generó 6 falsos positivos en este mismo script.
 // ─────────────────────────────────────────────────────────────────────────
 async function checkExpenseMirrors() {
   const [expenses, movements] = await Promise.all([
-    all("expenses", "id, amount, note, source"),
+    all("expenses", "id, amount, note, source, source_ref_id"),
     all("savings_movements", "id, amount, source, source_ref_id"),
   ]);
-  const movByRef = new Map();
+
+  // --- Gastos "padre-hijo" (todo lo que no sea pago de deuda) ---
+  const movByExpenseId = new Map();
   for (const m of movements) {
     if (m.source_ref_id) {
-      (movByRef.get(m.source_ref_id) ?? movByRef.set(m.source_ref_id, []).get(m.source_ref_id)).push(m);
+      (movByExpenseId.get(m.source_ref_id) ?? movByExpenseId.set(m.source_ref_id, []).get(m.source_ref_id)).push(m);
     }
   }
-
-  for (const e of expenses) {
-    const mirrors = movByRef.get(e.id) ?? [];
+  for (const e of expenses.filter((e) => e.source !== "debt_payment")) {
+    const mirrors = movByExpenseId.get(e.id) ?? [];
     if (mirrors.length === 0) {
       problems.push(`Gasto "${e.note ?? e.id}" (${money(e.amount)}) no tiene movimiento espejo en el ledger.`);
     } else if (mirrors.length > 1) {
@@ -144,12 +162,26 @@ async function checkExpenseMirrors() {
     }
   }
 
-  // Inverso: todo pago de deuda en el ledger debe tener su gasto.
-  const debtPayments = movements.filter((m) => m.source === "debt_payment");
-  const expenseIds = new Set(expenses.map((e) => e.id));
-  for (const m of debtPayments) {
-    if (!m.source_ref_id || !expenseIds.has(m.source_ref_id)) {
-      problems.push(`Movimiento de pago de deuda (${money(m.amount)}, id ${m.id}) no tiene gasto espejo.`);
+  // --- Pagos de deuda "hermanos" (agrupados por la cuota/deuda que pagan) ---
+  const debtExpenses = expenses.filter((e) => e.source === "debt_payment");
+  const debtMovements = movements.filter((m) => m.source === "debt_payment");
+  const refIds = new Set([
+    ...debtExpenses.map((e) => e.source_ref_id).filter(Boolean),
+    ...debtMovements.map((m) => m.source_ref_id).filter(Boolean),
+  ]);
+  for (const refId of refIds) {
+    const es = debtExpenses.filter((e) => e.source_ref_id === refId);
+    const ms = debtMovements.filter((m) => m.source_ref_id === refId);
+    if (es.length === 0) {
+      problems.push(`Pago de deuda (cuota/deuda ${refId}, ${money(ms[0]?.amount ?? 0)}) no tiene gasto espejo.`);
+    } else if (ms.length === 0) {
+      problems.push(`Pago de deuda (cuota/deuda ${refId}, ${money(es[0]?.amount ?? 0)}) no tiene movimiento espejo.`);
+    } else if (es.length > 1 || ms.length > 1) {
+      problems.push(`Pago de deuda (cuota/deuda ${refId}) tiene ${es.length} gasto(s) y ${ms.length} movimiento(s) — debería ser 1 y 1.`);
+    } else if (!closeEnough(es[0].amount, ms[0].amount)) {
+      problems.push(
+        `Pago de deuda (cuota/deuda ${refId}): el gasto es ${money(es[0].amount)} pero el movimiento es ${money(ms[0].amount)}.`,
+      );
     }
   }
 }
@@ -222,7 +254,13 @@ async function checkReceivableMirrors() {
 async function checkOrphanMovements() {
   const movements = await all("savings_movements", "id, amount, source, source_ref_id");
   const targets = {
-    debt_payment: new Set((await all("expenses", "id")).map((r) => r.id)),
+    // debt_payment: source_ref_id es la CUOTA o la DEUDA que se pagó (ver
+    // recordDebtPayment en deudas/actions.ts) — NO el gasto espejo, ese es
+    // un hermano, no el destino (ver nota larga en checkExpenseMirrors).
+    debt_payment: new Set([
+      ...(await all("debts", "id")).map((r) => r.id),
+      ...(await all("debt_installments", "id")).map((r) => r.id),
+    ]),
     salary: new Set((await all("salaries", "id")).map((r) => r.id)),
     receivable_collected: new Set([
       ...(await all("receivables", "id")).map((r) => r.id),
@@ -248,19 +286,24 @@ async function checkDebtTotals() {
     all("debt_installments", "id, debt_id, amount, paid"),
     all("expenses", "id, amount, source, source_ref_id"),
   ]);
-  const expenseAmountById = new Map(expenses.map((e) => [e.id, Number(e.amount)]));
+  // El gasto de una cuota de deuda NO tiene su propio id igual al de la
+  // cuota — comparte source_ref_id CON la cuota (son hermanos, ver la nota
+  // larga en checkExpenseMirrors). Se agrupa por source_ref_id, no por id.
+  const expenseAmountByRef = new Map(
+    expenses.filter((e) => e.source === "debt_payment").map((e) => [e.source_ref_id, Number(e.amount)]),
+  );
 
   for (const d of debts) {
     if (d.payment_type !== "cuotas") continue;
     const own = installments.filter((i) => i.debt_id === d.id);
     const paidTotal = own.filter((i) => i.paid).reduce((s, i) => s + Number(i.amount), 0);
-    // El expense espejo de cada cuota pagada es lo que de verdad cuenta
-    // como "salió de tu bolsillo" — se compara contra ESO, no contra
+    // El gasto espejo de cada cuota pagada es lo que de verdad cuenta como
+    // "salió de tu bolsillo" — se compara contra ESO, no contra
     // installments.amount de nuevo (sería comparar la fuente contra sí
-    // misma). source_ref_id de una cuota de deuda es el id de la cuota.
+    // misma).
     const ledgerTotal = own
       .filter((i) => i.paid)
-      .reduce((s, i) => s + (expenseAmountById.get(i.id) ?? 0), 0);
+      .reduce((s, i) => s + (expenseAmountByRef.get(i.id) ?? 0), 0);
     if (!closeEnough(paidTotal, ledgerTotal)) {
       problems.push(
         `Deuda "${d.name}": las cuotas pagadas suman ${money(paidTotal)} pero el ledger solo registra ${money(ledgerTotal)}.`,

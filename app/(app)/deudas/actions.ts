@@ -31,12 +31,18 @@ async function recordDebtPayment(
   amount: number,
   label: string,
   accountId?: string,
-): Promise<void> {
+): Promise<boolean> {
   const account_id = accountId || (await getOrCreateDefaultAccountId(supabase, userId));
-  if (!account_id) return;
+  if (!account_id) return false;
   const date = todayISO();
   const note = `Pago deuda: ${label}`;
-  await Promise.all([
+  // Antes ninguno de los dos resultados se revisaba: si el insert del gasto
+  // se rechazaba (RLS, constraint, lo que sea) mientras el del ledger sí
+  // pasaba, el código seguía como si ambos hubieran funcionado — el dinero
+  // salía de la cuenta pero jamás contaba como gasto real. Así se encontró
+  // (npm run check:coherence, con datos reales) que 6 deudas de pago único
+  // ya pagadas nunca generaron su gasto — silencioso hasta ahora.
+  const [movRes, expRes] = await Promise.all([
     supabase.from("savings_movements").insert({
       account_id,
       user_id: userId,
@@ -57,6 +63,14 @@ async function recordDebtPayment(
       source_ref_id: refId,
     }),
   ]);
+  if (movRes.error || expRes.error) {
+    console.error("[recordDebtPayment] insert falló:", {
+      movimiento: movRes.error?.message,
+      gasto: expRes.error?.message,
+    });
+    return false;
+  }
+  return true;
 }
 
 /** Quita el retiro del ledger Y el gasto asociados a una cuota/deuda (al
@@ -107,7 +121,19 @@ async function payDebt(
   } else {
     await supabase.from("debts").update({ status: "pagada" }).eq("id", debtId);
   }
-  await recordDebtPayment(supabase, userId, installmentId ?? debtId, amount, label, account_id);
+  const wrote = await recordDebtPayment(supabase, userId, installmentId ?? debtId, amount, label, account_id);
+  if (!wrote) {
+    // Este camino de respaldo (sin la RPC) no es atómico de verdad — si el
+    // ledger/gasto falla acá, se revierte la marca de "pagada" a mano en
+    // vez de dejarla mentir sobre que el dinero se movió (justo el bug que
+    // encontró check:coherence: 6 deudas quedaron "pagada" sin su gasto).
+    if (installmentId) {
+      await supabase.from("debt_installments").update({ paid: false, paid_date: null }).eq("id", installmentId);
+    } else {
+      await supabase.from("debts").update({ status: "pendiente" }).eq("id", debtId);
+    }
+    return false;
+  }
   return true;
 }
 

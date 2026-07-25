@@ -26,10 +26,10 @@ async function recordCollection(
   amount: number,
   label: string,
   accountId?: string,
-): Promise<void> {
+): Promise<boolean> {
   const account_id = accountId || (await getOrCreateDefaultAccountId(supabase, userId));
-  if (!account_id) return;
-  await supabase.from("savings_movements").insert({
+  if (!account_id) return false;
+  const { error } = await supabase.from("savings_movements").insert({
     account_id,
     user_id: userId,
     kind: "deposito",
@@ -39,6 +39,15 @@ async function recordCollection(
     source: "receivable_collected",
     source_ref_id: refId,
   });
+  // Mismo bug que encontró check:coherence en Deudas (recordDebtPayment):
+  // el resultado del insert no se revisaba, así que un rechazo silencioso
+  // (RLS, constraint) dejaba la cuota marcada "cobrada" sin que el dinero
+  // hubiera entrado. Acá el insert es uno solo, pero el riesgo es el mismo.
+  if (error) {
+    console.error("[recordCollection] insert falló:", error.message);
+    return false;
+  }
+  return true;
 }
 
 /** Revierte el depósito al desmarcar un cobro. */
@@ -88,7 +97,19 @@ async function collectReceivable(
   } else {
     await supabase.from("receivables").update({ status: "cobrada" }).eq("id", receivableId);
   }
-  await recordCollection(supabase, userId, installmentId ?? receivableId, amount, label, account_id);
+  const wrote = await recordCollection(supabase, userId, installmentId ?? receivableId, amount, label, account_id);
+  if (!wrote) {
+    // Este camino de respaldo no es atómico de verdad — si el insert falla
+    // acá, se revierte la marca de "cobrada" a mano en vez de dejarla
+    // mentir sobre que el dinero entró (mismo bug real que encontró
+    // check:coherence del lado de Deudas).
+    if (installmentId) {
+      await supabase.from("receivable_installments").update({ paid: false, paid_date: null }).eq("id", installmentId);
+    } else {
+      await supabase.from("receivables").update({ status: "pendiente" }).eq("id", receivableId);
+    }
+    return false;
+  }
   return true;
 }
 
