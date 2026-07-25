@@ -50,6 +50,73 @@ async function removeCollection(supabase: SupabaseClient, refId: string): Promis
     .eq("source_ref_id", refId);
 }
 
+/** Marca cobrada una cuota (o, si installmentId es null, un cobro de pago
+ *  único) y registra el depósito — todo en UNA transacción vía
+ *  collect_receivable() (migration-v19). Mismo problema que resolvió
+ *  pay_debt()/unpay_debt() en Deudas (migration-v18): antes eran 2
+ *  escrituras sueltas, con el mismo riesgo de quedar "cobrado" sin que el
+ *  dinero hubiera entrado de verdad si la segunda fallaba a medias.
+ *
+ *  Si la función todavía no existe (migración sin correr), cae al camino
+ *  anterior — mismo resultado, sin la atomicidad. */
+async function collectReceivable(
+  supabase: SupabaseClient,
+  userId: string,
+  receivableId: string,
+  installmentId: string | null,
+  amount: number,
+  label: string,
+  accountId?: string,
+): Promise<boolean> {
+  const account_id = accountId || (await getOrCreateDefaultAccountId(supabase, userId));
+  if (!account_id) return false;
+
+  const { error } = await supabase.rpc("collect_receivable", {
+    p_receivable_id: receivableId,
+    p_installment_id: installmentId,
+    p_amount: amount,
+    p_account_id: account_id,
+    p_label: label,
+  });
+  if (!error) return true;
+
+  if (installmentId) {
+    await supabase
+      .from("receivable_installments")
+      .update({ paid: true, paid_date: todayISO() })
+      .eq("id", installmentId);
+  } else {
+    await supabase.from("receivables").update({ status: "cobrada" }).eq("id", receivableId);
+  }
+  await recordCollection(supabase, userId, installmentId ?? receivableId, amount, label, account_id);
+  return true;
+}
+
+/** Reverso de collectReceivable(): vía uncollect_receivable(), mismo
+ *  criterio que unpayDebt() en Deudas — el camino de vuelta queda igual de
+ *  atómico que el de ida. */
+async function uncollectReceivable(
+  supabase: SupabaseClient,
+  receivableId: string,
+  installmentId: string | null,
+): Promise<void> {
+  const { error } = await supabase.rpc("uncollect_receivable", {
+    p_receivable_id: receivableId,
+    p_installment_id: installmentId,
+  });
+  if (!error) return;
+
+  if (installmentId) {
+    await supabase
+      .from("receivable_installments")
+      .update({ paid: false, paid_date: null })
+      .eq("id", installmentId);
+  } else {
+    await supabase.from("receivables").update({ status: "pendiente" }).eq("id", receivableId);
+  }
+  await removeCollection(supabase, installmentId ?? receivableId);
+}
+
 function stepDate(iso: string, freq: DebtFrequency, times: number): string {
   const d = parseISODate(iso);
   if (freq === "mensual") d.setMonth(d.getMonth() + times);
@@ -186,12 +253,10 @@ export async function toggleReceivableInstallment(
 ): Promise<ActionResult> {
   const user = await requireUser();
   const supabase = await createClient();
-  const { error } = await supabase
-    .from("receivable_installments")
-    .update({ paid, paid_date: paid ? todayISO() : null })
-    .eq("id", installmentId);
-  if (error) return { ok: false };
 
+  // Atómico vía collectReceivable()/uncollectReceivable() (migration-v19)
+  // — el estado lo recalcula el trigger de la base (ver migration-v11),
+  // dentro de la misma transacción cuando la RPC está disponible.
   if (paid) {
     const { data: inst } = await supabase
       .from("receivable_installments")
@@ -203,21 +268,21 @@ export async function toggleReceivableInstallment(
       .select("name")
       .eq("id", receivableId)
       .maybeSingle();
-    if (inst) {
-      await recordCollection(
-        supabase,
-        user.id,
-        installmentId,
-        Number(inst.amount),
-        rec?.name ?? "",
-        accountId,
-      );
-    }
+    if (!inst) return { ok: false };
+    const ok = await collectReceivable(
+      supabase,
+      user.id,
+      receivableId,
+      installmentId,
+      Number(inst.amount),
+      rec?.name ?? "",
+      accountId,
+    );
+    if (!ok) return { ok: false, error: "No se pudo registrar el cobro." };
   } else {
-    await removeCollection(supabase, installmentId);
+    await uncollectReceivable(supabase, receivableId, installmentId);
   }
 
-  // El estado lo recalcula el trigger de la base (ver migration-v11).
   revalidateAll();
   return { ok: true };
 }
@@ -230,11 +295,6 @@ export async function toggleReceivableCollected(
 ): Promise<ActionResult> {
   const user = await requireUser();
   const supabase = await createClient();
-  const { error } = await supabase
-    .from("receivables")
-    .update({ status: paid ? "cobrada" : "pendiente" })
-    .eq("id", id);
-  if (error) return { ok: false };
 
   if (paid) {
     const { data: rec } = await supabase
@@ -242,11 +302,11 @@ export async function toggleReceivableCollected(
       .select("name, total_amount")
       .eq("id", id)
       .maybeSingle();
-    if (rec) {
-      await recordCollection(supabase, user.id, id, Number(rec.total_amount), rec.name, accountId);
-    }
+    if (!rec) return { ok: false };
+    const ok = await collectReceivable(supabase, user.id, id, null, Number(rec.total_amount), rec.name, accountId);
+    if (!ok) return { ok: false, error: "No se pudo registrar el cobro." };
   } else {
-    await removeCollection(supabase, id);
+    await uncollectReceivable(supabase, id, null);
   }
 
   revalidateAll();
