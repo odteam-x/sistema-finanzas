@@ -282,3 +282,22 @@ export interface UserProfileRow {
   user_id: string;
   display_name: string | null;
 }
+
+export type CsvDateFormat = "YYYY-MM-DD" | "DD/MM/YYYY" | "MM/DD/YYYY";
+
+/** Mapeo de columnas de un CSV bancario, guardado para no volver a
+ *  preguntarlo cada vez que se importa un extracto del mismo banco. */
+export interface ImportProfile {
+  id: string;
+  user_id: string;
+  name: string;
+  date_column: string;
+  description_column: string;
+  /** Un solo monto con signo — o null si el banco separa débito/crédito. */
+  amount_column: string | null;
+  debit_column: string | null;
+  credit_column: string | null;
+  date_format: CsvDateFormat;
+  decimal_separator: "." | ",";
+  created_at: string;
+}

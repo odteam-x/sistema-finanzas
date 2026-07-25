@@ -153,7 +153,18 @@ export default async function MovimientosPage({
       <PageHeader
         title="Movimientos"
         subtitle="Todo lo que entra y sale de tus cuentas"
-        action={<NewMovementForm accounts={accounts} today={today} triggerLabel="Movimiento" trigger="pill" />}
+        action={
+          <div className="flex items-center gap-2">
+            <Link
+              href="/movimientos/importar"
+              className="inline-flex items-center justify-center gap-1.5 min-h-11 rounded-full font-semibold text-sm cursor-pointer transition-colors active:scale-[0.97] bg-black/5 text-ink hover:bg-black/10 px-3"
+            >
+              <Icon name="bank" size={16} />
+              Importar
+            </Link>
+            <NewMovementForm accounts={accounts} today={today} triggerLabel="Movimiento" trigger="pill" />
+          </div>
+        }
       />
 
       {movements.length > 0 && (

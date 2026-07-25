@@ -9,6 +9,7 @@ import type {
   DebtInstallment,
   Expense,
   Goal,
+  ImportProfile,
   Receivable,
   ReceivableInstallment,
   Salary,
@@ -304,4 +305,10 @@ export async function getUserProfile(): Promise<UserProfileRow | null> {
   const supabase = await createClient();
   const { data } = await supabase.from("user_profile").select("*").maybeSingle();
   return data ?? null;
+}
+
+export async function getImportProfiles(): Promise<ImportProfile[]> {
+  const supabase = await createClient();
+  const { data } = await supabase.from("import_profiles").select("*").order("name", { ascending: true });
+  return data ?? [];
 }
