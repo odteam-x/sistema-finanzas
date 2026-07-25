@@ -24,6 +24,7 @@ import {
   Clock,
   Coins,
   CreditCard,
+  DownloadSimple,
   Eye,
   EyeSlash,
   Gear,
@@ -87,7 +88,8 @@ export type IconName =
   | "movements"
   | "search"
   | "bell"
-  | "sparkle";
+  | "sparkle"
+  | "download";
 
 const icons: Record<IconName, PhosphorIcon> = {
   dashboard: House,
@@ -128,6 +130,7 @@ const icons: Record<IconName, PhosphorIcon> = {
   search: MagnifyingGlass,
   bell: Bell,
   sparkle: Sparkle,
+  download: DownloadSimple,
 };
 
 interface IconProps {

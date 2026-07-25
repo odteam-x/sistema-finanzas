@@ -24,15 +24,23 @@ export default async function AppLayout({
   return (
     <PersonalizeProvider>
       <ToastProvider>
-      <OfflineBanner />
+      <div className="print:hidden">
+        <OfflineBanner />
+      </div>
       <div className="lg:flex">
-        <Sidebar email={email} />
-        <main className="flex-1 min-w-0 w-full max-w-3xl mx-auto px-4 sm:px-6 pb-28 lg:pb-10">
+        <div className="print:hidden">
+          <Sidebar email={email} />
+        </div>
+        <main className="flex-1 min-w-0 w-full max-w-3xl mx-auto px-4 sm:px-6 pb-28 lg:pb-10 print:pb-0 print:max-w-none">
           <PageTransition>{children}</PageTransition>
         </main>
-        <BottomTabBar email={email} accounts={accounts} />
+        <div className="print:hidden">
+          <BottomTabBar email={email} accounts={accounts} />
+        </div>
       </div>
-      <AssistantWidget />
+      <div className="print:hidden">
+        <AssistantWidget />
+      </div>
       </ToastProvider>
     </PersonalizeProvider>
   );

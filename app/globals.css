@@ -178,6 +178,30 @@ html {
   background-color: var(--color-bg);
 }
 
+/* Exportar PDF (Reportes, R09): window.print() reusa el HTML ya renderizado
+   en vez de generarlo aparte con una librería — pero el modo oscuro no debe
+   imprimirse oscuro (desperdicia tinta y puede no leerse en papel), así que
+   se fuerza claro sin importar [data-mode] activo. Los blobs decorativos de
+   fondo tampoco aportan nada en una hoja. */
+@media print {
+  :root,
+  [data-mode="dark"] {
+    color-scheme: light;
+    --color-bg: #ffffff;
+    --color-ink: #212121;
+    --color-muted: #727272;
+    --color-subtle: #848484;
+    --glass-bg: #ffffff;
+    --glass-bg-strong: #ffffff;
+    --glass-border: rgba(20, 30, 24, 0.12);
+    --glass-border-strong: rgba(20, 30, 24, 0.16);
+    --glass-shadow: transparent;
+  }
+  body::before {
+    display: none;
+  }
+}
+
 /* Fondo con blobs suaves (capa fija, sin background-attachment para evitar
    jank/repaint en móvil) para que el vidrio tenga sobre qué reflejar.
    Los tonos siguen al tema activo. */
