@@ -15,6 +15,7 @@ import { DisplayNameForm } from "./DisplayNameForm";
 import { ExportCsvForm } from "./ExportCsvForm";
 import { addTag, deleteTag, updateTag } from "./actions";
 import { undoDelete } from "../undo-actions";
+import { seedDefaultTagsIfEmpty } from "@/lib/tags";
 
 export const metadata = { title: "Configuración · Cachin'" };
 
@@ -51,6 +52,7 @@ function NewTagForm({
 }
 
 export default async function ConfiguracionPage() {
+  await seedDefaultTagsIfEmpty();
   const today = todayISO();
   const monthStart = toISODate(new Date(Number(today.slice(0, 4)), Number(today.slice(5, 7)) - 1, 1, 12));
 

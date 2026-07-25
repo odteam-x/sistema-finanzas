@@ -37,6 +37,7 @@ import { Money } from "@/components/ui/Money";
 import { addExpense, clearPeriodOverride, deleteExpense } from "./actions";
 import type { SavingsAccount, Tag } from "@/lib/types";
 import { undoDelete } from "../undo-actions";
+import { seedDefaultTagsIfEmpty } from "@/lib/tags";
 
 export const metadata = { title: "Gastos · Cachin'" };
 
@@ -104,6 +105,10 @@ export default async function PresupuestoPage({
 }: {
   searchParams: Promise<{ tag?: string; q?: string }>;
 }) {
+  // Categorías por defecto en español dominicano si el usuario todavía no
+  // tiene ninguna — reduce la fricción de arrancar con la lista vacía.
+  await seedDefaultTagsIfEmpty();
+
   const sp = await searchParams;
   const tagFilter = sp.tag || "";
   const search = (sp.q ?? "").trim().toLowerCase();
