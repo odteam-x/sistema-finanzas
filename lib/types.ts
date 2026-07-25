@@ -306,6 +306,17 @@ export type CsvDateFormat = "YYYY-MM-DD" | "DD/MM/YYYY" | "MM/DD/YYYY";
 
 /** Mapeo de columnas de un CSV bancario, guardado para no volver a
  *  preguntarlo cada vez que se importa un extracto del mismo banco. */
+/** Regla simple de auto-categorización: "si la nota contiene `keyword` →
+ *  usa `tag_id`". `keyword` ya está normalizada (minúsculas, sin acentos) al
+ *  guardarse — ver lib/categorize.ts. */
+export interface CategorizationRule {
+  id: string;
+  user_id: string;
+  keyword: string;
+  tag_id: string;
+  created_at: string;
+}
+
 export interface ImportProfile {
   id: string;
   user_id: string;

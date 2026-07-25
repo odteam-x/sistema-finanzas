@@ -5,6 +5,7 @@ import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { parseAmount, type ActionResult } from "@/lib/actions-shared";
 import { softDeleteRows, type UndoableResult } from "@/lib/softDelete";
+import { normalizeKeyword } from "@/lib/categorize";
 
 function revalidateAll() {
   revalidatePath("/configuracion");
@@ -101,5 +102,39 @@ export async function setExchangeRate(formData: FormData): Promise<ActionResult>
   if (error) return { ok: false, error: "No se pudo guardar la tasa." };
   revalidateAll();
   revalidatePath("/balance");
+  return { ok: true };
+}
+
+/** Regla de auto-categorización: "si la nota contiene X -> categoría Y",
+ *  aplicada al registrar un gasto sin categoría explícita (ver addExpense en
+ *  presupuesto/actions.ts). `keyword` se normaliza aquí (una sola vez, al
+ *  guardar) para que la comparación en cada gasto sea una simple búsqueda de
+ *  substring. */
+export async function addCategorizationRule(formData: FormData): Promise<ActionResult> {
+  const user = await requireUser();
+  const keyword = normalizeKeyword(String(formData.get("keyword") ?? ""));
+  const tag_id = String(formData.get("tag_id") ?? "");
+  if (!keyword) return { ok: false, error: "Escribe una palabra clave." };
+  if (!tag_id) return { ok: false, error: "Elige una categoría." };
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("categorization_rules")
+    .insert({ user_id: user.id, keyword, tag_id });
+  if (error) {
+    return {
+      ok: false,
+      error: error.code === "23505" ? "Ya existe una regla con esa palabra clave." : "No se pudo agregar la regla.",
+    };
+  }
+  revalidateAll();
+  return { ok: true };
+}
+
+export async function deleteCategorizationRule(id: string): Promise<ActionResult> {
+  await requireUser();
+  const supabase = await createClient();
+  const { error } = await supabase.from("categorization_rules").delete().eq("id", id);
+  if (error) return { ok: false, error: "No se pudo eliminar la regla." };
+  revalidateAll();
   return { ok: true };
 }

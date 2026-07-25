@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getOrCreateDefaultAccountId } from "@/lib/accounts";
 import { parseAmount, type ActionResult } from "@/lib/actions-shared";
 import { softDeleteRows, type UndoableResult } from "@/lib/softDelete";
+import { matchTagForNote } from "@/lib/categorize";
 
 function revalidateAll() {
   revalidatePath("/presupuesto");
@@ -78,7 +79,7 @@ export async function addExpense(formData: FormData): Promise<ActionResult> {
   const user = await requireUser();
   const amount = parseAmount(formData.get("amount"));
   const date = String(formData.get("date") ?? "");
-  const tag_id = String(formData.get("tag_id") ?? "") || null;
+  let tag_id = String(formData.get("tag_id") ?? "") || null;
   const note = String(formData.get("note") ?? "").trim() || null;
   const chosenAccount = String(formData.get("account_id") ?? "") || null;
   if (!Number.isFinite(amount) || amount <= 0) {
@@ -86,6 +87,14 @@ export async function addExpense(formData: FormData): Promise<ActionResult> {
   }
   if (!date) return { ok: false, error: "Selecciona la fecha." };
   const supabase = await createClient();
+
+  // Auto-categorización: si no se eligió categoría a mano (ej. desde el FAB
+  // rápido, que no tiene ese campo) pero la nota coincide con una regla del
+  // usuario, se aplica sola — nunca sobre una categoría ya elegida.
+  if (!tag_id && note) {
+    const { data: rules } = await supabase.from("categorization_rules").select("*");
+    tag_id = matchTagForNote(note, rules ?? []);
+  }
   // El ledger es autoritativo: todo gasto sale de una cuenta (la elegida o
   // la de por defecto), para que el saldo en Balance sea siempre real.
   // Si no se puede resolver una cuenta, se ABORTA la operación completa —

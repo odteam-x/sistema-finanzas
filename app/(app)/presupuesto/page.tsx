@@ -1,6 +1,7 @@
 import Link from "next/link";
 import {
   getBudgetCategories,
+  getCategorizationRules,
   getExceptions,
   getExpenses,
   getPeriodOverrides,
@@ -35,7 +36,8 @@ import {
 import { BudgetRing } from "@/components/charts/BudgetRing";
 import { Money } from "@/components/ui/Money";
 import { addExpense, clearPeriodOverride, deleteExpense } from "./actions";
-import type { SavingsAccount, Tag } from "@/lib/types";
+import { ExpenseCategoryFields } from "./ExpenseCategoryFields";
+import type { CategorizationRule, SavingsAccount, Tag } from "@/lib/types";
 import { undoDelete } from "../undo-actions";
 import { seedDefaultTagsIfEmpty } from "@/lib/tags";
 
@@ -43,6 +45,7 @@ export const metadata = { title: "Gastos · Cachin'" };
 
 function NewExpenseForm({
   tags,
+  rules,
   accounts,
   today,
   triggerLabel,
@@ -50,6 +53,7 @@ function NewExpenseForm({
   triggerIcon,
 }: {
   tags: Tag[];
+  rules: CategorizationRule[];
   accounts: SavingsAccount[];
   today: string;
   triggerLabel: string;
@@ -71,19 +75,7 @@ function NewExpenseForm({
       <Field label="Fecha" htmlFor="exp-date" required>
         <Input id="exp-date" name="date" type="date" defaultValue={today} required />
       </Field>
-      <Field label="Categoría" htmlFor="exp-cat" hint="Categoría general del gasto (independiente del presupuesto por día).">
-        <Select id="exp-cat" name="tag_id" defaultValue="">
-          <option value="">General</option>
-          {tags.map((t) => (
-            <option key={t.id} value={t.id}>
-              {t.name}
-            </option>
-          ))}
-        </Select>
-      </Field>
-      <Field label="Nota" htmlFor="exp-note">
-        <Input id="exp-note" name="note" placeholder="Opcional" />
-      </Field>
+      <ExpenseCategoryFields tags={tags} rules={rules} idPrefix="exp" />
       {accounts.length > 0 && (
         <Field label="Cuenta" htmlFor="exp-account" hint="Opcional: resta el monto del saldo de esa cuenta.">
           <Select id="exp-account" name="account_id" defaultValue="">
@@ -117,7 +109,7 @@ export default async function PresupuestoPage({
   const monthStart = toISODate(new Date(q.year, q.month, 1, 12));
   const monthEnd = toISODate(new Date(q.year, q.month + 1, 0, 12));
 
-  const [categories, exceptions, expenses, accounts, tags, overrides, subscriptions] =
+  const [categories, exceptions, expenses, accounts, tags, overrides, subscriptions, rules] =
     await Promise.all([
       getBudgetCategories(),
       getExceptions(monthStart, monthEnd),
@@ -126,6 +118,7 @@ export default async function PresupuestoPage({
       getTags(),
       getPeriodOverrides(),
       getSubscriptions(),
+      getCategorizationRules(),
     ]);
   const activeSubs = subscriptions.filter((s) => s.active);
 
@@ -285,6 +278,7 @@ export default async function PresupuestoPage({
         <h2 className="text-sm font-bold text-ink">Gastos reales de la quincena</h2>
         <NewExpenseForm
           tags={tags}
+          rules={rules}
           accounts={accounts}
           today={today}
           triggerLabel="Registrar"
@@ -332,7 +326,7 @@ export default async function PresupuestoPage({
           title="Sin gastos aún"
           message="Registra tus gastos reales para compararlos con el presupuesto."
           action={
-            <NewExpenseForm tags={tags} accounts={accounts} today={today} triggerLabel="Registrar gasto" />
+            <NewExpenseForm tags={tags} rules={rules} accounts={accounts} today={today} triggerLabel="Registrar gasto" />
           }
         />
       ) : visibleExpenses.length === 0 ? (

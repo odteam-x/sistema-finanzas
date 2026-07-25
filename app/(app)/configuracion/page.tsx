@@ -1,10 +1,17 @@
-import { getExchangeRates, getExpenses, getSavingsAccounts, getTags, getUserProfile } from "@/lib/data";
+import {
+  getCategorizationRules,
+  getExchangeRates,
+  getExpenses,
+  getSavingsAccounts,
+  getTags,
+  getUserProfile,
+} from "@/lib/data";
 import { todayISO, toISODate, clampPct } from "@/lib/format";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ProgressBar } from "@/components/ui/ProgressBar";
-import { Field, Input, MoneyInput } from "@/components/ui/Field";
+import { Field, Input, Select, MoneyInput } from "@/components/ui/Field";
 import { FormModal } from "@/components/ui/FormModal";
 import { DeleteButton } from "@/components/ui/DeleteButton";
 import { IconBubble } from "@/components/ui/IconBubble";
@@ -14,7 +21,7 @@ import { NotificationToggle } from "@/components/NotificationToggle";
 import { DisplayNameForm } from "./DisplayNameForm";
 import { ExportCsvForm } from "./ExportCsvForm";
 import { ExchangeRateForm } from "./ExchangeRateForm";
-import { addTag, deleteTag, updateTag } from "./actions";
+import { addTag, deleteTag, updateTag, addCategorizationRule, deleteCategorizationRule } from "./actions";
 import { undoDelete } from "../undo-actions";
 import { seedDefaultTagsIfEmpty } from "@/lib/tags";
 
@@ -52,17 +59,62 @@ function NewTagForm({
   );
 }
 
+/** Regla simple de auto-categorización: "si la nota contiene esta palabra,
+ *  usa esta categoría" — se aplica sola al registrar un gasto sin categoría
+ *  elegida a mano (ver lib/categorize.ts). */
+function NewRuleForm({
+  tags,
+  triggerLabel,
+  trigger,
+  triggerIcon,
+}: {
+  tags: { id: string; name: string }[];
+  triggerLabel: string;
+  trigger?: "button" | "link" | "icon" | "pill";
+  triggerIcon?: "plus";
+}) {
+  return (
+    <FormModal
+      title="Nueva regla"
+      action={addCategorizationRule}
+      submitLabel="Agregar"
+      trigger={trigger}
+      triggerIcon={triggerIcon}
+      triggerLabel={triggerLabel}
+    >
+      <Field
+        label="Si la nota contiene…"
+        htmlFor="rule-keyword"
+        required
+        hint="Ej.: colmado, uber, netflix. No distingue mayúsculas ni acentos."
+      >
+        <Input id="rule-keyword" name="keyword" placeholder="colmado" required />
+      </Field>
+      <Field label="…usa esta categoría" htmlFor="rule-tag" required>
+        <Select id="rule-tag" name="tag_id" required>
+          {tags.map((t) => (
+            <option key={t.id} value={t.id}>
+              {t.name}
+            </option>
+          ))}
+        </Select>
+      </Field>
+    </FormModal>
+  );
+}
+
 export default async function ConfiguracionPage() {
   await seedDefaultTagsIfEmpty();
   const today = todayISO();
   const monthStart = toISODate(new Date(Number(today.slice(0, 4)), Number(today.slice(5, 7)) - 1, 1, 12));
 
-  const [profile, tags, monthExpenses, accounts, exchangeRates] = await Promise.all([
+  const [profile, tags, monthExpenses, accounts, exchangeRates, rules] = await Promise.all([
     getUserProfile(),
     getTags(),
     getExpenses(monthStart, today),
     getSavingsAccounts(),
     getExchangeRates(),
+    getCategorizationRules(),
   ]);
 
   const spentByTag = new Map<string, number>();
@@ -77,6 +129,7 @@ export default async function ConfiguracionPage() {
     new Set(accounts.map((a) => a.currency).filter((c): c is "USD" | "EUR" => c !== "DOP")),
   );
   const rateByCurrency = new Map(exchangeRates.map((r) => [r.currency, r]));
+  const tagName = (id: string) => tags.find((t) => t.id === id)?.name ?? "—";
 
   return (
     <>
@@ -166,6 +219,46 @@ export default async function ConfiguracionPage() {
             );
           })}
         </ul>
+      )}
+
+      {tags.length > 0 && (
+        <>
+          <div className="flex items-center justify-between px-1 mb-2 mt-4">
+            <div>
+              <h2 className="text-sm font-bold text-ink">Reglas de categorización</h2>
+              <p className="text-xs text-muted">Categoriza gastos solos según su nota.</p>
+            </div>
+            <NewRuleForm tags={tags} triggerLabel="Nueva" trigger="link" triggerIcon="plus" />
+          </div>
+
+          {rules.length === 0 ? (
+            <EmptyState
+              icon="budget"
+              illustration="preferences"
+              title="Sin reglas todavía"
+              message='Ej.: "colmado" → Colmado. La próxima vez que un gasto tenga esa palabra en la nota, se categoriza solo (siempre editable).'
+              action={<NewRuleForm tags={tags} triggerLabel="Crear regla" />}
+            />
+          ) : (
+            <ul className="flex flex-col gap-2 mb-4">
+              {rules.map((r) => (
+                <li key={r.id}>
+                  <GlassCard className="py-3 flex items-center gap-3">
+                    <IconBubble icon="budget" tone="neutral" />
+                    <p className="min-w-0 flex-1 text-sm text-ink truncate">
+                      Si la nota contiene <span className="font-semibold">“{r.keyword}”</span> → {tagName(r.tag_id)}
+                    </p>
+                    <DeleteButton
+                      action={deleteCategorizationRule.bind(null, r.id)}
+                      title="¿Eliminar regla?"
+                      message="Los gastos ya registrados no cambian."
+                    />
+                  </GlassCard>
+                </li>
+              ))}
+            </ul>
+          )}
+        </>
       )}
 
       {foreignCurrencies.length > 0 && (

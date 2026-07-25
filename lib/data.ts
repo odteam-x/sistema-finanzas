@@ -4,6 +4,7 @@ import { createClient } from "./supabase/server";
 import type {
   BudgetCategory,
   BudgetPeriodOverride,
+  CategorizationRule,
   Debt,
   DebtIncrement,
   DebtInstallment,
@@ -317,5 +318,14 @@ export async function getImportProfiles(): Promise<ImportProfile[]> {
 export async function getExchangeRates(): Promise<ExchangeRate[]> {
   const supabase = await createClient();
   const { data } = await supabase.from("exchange_rates").select("*");
+  return data ?? [];
+}
+
+export async function getCategorizationRules(): Promise<CategorizationRule[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("categorization_rules")
+    .select("*")
+    .order("created_at", { ascending: false });
   return data ?? [];
 }
