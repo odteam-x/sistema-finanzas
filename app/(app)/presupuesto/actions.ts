@@ -1,12 +1,16 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { getOrCreateDefaultAccountId } from "@/lib/accounts";
 import { parseAmount, type ActionResult } from "@/lib/actions-shared";
 import { softDeleteRows, type UndoableResult } from "@/lib/softDelete";
 import { matchTagForNote } from "@/lib/categorize";
+import { getQuincenaBudgetStatus } from "@/lib/budgetStatus";
+import { sendPushToCurrentUser } from "@/lib/webpush";
+import { formatDOP } from "@/lib/format";
 
 function revalidateAll() {
   revalidatePath("/presupuesto");
@@ -131,6 +135,31 @@ export async function addExpense(formData: FormData): Promise<ActionResult> {
   }
 
   revalidateAll();
+
+  // Push real (Bloque 12): si ESTE gasto específicamente hizo cruzar el
+  // presupuesto de la quincena por 80% o 100%, avisa — "cruzar" se detecta
+  // comparando el total antes/después de este gasto (no hace falta una
+  // tabla de "ya avisado" aparte: solo el gasto que cruza dispara, los
+  // siguientes ya no porque el total ya estaba sobre el umbral).
+  // after(): se ejecuta tras responder al usuario (no le hace esperar la
+  // red del envío push) pero Vercel garantiza que termine, a diferencia de
+  // una promesa suelta sin await.
+  after(async () => {
+    const { estQuincena, realQuincena: afterTotal } = await getQuincenaBudgetStatus(date);
+    if (estQuincena <= 0) return;
+    const beforeTotal = afterTotal - amount;
+    const crossed100 = beforeTotal < estQuincena && afterTotal >= estQuincena;
+    const crossed80 = !crossed100 && beforeTotal < estQuincena * 0.8 && afterTotal >= estQuincena * 0.8;
+    if (!crossed100 && !crossed80) return;
+    await sendPushToCurrentUser(user.id, {
+      title: crossed100 ? "Presupuesto superado" : "Cerca del límite de presupuesto",
+      body: crossed100
+        ? `Ya gastaste ${formatDOP(afterTotal, false)} de tu presupuesto de ${formatDOP(estQuincena, false)} esta quincena.`
+        : `Vas en ${formatDOP(afterTotal, false)} de tu presupuesto de ${formatDOP(estQuincena, false)} esta quincena.`,
+      url: "/presupuesto",
+    });
+  });
+
   return { ok: true };
 }
 

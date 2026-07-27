@@ -10,10 +10,37 @@ import { addExpense } from "@/app/(app)/presupuesto/actions";
 import { addSalary } from "@/app/(app)/ingresos/actions";
 import { addMovement } from "@/app/(app)/balance/actions";
 import { addDebt } from "@/app/(app)/deudas/actions";
-import { todayISO } from "@/lib/format";
+import { todayISO, formatDOP } from "@/lib/format";
+import { parseAmount, type ActionResult } from "@/lib/actions-shared";
+import { submitOfflineAware } from "@/lib/offlineQueue";
 import type { SavingsAccount } from "@/lib/types";
 
 type QuickForm = "gasto" | "ingreso" | "movimiento" | "deuda" | null;
+
+// Los 3 formularios "sobre la marcha" del FAB pasan por la cola offline-first
+// (Bloque 12, ver lib/offlineQueue.ts) — si no hay red, se encolan en vez de
+// fallar. "Nueva deuda" queda fuera de este alcance: registrar una deuda no
+// es un caso de "estoy en la calle sin señal" tan frecuente como estos 3.
+function submitGasto(formData: FormData): Promise<ActionResult> {
+  const amount = parseAmount(formData.get("amount"));
+  return submitOfflineAware("gasto", addExpense, formData, `Gasto · ${formatDOP(amount || 0, false)}`);
+}
+
+function submitIngreso(formData: FormData): Promise<ActionResult> {
+  const amount = parseAmount(formData.get("amount"));
+  return submitOfflineAware("ingreso", addSalary, formData, `Ingreso · ${formatDOP(amount || 0, false)}`);
+}
+
+function submitMovimiento(formData: FormData): Promise<ActionResult> {
+  const amount = parseAmount(formData.get("amount"));
+  const isDeposito = String(formData.get("kind") ?? "") === "deposito";
+  return submitOfflineAware(
+    "movimiento",
+    addMovement,
+    formData,
+    `${isDeposito ? "Ingreso" : "Gasto"} · ${formatDOP(amount || 0, false)}`,
+  );
+}
 
 function QuickRow({
   icon,
@@ -142,7 +169,7 @@ export function QuickAddFab({ accounts }: { accounts: SavingsAccount[] }) {
 
       <FormModal
         title="Registrar gasto"
-        action={addExpense}
+        action={submitGasto}
         submitLabel="Registrar"
         hideTrigger
         open={activeForm === "gasto"}
@@ -173,7 +200,7 @@ export function QuickAddFab({ accounts }: { accounts: SavingsAccount[] }) {
 
       <FormModal
         title="Registrar ingreso"
-        action={addSalary}
+        action={submitIngreso}
         submitLabel="Registrar"
         hideTrigger
         open={activeForm === "ingreso"}
@@ -212,7 +239,7 @@ export function QuickAddFab({ accounts }: { accounts: SavingsAccount[] }) {
 
       <FormModal
         title="Nuevo movimiento"
-        action={addMovement}
+        action={submitMovimiento}
         submitLabel="Registrar"
         hideTrigger
         open={activeForm === "movimiento"}

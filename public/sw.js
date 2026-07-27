@@ -88,3 +88,42 @@ self.addEventListener("fetch", (event) => {
     );
   }
 });
+
+// Push real (Bloque 12): el servidor firma y despacha el payload con la
+// clave VAPID privada (lib/webpush.ts) — acá solo se recibe y se pinta. Con
+// la app cerrada, esto es lo único que puede avisar (las notificaciones
+// locales de NotificationTrigger.tsx solo disparan con la app abierta).
+self.addEventListener("push", (event) => {
+  let data = { title: "Cachin'", body: "Tienes una novedad.", url: "/dashboard" };
+  try {
+    if (event.data) data = { ...data, ...event.data.json() };
+  } catch {
+    // payload no-JSON (no debería pasar, lib/webpush.ts siempre manda JSON) —
+    // se usa el genérico de arriba en vez de fallar el evento entero.
+  }
+  event.waitUntil(
+    self.registration.showNotification(data.title, {
+      body: data.body,
+      icon: "/icons/icon-192.png",
+      badge: "/icons/icon-192.png",
+      data: { url: data.url || "/dashboard" },
+    }),
+  );
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const url = event.notification.data && event.notification.data.url ? event.notification.data.url : "/dashboard";
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => {
+      for (const client of clients) {
+        if (client.url.includes(url) && "focus" in client) return client.focus();
+      }
+      if (clients.length > 0 && "focus" in clients[0]) {
+        clients[0].navigate(url);
+        return clients[0].focus();
+      }
+      return self.clients.openWindow(url);
+    }),
+  );
+});

@@ -7,6 +7,7 @@ import { BottomTabBar } from "@/components/nav/BottomTabBar";
 import { PageTransition } from "@/components/PageTransition";
 import { PersonalizeProvider } from "@/components/theme/PersonalizeContext";
 import { OfflineBanner } from "@/components/OfflineBanner";
+import { PendingSyncBanner } from "@/components/PendingSyncBanner";
 import { ToastProvider } from "@/components/ui/Toast";
 import { AssistantWidget } from "@/components/assistant/AssistantWidget";
 import { AppLockGate } from "@/components/AppLockGate";
@@ -26,8 +27,9 @@ export default async function AppLayout({
     <PersonalizeProvider>
       <ToastProvider>
       <AppLockGate>
-      <div className="print:hidden">
+      <div className="fixed top-0 inset-x-0 z-[100] flex flex-col print:hidden">
         <OfflineBanner />
+        <PendingSyncBanner />
       </div>
       <div className="lg:flex">
         <div className="print:hidden">

@@ -325,6 +325,19 @@ export interface CategorizationRule {
   created_at: string;
 }
 
+/** Un navegador/dispositivo suscrito a push — puede haber varios por
+ *  usuario (celular + laptop). `endpoint` es único por suscripción real del
+ *  navegador; p256dh/auth son las claves públicas que exige el estándar Web
+ *  Push para cifrar el payload. */
+export interface PushSubscriptionRow {
+  id: string;
+  user_id: string;
+  endpoint: string;
+  p256dh: string;
+  auth: string;
+  created_at: string;
+}
+
 export interface ImportProfile {
   id: string;
   user_id: string;

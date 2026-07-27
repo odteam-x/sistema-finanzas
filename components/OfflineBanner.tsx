@@ -27,7 +27,7 @@ export function OfflineBanner() {
   if (online) return null;
 
   return (
-    <div className="fixed top-0 inset-x-0 z-[100] bg-warning text-white text-xs font-semibold text-center py-1.5 px-3 flex items-center justify-center gap-1.5">
+    <div className="bg-warning text-white text-xs font-semibold text-center py-1.5 px-3 flex items-center justify-center gap-1.5">
       <Icon name="alert" size={13} />
       Sin conexión · viendo tu última sincronización
     </div>
