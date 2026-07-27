@@ -18,6 +18,7 @@ import { IconBubble } from "@/components/ui/IconBubble";
 import { Money } from "@/components/ui/Money";
 import { ThemeButton } from "@/components/theme/ThemeButton";
 import { NotificationToggle } from "@/components/NotificationToggle";
+import { SecuritySettings } from "@/components/SecuritySettings";
 import { DisplayNameForm } from "./DisplayNameForm";
 import { ExportCsvForm } from "./ExportCsvForm";
 import { ExchangeRateForm } from "./ExchangeRateForm";
@@ -274,6 +275,11 @@ export default async function ConfiguracionPage() {
           </div>
         </GlassCard>
       )}
+
+      <GlassCard className="mt-4 mb-4">
+        <h2 className="font-bold text-ink mb-3">Seguridad</h2>
+        <SecuritySettings />
+      </GlassCard>
 
       <GlassCard className="mt-4 mb-4">
         <h2 className="font-bold text-ink mb-3">Preferencias</h2>

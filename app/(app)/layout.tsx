@@ -9,6 +9,7 @@ import { PersonalizeProvider } from "@/components/theme/PersonalizeContext";
 import { OfflineBanner } from "@/components/OfflineBanner";
 import { ToastProvider } from "@/components/ui/Toast";
 import { AssistantWidget } from "@/components/assistant/AssistantWidget";
+import { AppLockGate } from "@/components/AppLockGate";
 
 export default async function AppLayout({
   children,
@@ -24,6 +25,7 @@ export default async function AppLayout({
   return (
     <PersonalizeProvider>
       <ToastProvider>
+      <AppLockGate>
       <div className="print:hidden">
         <OfflineBanner />
       </div>
@@ -41,6 +43,7 @@ export default async function AppLayout({
       <div className="print:hidden">
         <AssistantWidget />
       </div>
+      </AppLockGate>
       </ToastProvider>
     </PersonalizeProvider>
   );
