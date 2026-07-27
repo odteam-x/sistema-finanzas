@@ -23,6 +23,7 @@ import {
 import { exceptionsMap } from "./calendar";
 import { resolveBudgetBasis } from "./budgetDays";
 import { balanceOfAccount, deltaForAccount } from "./balances";
+import { normalizeKeyword } from "./categorize";
 import { ratesMap, toDOP } from "./currency";
 import { outstandingOfDebt } from "./debts";
 import { goalProgress } from "./goals";
@@ -91,6 +92,9 @@ export interface FinanceSummary {
    *  para que la UI pueda convertir/formatear cuentas en moneda extranjera
    *  sin volver a consultar exchange_rates. */
   rates: Record<Currency, number>;
+  /** Gastos recurrentes detectados que no están dados de alta como
+   *  suscripción — ver el bloque de detección más abajo. */
+  subscriptionCandidates: { name: string; amount: number; occurrences: number }[];
   estByCategory: NamedValue[];
   realByCategory: NamedValue[];
   alerts: Alert[];
@@ -272,6 +276,42 @@ export async function getFinanceSummary(): Promise<FinanceSummary> {
     return results;
   })();
 
+  // Suscripciones no registradas: gastos manuales con la misma nota (sin
+  // acentos/mayúsculas, ver lib/categorize.ts) y un monto consistente que se
+  // repiten en 2+ meses distintos de la ventana de trailingExpenses — regla
+  // simple, no ML, tal como pide la spec. Se descarta cualquier grupo cuya
+  // nota ya coincide con una suscripción activa/inactiva existente, para no
+  // sugerir de nuevo algo que el usuario ya dio de alta.
+  const subscriptionCandidates: { name: string; amount: number; occurrences: number }[] = (() => {
+    const groups = new Map<string, { amounts: number[]; months: Set<string>; note: string }>();
+    for (const e of trailingExpenses) {
+      if (!e.note) continue;
+      const key = normalizeKeyword(e.note);
+      if (!key) continue;
+      const g = groups.get(key) ?? { amounts: [], months: new Set<string>(), note: e.note };
+      g.amounts.push(Number(e.amount));
+      g.months.add(e.date.slice(0, 7));
+      groups.set(key, g);
+    }
+    const results: { name: string; amount: number; occurrences: number }[] = [];
+    for (const [key, g] of groups) {
+      if (g.months.size < 2) continue;
+      const avg = g.amounts.reduce((s, a) => s + a, 0) / g.amounts.length;
+      // Tolerancia: 5% del promedio o RD$5, lo que sea mayor — cubre
+      // pequeñas variaciones (impuestos, redondeo) sin agrupar montos
+      // realmente distintos.
+      const consistent = g.amounts.every((a) => Math.abs(a - avg) <= Math.max(avg * 0.05, 5));
+      if (!consistent) continue;
+      const alreadyRegistered = subscriptions.some((s) => {
+        const subKey = normalizeKeyword(s.name);
+        return subKey.length > 0 && (key.includes(subKey) || subKey.includes(key));
+      });
+      if (alreadyRegistered) continue;
+      results.push({ name: g.note, amount: avg, occurrences: g.months.size });
+    }
+    return results.sort((a, b) => b.occurrences - a.occurrences).slice(0, 5);
+  })();
+
   // Deudas. El total adeudado sale de lib/debts.ts (misma implementación que
   // usa la pantalla de Deudas), así incluye los aumentos posteriores (R02) —
   // antes se sumaba a mano acá y se habría quedado con el monto original.
@@ -447,6 +487,7 @@ export async function getFinanceSummary(): Promise<FinanceSummary> {
     accountBalances,
     netWorth: savingsTotal - outstandingDebt,
     rates,
+    subscriptionCandidates,
     estByCategory,
     realByCategory,
     alerts,

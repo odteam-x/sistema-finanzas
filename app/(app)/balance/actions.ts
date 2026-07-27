@@ -70,19 +70,96 @@ export async function addAccount(formData: FormData): Promise<ActionResult> {
 }
 
 export async function updateAccount(formData: FormData): Promise<ActionResult> {
-  await requireUser();
+  const user = await requireUser();
   const id = String(formData.get("id") ?? "");
   const name = String(formData.get("name") ?? "").trim();
   const type = parseAccountType(formData.get("type"));
   const goal_id = String(formData.get("goal_id") ?? "") || null;
+  const is_cushion = formData.get("is_cushion") === "on";
   if (!id) return { ok: false };
   if (!name) return { ok: false, error: "Escribe un nombre." };
+
   const supabase = await createClient();
+
+  let cushion_payout_amount: number | null = null;
+  let cushion_target_account_id: string | null = null;
+  if (is_cushion) {
+    cushion_payout_amount = parseAmount(formData.get("cushion_payout_amount"));
+    cushion_target_account_id = String(formData.get("cushion_target_account_id") ?? "") || null;
+    if (!Number.isFinite(cushion_payout_amount) || cushion_payout_amount <= 0) {
+      return { ok: false, error: "Ingresa el monto fijo que te pagas cada quincena." };
+    }
+    if (!cushion_target_account_id) {
+      return { ok: false, error: "Elige a qué cuenta se paga." };
+    }
+    if (cushion_target_account_id === id) {
+      return { ok: false, error: "La cuenta destino debe ser distinta de la cuenta colchón." };
+    }
+    // Solo una cuenta colchón por usuario (también lo garantiza el índice
+    // único de la base) — se desmarca cualquier otra antes de marcar esta,
+    // para no chocar con esa restricción en el camino feliz.
+    await supabase
+      .from("savings_accounts")
+      .update({ is_cushion: false, cushion_payout_amount: null, cushion_target_account_id: null })
+      .eq("user_id", user.id)
+      .eq("is_cushion", true)
+      .neq("id", id);
+  }
+
   const { error } = await supabase
     .from("savings_accounts")
-    .update({ name, type, goal_id })
+    .update({
+      name,
+      type,
+      goal_id,
+      is_cushion,
+      cushion_payout_amount: is_cushion ? cushion_payout_amount : null,
+      cushion_target_account_id: is_cushion ? cushion_target_account_id : null,
+    })
     .eq("id", id);
   if (error) return { ok: false, error: "No se pudo actualizar." };
+  revalidateAll();
+  return { ok: true };
+}
+
+/** "Pagarme esta quincena": transfiere el monto fijo ya configurado desde la
+ *  cuenta colchón hacia su cuenta destino — una transferencia común (ver
+ *  addTransfer más abajo), solo que el monto y el destino ya están
+ *  decididos de antemano, así que es un solo tap sin formulario. */
+export async function payCushionQuincena(): Promise<ActionResult> {
+  const user = await requireUser();
+  const supabase = await createClient();
+
+  const { data: cushion } = await supabase
+    .from("savings_accounts")
+    .select("id, currency, cushion_payout_amount, cushion_target_account_id")
+    .eq("user_id", user.id)
+    .eq("is_cushion", true)
+    .maybeSingle();
+  if (!cushion || !cushion.cushion_payout_amount || !cushion.cushion_target_account_id) {
+    return { ok: false, error: "Configura el monto y la cuenta destino primero (Editar cuenta)." };
+  }
+
+  const { data: target } = await supabase
+    .from("savings_accounts")
+    .select("currency")
+    .eq("id", cushion.cushion_target_account_id)
+    .maybeSingle();
+  if (target && target.currency !== cushion.currency) {
+    return { ok: false, error: "La cuenta colchón y la de destino ya no comparten moneda." };
+  }
+
+  const { error } = await supabase.from("savings_movements").insert({
+    account_id: cushion.id,
+    to_account_id: cushion.cushion_target_account_id,
+    user_id: user.id,
+    kind: "transferencia",
+    amount: cushion.cushion_payout_amount,
+    date: todayISO(),
+    note: "Pago de quincena (cuenta colchón)",
+    source: "manual",
+  });
+  if (error) return { ok: false, error: "No se pudo registrar la transferencia." };
   revalidateAll();
   return { ok: true };
 }

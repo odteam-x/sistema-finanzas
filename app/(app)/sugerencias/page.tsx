@@ -1,9 +1,13 @@
 import { getFinanceSummary } from "@/lib/summary";
+import { getSavingsAccounts, getTags } from "@/lib/data";
+import { todayISO } from "@/lib/format";
 import { TIPS } from "@/lib/tips";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { IconBubble } from "@/components/ui/IconBubble";
 import { AccordionItem } from "@/components/ui/Accordion";
+import { Money } from "@/components/ui/Money";
+import { NewSubscriptionForm } from "../suscripciones/NewSubscriptionForm";
 import type { IconName } from "@/components/ui/Icon";
 import type { Alert } from "@/lib/summary";
 
@@ -20,7 +24,8 @@ const alertStyle: Record<
 };
 
 export default async function SugerenciasPage() {
-  const s = await getFinanceSummary();
+  const [s, accounts, tags] = await Promise.all([getFinanceSummary(), getSavingsAccounts(), getTags()]);
+  const today = todayISO();
 
   return (
     <>
@@ -28,6 +33,38 @@ export default async function SugerenciasPage() {
         title="Consejos"
         subtitle="Alertas según tus datos y tips de finanzas"
       />
+
+      {/* Suscripciones detectadas: gastos que se repiten con la misma nota y
+          monto en 2+ meses pero no están dadas de alta como suscripción —
+          regla simple sobre lib/summary.ts, no ML. Se ofrece "Dar de alta"
+          con un solo tap; nunca se registra sola. */}
+      {s.subscriptionCandidates.length > 0 && (
+        <>
+          <h2 className="text-sm font-bold text-ink px-1 mb-2">Posibles suscripciones</h2>
+          <div className="flex flex-col gap-2 mb-6">
+            {s.subscriptionCandidates.map((c, i) => (
+              <GlassCard key={i} className="flex items-center gap-3">
+                <IconBubble icon="repeat" tone="info" />
+                <div className="min-w-0 flex-1">
+                  <p className="font-bold text-ink text-sm truncate">{c.name}</p>
+                  <p className="text-sm text-muted">
+                    <Money value={c.amount} decimals={false} /> · se repitió {c.occurrences} meses seguidos
+                  </p>
+                </div>
+                <NewSubscriptionForm
+                  tags={tags}
+                  accounts={accounts}
+                  today={today}
+                  triggerLabel="Dar de alta"
+                  trigger="link"
+                  defaultName={c.name}
+                  defaultAmount={c.amount}
+                />
+              </GlassCard>
+            ))}
+          </div>
+        </>
+      )}
 
       {/* Alertas personalizadas */}
       <h2 className="text-sm font-bold text-ink px-1 mb-2">Para ti ahora</h2>

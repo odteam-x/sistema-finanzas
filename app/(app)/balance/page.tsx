@@ -22,6 +22,8 @@ import { MoneyValue } from "@/components/ui/MoneyValue";
 import { Money } from "@/components/ui/Money";
 import { IconBubble } from "@/components/ui/IconBubble";
 import { PeekCarousel } from "@/components/ui/PeekCarousel";
+import { CushionField } from "./CushionField";
+import { PayCushionButton } from "./PayCushionButton";
 import type { AccountType, Goal } from "@/lib/types";
 import {
   addAccount,
@@ -323,6 +325,13 @@ export default async function BalancePage() {
                           idPrefix={`edit-${a.id}`}
                           defaultValue={a.goal_id}
                         />
+                        <CushionField
+                          accountId={a.id}
+                          otherAccounts={accounts.filter((acc) => acc.id !== a.id)}
+                          defaultChecked={a.is_cushion}
+                          defaultAmount={a.cushion_payout_amount}
+                          defaultTargetId={a.cushion_target_account_id}
+                        />
                       </FormModal>
                       <DeleteButton
                         action={deleteAccount.bind(null, a.id)}
@@ -376,6 +385,19 @@ export default async function BalancePage() {
                       </Field>
                     </FormModal>
                   </div>
+
+                  {a.is_cushion && a.cushion_payout_amount != null && (
+                    <div className="flex items-center justify-between gap-2 mt-3 pt-3 border-t border-black/5">
+                      <div className="min-w-0">
+                        <p className="text-xs text-muted">Cuenta colchón</p>
+                        <p className="text-sm font-semibold text-ink">
+                          <Money value={a.cushion_payout_amount} decimals={false} /> / quincena a{" "}
+                          {accountName(a.cushion_target_account_id ?? "")}
+                        </p>
+                      </div>
+                      <PayCushionButton />
+                    </div>
+                  )}
               </GlassCard>
             );
           })}

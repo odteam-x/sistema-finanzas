@@ -198,6 +198,14 @@ export interface SavingsAccount {
   /** La moneda la define la CUENTA, no cada movimiento — el monto de cada
    *  movimiento de esta cuenta ya está en esta moneda. */
   currency: Currency;
+  /** Cuenta "colchón" para ingresos variables (freelance/informal): el
+   *  ingreso real entra aquí como cualquier depósito; "Pagarme esta
+   *  quincena" transfiere `cushion_payout_amount` hacia
+   *  `cushion_target_account_id`. Solo una cuenta puede serlo a la vez
+   *  (índice único en la base, ver migration-v23.sql). */
+  is_cushion: boolean;
+  cushion_payout_amount: number | null;
+  cushion_target_account_id: string | null;
 }
 
 /** Tasa de cambio a RD$, editable por el usuario — RD no tiene un feed
