@@ -40,6 +40,7 @@ import { ExpenseCategoryFields } from "./ExpenseCategoryFields";
 import type { CategorizationRule, SavingsAccount, Tag } from "@/lib/types";
 import { undoDelete } from "../undo-actions";
 import { seedDefaultTagsIfEmpty } from "@/lib/tags";
+import { applyCategorizationRulesToPastExpenses } from "@/lib/categorizeCatchUp";
 
 export const metadata = { title: "Gastos · Cachin'" };
 
@@ -100,6 +101,10 @@ export default async function PresupuestoPage({
   // Categorías por defecto en español dominicano si el usuario todavía no
   // tiene ninguna — reduce la fricción de arrancar con la lista vacía.
   await seedDefaultTagsIfEmpty();
+  // Gastos ya registrados que quedaron sin categoría: si su nota coincide
+  // con una regla (nueva o ya existente), se agrupan también — no solo los
+  // gastos que se registren de ahora en adelante.
+  await applyCategorizationRulesToPastExpenses();
 
   const sp = await searchParams;
   const tagFilter = sp.tag || "";
