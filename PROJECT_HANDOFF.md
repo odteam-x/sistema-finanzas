@@ -287,6 +287,36 @@ recargar.
   tokens de `globals.css` o rutas API nuevas), correr `rm -rf .next` antes
   de reiniciar el dev server — hay caché que se queda obsoleta.
 
+## 7c. Feedback de navegación (`NavIcon`) y por qué offline se siente más
+## rápido que online — esto NO es un bug
+
+`components/nav/NavIcon.tsx` envuelve el ícono de cada enlace de
+`BottomTabBar`/`Sidebar` con `useLinkStatus()` (Next 15+/React 19): mientras
+ESA navegación en particular está pendiente, el ícono baja de opacidad y gira
+un anillo. Es por-enlace, no global — no hace falta contexto ni efecto.
+
+Por qué hacía falta: entre que la URL cambia (inmediato, es solo
+`history.pushState`) y que la pantalla nueva está lista, no había ninguna
+señal de que el toque hubiera registrado. Se sentía como "hay que tocar dos
+veces", pero el primer toque sí funcionaba — el usuario solo no lo veía.
+
+**La razón real de fondo, medida:** offline, la navegación de Next intenta
+traer el payload de la ruta, falla al instante (no hay red) y cae a la copia
+completa cacheada por el Service Worker — se sirve local, sin ninguna
+consulta a Supabase. Online, la página SÍ tiene que ejecutar sus consultas
+reales (13-18 por pantalla, ~400-450ms en paralelo medido contra este
+proyecto) más el round-trip del propio Vercel. Offline es rápido porque **no
+hace el trabajo real**; no es una referencia de cuánto debería tardar con
+datos frescos.
+
+**Lo que NO se hizo, a propósito:** Next permite `experimental.staleTimes`
+en `next.config.ts` para que el navegador reuse un payload reciente sin
+volver a pedirlo al servidor por unos segundos. Subiría la velocidad
+percibida en navegación de ida y vuelta, pero en una app de finanzas
+significa poder ver un balance desactualizado justo después de registrar un
+movimiento. No se activó sin decisión explícita del usuario — es un
+trade-off de framework, no un bug a corregir.
+
 ## 8. El roadmap de 12 bloques (COMPLETADO)
 
 Documento de planificación original en
