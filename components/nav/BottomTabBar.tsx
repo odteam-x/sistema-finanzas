@@ -21,8 +21,28 @@ export function BottomTabBar({
   const pathname = usePathname();
   const rm = useReducedMotion();
   const dragControls = useDragControls();
-  const [moreOpen, setMoreOpen] = useState(false);
+  const [pedidoAbrir, setPedidoAbrir] = useState(false);
+  // Ruta en la que se abrió la hoja. Sirve para cerrarla sola al navegar.
+  const [rutaAlAbrir, setRutaAlAbrir] = useState(pathname);
   const onSecondary = SECONDARY_ROUTES.some((r) => pathname === r.href);
+
+  /* La hoja se cierra cuando la ruta YA cambió, y eso se DERIVA en el render
+     en vez de resolverse con un efecto.
+
+     Antes cada enlace de la hoja cerraba la hoja en su propio onClick, o sea
+     que desmontaba el <Link> en el mismo instante en que Next arrancaba la
+     navegación —que es una transición de React— y la transición se abortaba:
+     la hoja se cerraba y no pasaba nada más. Por eso fallaban las 11 secciones
+     de "Más" y no las pestañas de la barra, que no se desmontan al tocarlas.
+
+     Tampoco valdría un useEffect que llame a setState al cambiar `pathname`:
+     este proyecto trata `react-hooks/set-state-in-effect` como error. */
+  const moreOpen = pedidoAbrir && rutaAlAbrir === pathname;
+
+  function abrirMas() {
+    setRutaAlAbrir(pathname);
+    setPedidoAbrir(true);
+  }
 
   // Bloquear scroll del fondo mientras el menú "Más" está abierto (evita
   // repintados del contenido detrás mientras anima, que era parte del lag).
@@ -44,7 +64,7 @@ export function BottomTabBar({
             <motion.button
               aria-label="Cerrar menú"
               className="absolute inset-0 bg-black/55"
-              onClick={() => setMoreOpen(false)}
+              onClick={() => setPedidoAbrir(false)}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -63,7 +83,7 @@ export function BottomTabBar({
               dragConstraints={{ top: 0, bottom: 0 }}
               dragElastic={{ top: 0, bottom: 0.6 }}
               onDragEnd={(_, info) => {
-                if (info.offset.y > 90 || info.velocity.y > 500) setMoreOpen(false);
+                if (info.offset.y > 90 || info.velocity.y > 500) setPedidoAbrir(false);
               }}
             >
               {/* Asa arrastrable: desliza hacia abajo para cerrar */}
@@ -84,7 +104,6 @@ export function BottomTabBar({
                     <Link
                       key={r.href}
                       href={r.href}
-                      onClick={() => setMoreOpen(false)}
                       aria-current={active ? "page" : undefined}
                       className="flex flex-col items-center gap-1.5 group active:scale-[0.97] transition-transform"
                     >
@@ -132,7 +151,6 @@ export function BottomTabBar({
                 <li key={r.href}>
                   <Link
                     href={r.href}
-                    prefetch
                     aria-current={active ? "page" : undefined}
                     className={cn(
                       "flex flex-col items-center justify-center gap-0.5 pt-2 pb-1.5 min-h-[52px] text-[0.75rem] font-semibold transition-colors active:scale-95",
@@ -152,7 +170,6 @@ export function BottomTabBar({
                 <li key={r.href}>
                   <Link
                     href={r.href}
-                    prefetch
                     aria-current={active ? "page" : undefined}
                     className={cn(
                       "flex flex-col items-center justify-center gap-0.5 pt-2 pb-1.5 min-h-[52px] text-[0.75rem] font-semibold transition-colors active:scale-95",
@@ -167,7 +184,7 @@ export function BottomTabBar({
             })}
             <li>
               <button
-                onClick={() => setMoreOpen(true)}
+                onClick={abrirMas}
                 aria-label="Más secciones"
                 className={cn(
                   "flex flex-col items-center justify-center gap-0.5 pt-2 pb-1.5 min-h-[52px] w-full text-[0.75rem] font-semibold transition-colors cursor-pointer active:scale-95",
