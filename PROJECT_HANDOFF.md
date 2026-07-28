@@ -317,6 +317,39 @@ significa poder ver un balance desactualizado justo después de registrar un
 movimiento. No se activó sin decisión explícita del usuario — es un
 trade-off de framework, no un bug a corregir.
 
+## 7d. `lib/supabase/authTimeout.ts` — por qué existe, no quitarlo
+
+Se reportó una pantalla tardando hasta ~20s en cargar. Causa encontrada
+leyendo el SDK (`node_modules/@supabase/auth-js`): `getUser()`/`getClaims()`
+llamados SIN un JWT explícito pasan por `getSession()` → `__loadSession()`,
+que revisa si el token está vencido y, si lo está, dispara un refresco. Si
+esa llamada de refresco encuentra un error de red "reintentable", el SDK
+reintenta con backoff exponencial (200ms, 400ms, 800ms, 1.6s, 3.2s, 6.4s,
+12.8s…) acotado por su propia constante `AUTO_REFRESH_TICK_DURATION_MS` a
+30s — la suma real ronda 25-28s antes de rendirse. **Esto es simétrico**:
+tanto el `getUser()` de antes como el `getClaims()` actual pasan por el
+mismo camino cuando se llaman sin argumento — no es algo que el cambio a
+`getClaims()` haya introducido, es un comportamiento latente del SDK que
+puede no haberse disparado antes simplemente porque el token no había
+llegado a vencer todavía en las pruebas.
+
+`withAuthTimeout()` acota la ESPERA (no cancela el reintento interno del
+SDK, que puede seguir unos instantes más en segundo plano) a 5s. Si se
+agota, se trata como sesión inválida → redirige a `/login`. Perder la
+sesión y tener que iniciar sesión de nuevo en el peor caso es aceptable;
+una pantalla congelada 20-28s no lo es.
+
+**No lo hace más lento en el camino normal:** para una sesión vigente,
+`__loadSession()` no hace ninguna llamada de red (solo lee el estado en
+memoria/cookie) — el timeout de 5s nunca se activa. Verificado contra un
+build de producción: las 7 rutas protegidas siguen redirigiendo a
+`/login` sin sesión en 3-92ms.
+
+Si se vuelve a ver una carga de ~20s, **no subir el valor de
+`AUTH_TIMEOUT_MS`** — hay que investigar por qué el refresco de token está
+fallando de forma reintentable tan seguido (¿Supabase caído?, ¿el
+proyecto rotó las claves?), no esconder el síntoma esperando más.
+
 ## 8. El roadmap de 12 bloques (COMPLETADO)
 
 Documento de planificación original en

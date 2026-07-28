@@ -4,6 +4,12 @@ import { cache } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "./supabase/server";
 import { isSupabaseConfigured } from "./supabase/config";
+import { withAuthTimeout } from "./supabase/authTimeout";
+
+/** Ver lib/supabase/authTimeout.ts para la causa raíz completa: sin este
+ *  límite, una sesión vencida con la red inestable puede colgar la petición
+ *  20-28 segundos dentro del propio SDK de Supabase. */
+const AUTH_TIMEOUT_MS = 5000;
 
 /** Identidad ya verificada. Solo lo que la app usa de verdad: en todo el
  *  código hay 65 lecturas de `user.id` y una de `user.email`, y las dos vienen
@@ -38,7 +44,12 @@ export interface AuthUser {
 export const getUser = cache(async (): Promise<AuthUser | null> => {
   if (!isSupabaseConfigured) return null;
   const supabase = await createClient();
-  const { data, error } = await supabase.auth.getClaims();
+  const result = await withAuthTimeout(supabase.auth.getClaims(), AUTH_TIMEOUT_MS);
+  // result === null: se agotó el tiempo (ver authTimeout.ts) — se trata como
+  // sesión inválida, nunca como sesión válida. Sin este límite, una sesión
+  // vencida con la red inestable puede colgar esta llamada 20-28s.
+  if (!result) return null;
+  const { data, error } = result;
   const sub = data?.claims?.sub;
   if (error || !sub) return null;
   const email = data.claims.email;

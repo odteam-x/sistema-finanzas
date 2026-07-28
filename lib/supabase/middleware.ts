@@ -2,8 +2,15 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { SUPABASE_ANON_KEY, SUPABASE_URL, isSupabaseConfigured } from "./config";
+import { withAuthTimeout } from "./authTimeout";
 
 const PUBLIC_PATHS = ["/login", "/auth"];
+
+// Ver lib/supabase/authTimeout.ts para la causa raíz completa: sin este
+// límite, una sesión vencida con la red inestable puede colgar TODA
+// navegación (este middleware corre en cada una) 20-28 segundos dentro del
+// propio SDK de Supabase.
+const AUTH_TIMEOUT_MS = 5000;
 
 export async function updateSession(request: NextRequest) {
   // Sin Supabase configurado, dejamos pasar todo (la UI muestra el aviso de setup).
@@ -38,9 +45,9 @@ export async function updateSession(request: NextRequest) {
   // que ese viaje de 90-600ms se pagaba siempre antes de empezar a cargar
   // nada. Sigue refrescando la sesión y reescribiendo las cookies: getClaims()
   // pasa por getSession() por dentro, que es quien renueva el token vencido.
-  // Ver la nota larga en lib/auth.ts.
-  const { data } = await supabase.auth.getClaims();
-  const user = data?.claims?.sub ? { id: data.claims.sub } : null;
+  // Ver la nota larga en lib/auth.ts y en authTimeout.ts.
+  const result = await withAuthTimeout(supabase.auth.getClaims(), AUTH_TIMEOUT_MS);
+  const user = result?.data?.claims?.sub ? { id: result.data.claims.sub } : null;
 
   const path = request.nextUrl.pathname;
   const isPublic = PUBLIC_PATHS.some((p) => path.startsWith(p));
