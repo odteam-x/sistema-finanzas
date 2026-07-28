@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from "next";
 import { Outfit } from "next/font/google";
 import "./globals.css";
 import { PWARegister } from "@/components/PWARegister";
-import { ClickSpark } from "@/components/reactbits/ClickSpark";
 import { THEME_INIT_SCRIPT } from "@/lib/theme";
 
 // Outfit: geométrica y con más carácter que Plus Jakarta Sans — la spec de
@@ -62,9 +61,13 @@ export default function RootLayout({
         {/* Aplica el tema guardado antes del primer pintado (evita flash). */}
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>
+      {/* Se retiró ClickSpark (la chispa en cada toque): era un canvas a
+          pantalla completa que se limpiaba y redibujaba en cada frame tras
+          CADA toque, y que además leía getComputedStyle(<html>) dentro del
+          bucle de animación — un recálculo de estilo por frame. Un adorno no
+          puede costar fluidez justo en el momento en que tocas algo. */}
       <body className="min-h-dvh" suppressHydrationWarning>
         {children}
-        <ClickSpark />
         <PWARegister />
       </body>
     </html>

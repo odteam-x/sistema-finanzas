@@ -81,15 +81,16 @@
      propósito: "entra/sale dinero" no es "bien/mal" (un gasto planificado no
      es un error). Antes esto se resolvía ad hoc y distinto en cada pantalla:
      `primary` en Reportes, `neutral` en Movimientos e Inicio.
-     Los valores NO son alias directos de success/danger: como texto sobre
-     blanco, danger da 4.23:1 y falla AA — el monto de un gasto es justo lo
-     que el rediseño exige que se lea bien.
-     Y no basta con verificarlos sobre blanco: el monto de un StatTile de
-     ingreso/gasto se pinta sobre su PROPIO tinte, que es más oscuro. Con
-     #2b7c51/#c2412f eso daba 4.32 y 4.15 — otra vez por debajo de AA. Estos
-     pasan sobre el tinte (5.29 y 5.00) y de sobra sobre blanco. */
-  --color-income: #256d46;
-  --color-expense: #b03626;
+     NO son verde y rojo. En una app cuya marca ES teal, un verde al lado del
+     teal no se lee como "otro significado" sino como un teal mal calibrado, y
+     mete un tercer tono en compe­tencia. Así que el dinero que ENTRA usa el
+     propio teal de marca —entrar dinero es lo bueno, y lo bueno de esta app ya
+     es teal— y el que SALE usa un terracota de arcilla, que es el complemento
+     armónico del teal, no una alarma. Dos tonos en total, no tres.
+     Verificados sobre los tres fondos donde caen (blanco, su tinte y el fondo
+     de página): el peor caso es 4.80:1, todos AA. */
+  --color-income: #0f6467;
+  --color-expense: #a04d38;
 
   /* Superficies. Todas OPACAS. Tres niveles: la página (bg), la tarjeta
      (surface), y lo que se eleva sobre la tarjeta (raised) o se hunde en ella
@@ -112,8 +113,11 @@
      alpha: sobre una tarjeta clara se veían igual, pero sobre una oscura el
      resultado dependía de qué hubiera debajo. */
   --color-tint-brand: #dceeee;
-  --color-tint-income: #dff0e6;
-  --color-tint-expense: #fae2de;
+  /* El tinte de ingreso es el mismo de marca: no hay una familia verde que
+     sostener. Lo que distingue un tile de ingreso de uno neutro es la flecha
+     y la etiqueta, no un color propio. */
+  --color-tint-income: #dceeee;
+  --color-tint-expense: #f7e6e0;
   --color-tint-warning: #faebd6;
   --color-tint-info: #e6ebee;
   --color-tint-neutral: #eaeaea;
@@ -237,8 +241,8 @@
   --color-info: #8aa4bd;
   --color-info-soft: #232d38;
 
-  --color-income: #52b788;
-  --color-expense: #e8705c;
+  --color-income: #2fb5b9;
+  --color-expense: #dd9079;
 
   --color-surface: #1c2622;
   --color-surface-raised: #212d28;
@@ -251,8 +255,8 @@
   --color-line-strong: #48584f;
 
   --color-tint-brand: #123638;
-  --color-tint-income: #1e3a2c;
-  --color-tint-expense: #3a2a25;
+  --color-tint-income: #123638;
+  --color-tint-expense: #382a25;
   --color-tint-warning: #3b2f1a;
   --color-tint-info: #232d38;
   --color-tint-neutral: #313131;

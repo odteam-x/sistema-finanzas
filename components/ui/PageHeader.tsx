@@ -18,8 +18,10 @@ interface PageHeaderProps {
  *  con el título/la acción); vive solo en el hero de Inicio.
  *  El fondo es OPACO (antes era `/85` + `backdrop-blur-md`): al hacer scroll,
  *  el contenido pasa por debajo sin verse difuminado a través de la barra.
- *  Requiere que ningún ancestro anime `transform` (ver PageTransition.tsx
- *  — solo anima opacity). */
+ *  Requiere que ningún ancestro tenga `transform`: incluso un translateY(0px)
+ *  en reposo crea un containing block nuevo y rompe `sticky`/`fixed` en los
+ *  descendientes. Por eso el layout ya no envuelve la página en un contenedor
+ *  animado. */
 export function PageHeader({ title, subtitle, action, showBack = true }: PageHeaderProps) {
   return (
     <header

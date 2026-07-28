@@ -1,4 +1,3 @@
-import { Suspense } from "react";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { SetupNotice } from "@/components/SetupNotice";
 import { requireUser } from "@/lib/auth";
@@ -6,7 +5,6 @@ import { getSavingsAccounts } from "@/lib/data";
 import { Sidebar } from "@/components/nav/Sidebar";
 import { BottomTabBar } from "@/components/nav/BottomTabBar";
 import { QuickAddFab } from "@/components/nav/QuickAddFab";
-import { PageTransition } from "@/components/PageTransition";
 import { PersonalizeProvider } from "@/components/theme/PersonalizeContext";
 import { OfflineBanner } from "@/components/OfflineBanner";
 import { PendingSyncBanner } from "@/components/PendingSyncBanner";
@@ -15,16 +13,6 @@ import { AssistantWidget } from "@/components/assistant/AssistantWidget";
 import { AppLockGate } from "@/components/AppLockGate";
 import { StatusBarColor } from "@/components/StatusBarColor";
 
-/** El FAB necesita la lista de cuentas para el <select> de sus formularios,
- *  pero la barra de navegación no. Aislarlo en su propio componente async lo
- *  saca de la ruta crítica: la cáscara se pinta con el resto de la barra ya
- *  usable y el botón aparece en cuanto llega la consulta, en vez de que una
- *  consulta a Supabase retrase TODA la interfaz. */
-async function FabWithAccounts() {
-  const accounts = await getSavingsAccounts();
-  return <QuickAddFab accounts={accounts} />;
-}
-
 export default async function AppLayout({
   children,
 }: {
@@ -32,13 +20,17 @@ export default async function AppLayout({
 }) {
   if (!isSupabaseConfigured) return <SetupNotice />;
 
-  // Lo único que bloquea la cáscara es la verificación de sesión (defensa en
-  // profundidad, además del middleware) — y va memoizada con cache() de React,
-  // así que las páginas y los catch-ups la reusan sin pegar de nuevo a la red.
-  // Antes aquí se esperaba ADEMÁS getSavingsAccounts() en serie: dos viajes de
-  // red seguidos con la pantalla en blanco, porque loading.tsx cubre la página
-  // pero no el layout que la envuelve.
-  const user = await requireUser();
+  // Las dos consultas van EN PARALELO (antes iban en serie: dos viajes de red
+  // seguidos con la pantalla en blanco, porque loading.tsx cubre la página
+  // pero no el layout que la envuelve).
+  //
+  // Y van las dos aquí, sin <Suspense>: aislar el FAB en un límite de Suspense
+  // pintaba la cáscara antes, sí, pero dejaba el stream de HTML abierto hasta
+  // que resolvía la consulta — y React no termina de hidratar hasta que el
+  // stream cierra. Resultado: la pantalla se veía lista y no respondía, así que
+  // el primer toque no hacía nada y había que tocar dos veces. Es peor que
+  // esperar: un blanco honesto se entiende, una pantalla muerta no.
+  const [user, accounts] = await Promise.all([requireUser(), getSavingsAccounts()]);
   const email = user.email ?? null;
 
   return (
@@ -54,18 +46,15 @@ export default async function AppLayout({
             <div className="print:hidden">
               <Sidebar email={email} />
             </div>
+            {/* Sin transición de página: animaba opacity con key={pathname},
+                o sea que remontaba el árbol entero en cada navegación y le
+                sumaba 220ms de fundido a algo que ya tarda. La navegación
+                debe sentirse inmediata, no coreografiada. */}
             <main className="flex-1 min-w-0 w-full max-w-3xl mx-auto px-4 sm:px-6 pb-28 lg:pb-10 print:pb-0 print:max-w-none">
-              <PageTransition>{children}</PageTransition>
+              {children}
             </main>
             <div className="print:hidden">
-              <BottomTabBar
-                email={email}
-                fab={
-                  <Suspense fallback={null}>
-                    <FabWithAccounts />
-                  </Suspense>
-                }
-              />
+              <BottomTabBar email={email} fab={<QuickAddFab accounts={accounts} />} />
             </div>
           </div>
           <div className="print:hidden">
