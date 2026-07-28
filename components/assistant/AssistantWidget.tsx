@@ -59,18 +59,10 @@ export function AssistantWidget() {
   return (
     <>
       <div className="fixed bottom-24 right-4 lg:bottom-6 lg:right-6 z-[70] grid place-items-center">
-        {/* Anillo pulsante — la señal de "esto es IA". Antes esa señal era un
-         *  gradiente violeta→teal, el único color fuera de la paleta en toda
-         *  la app. La lleva ahora el movimiento (el pulso) más el ícono de
-         *  destello, que no exigen romper el sistema de color. */}
-        {!open && (
-          <motion.span
-            aria-hidden="true"
-            className="absolute inset-0 rounded-pill bg-gradient-brand"
-            animate={rm ? undefined : { scale: [1, 1.35, 1], opacity: [0.55, 0, 0.55] }}
-            transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
-          />
-        )}
+        {/* Sin anillo pulsante. Latía sin parar sobre CUALQUIER pantalla, y
+         *  una animación infinita al lado del FAB de registrar competía por
+         *  la atención con la acción principal de la app en vez de esperar a
+         *  que la busquen. El ícono de destello ya dice qué es. */}
         <button
           onClick={() => setOpen((v) => !v)}
           aria-label={open ? "Cerrar asistente" : "Abrir asistente"}

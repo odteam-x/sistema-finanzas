@@ -38,7 +38,14 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#127478",
+  // Valor de arranque, antes de que hidrate StatusBarColor (que lo ajusta por
+  // ruta): el tope de pantalla es el gradiente de marca en Inicio —que es el
+  // start_url— y el fondo de página en el resto. Se declara por esquema para
+  // que el modo oscuro no arranque con una franja clara.
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#0c4c4f" },
+    { media: "(prefers-color-scheme: dark)", color: "#0d5457" },
+  ],
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",

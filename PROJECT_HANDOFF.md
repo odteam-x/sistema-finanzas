@@ -234,18 +234,29 @@ opaca + sombra + línea.
   fluidos a propósito — mezclar uno fijo con uno fluido invertía el orden en
   móvil.
 - Modo oscuro vía `[data-mode="dark"]` en `<html>`, no clases `dark:`.
-- Iconos: Phosphor (`@phosphor-icons/react`), mapa en `components/ui/Icon.tsx`.
-  **No migrar a Iconify por su vía normal**: descarga los SVG de un CDN en
-  runtime y rompe el offline de la PWA.
-- **Ilustraciones (estados vacíos):** unDraw en `public/illustrations`, con una
-  variante `<n>.dark.svg` por cada una. Se cargan como `background-image` (no
-  `<img>`): así el CSS elige la URL según `[data-mode]` y el navegador baja
-  **solo** la del tema activo — con dos `<img>` se descargarían las dos.
-  Si agregas o reemplazas una ilustración, corre
-  `node scripts/build-illustrations-dark.mjs`: regenera las variantes oscuras
-  y el manifiesto de proporciones (`components/ui/illustrations.generated.ts`,
-  no editar a mano). El script avisa y sale con código 1 si encuentra un color
-  sin equivalente oscuro en su mapa.
+- Iconos: Phosphor (`@phosphor-icons/react`), mapa en `components/ui/Icon.tsx`,
+  peso por defecto **`light`** (el trazo más fino que aguanta 14-16px; `thin`
+  se rompe). El peso se cambia una sola vez ahí. Excepción: la barra inferior
+  y el sidebar usan `fill` en el ítem activo — es lo que dice de un vistazo en
+  qué sección estás. **No migrar a Iconify por su vía normal**: descarga los
+  SVG de un CDN en runtime y rompe el offline de la PWA.
+- **Ilustraciones (estados vacíos):** dibujos de línea propios, EN LÍNEA en el
+  DOM (`components/ui/Illustration.tsx`), no archivos en `public/`. Al ir
+  inline consumen los tokens vía las clases `.ill-line` / `.ill-soft` /
+  `.ill-fill` definidas en `globals.css`, así que un solo dibujo sirve para
+  claro y oscuro. Antes eran de unDraw como `<img>`, lo que obligaba a una
+  copia `.dark.svg` por ilustración generada por script. Para añadir una:
+  agrega la entrada al mapa `ART` con la misma rejilla 120×96 y esas clases.
+
+## 7b. Barra de estado / theme-color
+
+`components/StatusBarColor.tsx` ajusta `<meta name="theme-color">` según la
+ruta y el tema: el gradiente de marca en `/dashboard` (único sitio con hero a
+sangre arriba) y el fondo de página en el resto. Retira las metas que emite
+Next con `media` y deja una sola sin `media` — con varias, el navegador usa la
+primera cuyo media coincida, así que escribir encima de la primera no aplicaba
+en modo oscuro. Observa `data-mode` para reaccionar al cambio de tema sin
+recargar.
 - **Gotcha de Turbopack (dev)**: si algo no refleja un cambio (sobre todo
   tokens de `globals.css` o rutas API nuevas), correr `rm -rf .next` antes
   de reiniciar el dev server — hay caché que se queda obsoleta.

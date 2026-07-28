@@ -8,15 +8,16 @@ import { cn } from "@/lib/cn";
 import { Icon } from "@/components/ui/Icon";
 import { PRIMARY_ROUTES, SECONDARY_ROUTES } from "./routes";
 import { LogoutButton } from "./LogoutButton";
-import { QuickAddFab } from "./QuickAddFab";
-import type { SavingsAccount } from "@/lib/types";
 
 export function BottomTabBar({
   email,
-  accounts,
+  fab,
 }: {
   email: string | null;
-  accounts: SavingsAccount[];
+  /** El FAB llega como slot ya renderizado desde el servidor: necesita las
+   *  cuentas y la barra no, así que se transmite aparte (ver el Suspense del
+   *  layout) para no retrasar la navegación. */
+  fab: React.ReactNode;
 }) {
   const pathname = usePathname();
   const rm = useReducedMotion();
@@ -96,7 +97,7 @@ export function BottomTabBar({
                             : "bg-tint-brand text-primary-fg group-hover:bg-primary-soft",
                         )}
                       >
-                        <Icon name={r.icon} size={24} weight={active ? "fill" : "regular"} />
+                        <Icon name={r.icon} size={24} weight={active ? "fill" : "light"} />
                       </span>
                       <span
                         className={cn(
@@ -138,7 +139,7 @@ export function BottomTabBar({
                       active ? "text-primary-fg" : "text-muted",
                     )}
                   >
-                    <Icon name={r.icon} size={23} weight={active ? "fill" : "regular"} />
+                    <Icon name={r.icon} size={23} weight={active ? "fill" : "light"} />
                     {r.shortLabel}
                   </Link>
                 </li>
@@ -157,7 +158,7 @@ export function BottomTabBar({
                       active ? "text-primary-fg" : "text-muted",
                     )}
                   >
-                    <Icon name={r.icon} size={23} weight={active ? "fill" : "regular"} />
+                    <Icon name={r.icon} size={23} weight={active ? "fill" : "light"} />
                     {r.shortLabel}
                   </Link>
                 </li>
@@ -172,13 +173,13 @@ export function BottomTabBar({
                   onSecondary ? "text-primary-fg" : "text-muted",
                 )}
               >
-                <Icon name="menu" size={23} weight={onSecondary ? "fill" : "regular"} />
+                <Icon name="menu" size={23} weight={onSecondary ? "fill" : "light"} />
                 Más
               </button>
             </li>
           </ul>
         </nav>
-        <QuickAddFab accounts={accounts} />
+        {fab}
       </div>
     </>
   );

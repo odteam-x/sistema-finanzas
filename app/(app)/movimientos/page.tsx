@@ -22,6 +22,7 @@ import { Money } from "@/components/ui/Money";
 import { SearchBar } from "@/components/ui/SearchBar";
 import { DayPicker } from "@/components/ui/DayPicker";
 import { FilterMenu } from "@/components/ui/FilterMenu";
+import { ActiveFilters } from "@/components/ui/ActiveFilters";
 import { Field, Input, Select, MoneyInput } from "@/components/ui/Field";
 import { FormModal } from "@/components/ui/FormModal";
 import { cn } from "@/lib/cn";
@@ -130,24 +131,49 @@ export default async function MovimientosPage({
   const total = stats?.neto ?? totalIngresos - totalEgresos;
   const grouped = groupByDate(visible, (m) => m.date);
 
-  function hrefFor(next: { tipo?: string; range?: RangePreset; dia?: string | null }) {
+  function hrefFor(next: {
+    tipo?: string;
+    range?: RangePreset;
+    dia?: string | null;
+    q?: string | null;
+  }) {
     const params = new URLSearchParams();
-    const tipo = next.tipo ?? sp.tipo;
+    // `undefined` = "deja lo que ya había"; `null` = "quita este filtro".
+    const tipo = "tipo" in next ? next.tipo : sp.tipo;
     const r = next.range ?? range;
     const d = next.dia === null ? "" : (next.dia ?? day);
+    const q = next.q === null ? "" : (next.q ?? sp.q);
     if (tipo) params.set("tipo", tipo);
     if (d) params.set("dia", d);
     else if (r !== "todo") params.set("range", r);
-    if (sp.q) params.set("q", sp.q);
+    if (q) params.set("q", q);
     const qs = params.toString();
     return qs ? `/movimientos?${qs}` : "/movimientos";
   }
+
+  // Lo que el usuario está viendo, dicho con palabras. Antes el subtítulo era
+  // siempre "Todo lo que entra y sale de tus cuentas" aunque la lista
+  // estuviera recortada a un solo día y a un solo tipo: la pantalla filtrada
+  // se leía igual que la pantalla completa.
+  const tipoLabel = sp.tipo === "ingresos" ? "Solo ingresos" : sp.tipo === "gastos" ? "Solo gastos" : null;
+  const activeFilters = [
+    tipoLabel && { label: tipoLabel, removeHref: hrefFor({ tipo: undefined }) },
+    day && { label: formatDateLong(day), removeHref: hrefFor({ dia: null }) },
+    !day && range !== "todo" && { label: RANGE_LABEL[range], removeHref: hrefFor({ range: "todo" }) },
+    sp.q && { label: `“${sp.q}”`, removeHref: hrefFor({ q: null }) },
+  ].filter((f): f is { label: string; removeHref: string } => Boolean(f));
+
+  const alcance = day
+    ? formatDateLong(day)
+    : range === "todo"
+      ? "todo tu historial"
+      : RANGE_LABEL[range].toLowerCase();
 
   return (
     <>
       <PageHeader
         title="Movimientos"
-        subtitle="Todo lo que entra y sale de tus cuentas"
+        subtitle={`Viendo ${alcance}${tipoLabel ? ` · ${tipoLabel.toLowerCase()}` : ""}`}
         action={
           /* Dos acciones competían aquí con el mismo peso. "Importar" es
              algo que se hace una vez al mes contra un estado de cuenta;
@@ -169,6 +195,8 @@ export default async function MovimientosPage({
 
       {movements.length > 0 && (
         <>
+          <ActiveFilters filters={activeFilters} clearHref="/movimientos" />
+
           {/* El neto del filtro activo era una línea de texto corrido dentro
               del `summary` de un colapsable: la pantalla no tenía NINGUNA
               cifra dominante. Ahora manda, y los dos totales que lo componen
@@ -177,7 +205,9 @@ export default async function MovimientosPage({
             <section className="mb-5">
               <StatTile
                 emphasis="hero"
-                label={day ? "Neto de ese día" : `Neto · ${RANGE_LABEL[range].toLowerCase()}`}
+                // El label dice SOBRE QUÉ se calculó: "Neto · todo" no decía
+                // si eran los 34 movimientos de la lista o los de todo el año.
+                label={`Neto de ${alcance}`}
                 value={
                   <>
                     {total >= 0 ? "+" : "−"}
@@ -186,7 +216,7 @@ export default async function MovimientosPage({
                 }
                 sub={`${stats?.cantidad ?? visible.length} ${
                   (stats?.cantidad ?? visible.length) === 1 ? "movimiento" : "movimientos"
-                }${day ? ` · ${formatDateLong(day)}` : ""}`}
+                }`}
                 icon={total >= 0 ? "trendUp" : "trendDown"}
                 tone={total >= 0 ? "income" : "expense"}
               />
@@ -255,23 +285,10 @@ export default async function MovimientosPage({
               {/* R06: ver un solo día. Gana sobre el preset de rango. */}
               <DayPicker value={day} availableDays={availableDays} />
             </div>
-
-            {/* El filtro por día es el más restrictivo: se anuncia aparte y
-                con su propia salida. */}
-            {day && (
-              <div className="flex items-center gap-2 rounded-tile bg-tint-brand px-3 py-2.5">
-                <Icon name="calendar" size={16} className="text-primary-fg shrink-0" />
-                <p className="text-sm text-ink min-w-0 flex-1">
-                  Viendo solo el <span className="font-bold capitalize">{formatDateLong(day)}</span>
-                </p>
-                <Link
-                  href={hrefFor({ dia: null })}
-                  className="shrink-0 text-sm font-bold text-primary-fg"
-                >
-                  Ver todos
-                </Link>
-              </div>
-            )}
+            {/* El aviso propio del filtro por día se retiró: ActiveFilters ya
+                anuncia TODOS los filtros puestos arriba, con su salida. Tener
+                dos avisos distintos para el mismo estado era parte de por qué
+                no quedaba claro qué recortaba la lista. */}
           </div>
         </>
       )}

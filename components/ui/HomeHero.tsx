@@ -93,9 +93,13 @@ export function HomeHero({
 
   return (
     <>
+      {/* Alturas recortadas respecto a la primera versión: ocupaba casi media
+          pantalla y empujaba las alertas y el resumen fuera del primer
+          viewport. El saludo, en cambio, SUBE de tamaño: era lo más pequeño
+          del bloque siendo la identidad de quien usa la app. */}
       <header
-        className="-mx-4 sm:-mx-6 mb-5 bg-gradient-brand rounded-b-hero px-4 sm:px-6 pb-6 shadow-hero"
-        style={{ paddingTop: "max(1rem, env(safe-area-inset-top))" }}
+        className="-mx-4 sm:-mx-6 mb-5 bg-gradient-brand rounded-b-hero px-4 sm:px-6 pb-5 shadow-hero"
+        style={{ paddingTop: "max(0.75rem, env(safe-area-inset-top))" }}
       >
         {/* 1. Identidad */}
         <div className="flex items-center justify-between gap-3">
@@ -103,14 +107,14 @@ export function HomeHero({
             <Image
               src="/icons/logo-mark-white.png"
               alt=""
-              width={44}
-              height={44}
-              className="size-11 shrink-0 rounded-pill bg-on-brand-well p-2"
+              width={48}
+              height={48}
+              className="size-12 shrink-0 rounded-pill bg-on-brand-well p-2"
               priority
             />
             <div className="min-w-0">
-              <p className="text-xs text-on-brand-muted truncate">{greeting}</p>
-              <h1 className="text-sm font-bold text-on-brand truncate">
+              <p className="text-sm text-on-brand-muted truncate leading-tight">{greeting}</p>
+              <h1 className="text-xl font-extrabold text-on-brand truncate leading-tight">
                 {name || "Bienvenido"}
               </h1>
             </div>
@@ -136,14 +140,14 @@ export function HomeHero({
 
         {/* 2. La cifra dominante de la pantalla. Nada más aquí llega a este
             tamaño — todo lo de abajo es apoyo. */}
-        <div className="mt-7">
+        <div className="mt-4">
           <p className="text-sm font-medium text-on-brand-muted">Balance total</p>
           <MoneyValue
             value={total}
             decimals={false}
-            className="block money-hero font-extrabold text-on-brand tabular mt-0.5"
+            className="block money-lg font-extrabold text-on-brand tabular mt-0.5"
           />
-          <p className="mt-1.5 text-xs text-on-brand-muted">
+          <p className="mt-1 text-xs text-on-brand-muted">
             Quincena {periodLabel}
             {savingsPart !== 0 && (
               <>
@@ -157,39 +161,37 @@ export function HomeHero({
 
         {/* 3. Cuenta a mano — apoyo, no protagonista. */}
         {hasAccounts ? (
-          <div className="mt-5">
-            {accounts.length > 1 && (
-              <div className="flex gap-1.5 overflow-x-auto -mx-1 px-1 pb-1">
-                {accounts.map((a) => {
-                  const isActive = a.id === selected?.id;
-                  return (
-                    <button
-                      key={a.id}
-                      onClick={() => pick(a.id)}
-                      aria-pressed={isActive}
-                      className={cn(
-                        "shrink-0 rounded-pill px-4 min-h-11 text-xs font-semibold transition-colors cursor-pointer",
-                        isActive
-                          ? "bg-on-brand text-primary"
-                          : "bg-on-brand-well text-on-brand-muted hover:text-on-brand",
-                      )}
-                    >
-                      {a.name}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-            <p className="mt-2 text-xs text-on-brand-muted">
-              En {selected?.name}:{" "}
-              <span className="font-bold text-on-brand tabular">
-                {selected && selected.currency !== "DOP" ? (
-                  formatMoneyIn(selected.balance, selected.currency, false)
+          /* El saldo de la cuenta elegida vive DENTRO de su chip. Antes iba en
+             una línea aparte debajo ("En Efectivo: RD$X"), que repetía el
+             nombre que el chip activo ya mostraba y sumaba una tercera fila
+             secundaria al hero. */
+          <div className="mt-3.5 flex gap-1.5 overflow-x-auto -mx-1 px-1 pb-1">
+            {accounts.map((a) => {
+              const isActive = a.id === selected?.id;
+              const saldo =
+                a.currency !== "DOP" ? (
+                  formatMoneyIn(a.balance, a.currency, false)
                 ) : (
-                  <Money value={selected?.balance ?? 0} decimals={false} />
-                )}
-              </span>
-            </p>
+                  <Money value={a.balance} decimals={false} />
+                );
+              return (
+                <button
+                  key={a.id}
+                  onClick={() => pick(a.id)}
+                  aria-pressed={isActive}
+                  aria-label={`Ver saldo de ${a.name}`}
+                  className={cn(
+                    "shrink-0 inline-flex items-center gap-1.5 rounded-pill px-4 min-h-11 text-xs font-semibold transition-colors cursor-pointer",
+                    isActive
+                      ? "bg-on-brand text-primary"
+                      : "bg-on-brand-well text-on-brand-muted hover:text-on-brand",
+                  )}
+                >
+                  {a.name}
+                  {isActive && <span className="font-extrabold tabular">{saldo}</span>}
+                </button>
+              );
+            })}
           </div>
         ) : (
           <Link
@@ -203,7 +205,7 @@ export function HomeHero({
 
         {/* 4. Acciones. Suben al primer viewport: antes registrar un gasto
             —lo más frecuente de la app— solo se podía desde el FAB. */}
-        <div className="mt-7 grid grid-cols-4 gap-1">
+        <div className="mt-4 grid grid-cols-4 gap-1">
           <QuickAction
             icon="arrowUpRight"
             label="Gasto"
@@ -252,14 +254,14 @@ function QuickAction({
 }) {
   const content = (
     <>
-      <span className="grid place-items-center size-12 rounded-tile bg-on-brand-well text-on-brand">
-        <Icon name={icon} size={22} />
+      <span className="grid place-items-center size-11 rounded-tile bg-on-brand-well text-on-brand">
+        <Icon name={icon} size={20} />
       </span>
       <span className="text-xs font-semibold text-on-brand-muted">{label}</span>
     </>
   );
   const className =
-    "flex flex-col items-center gap-1.5 py-1 cursor-pointer active:scale-95 transition-transform";
+    "flex flex-col items-center gap-1 cursor-pointer active:scale-95 transition-transform";
 
   return href ? (
     <Link href={href} className={className}>

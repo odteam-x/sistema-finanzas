@@ -8,8 +8,12 @@ import { Icon } from "./Icon";
 // El relleno propio (--input-bg, distinto del de la tarjeta que lo contiene)
 // es lo que delimita el control; el borde solo lo remata. Por eso el borde
 // puede quedarse discreto sin perder accesibilidad.
+// `min-w-0` + `max-w-full`: un <input type="date"> trae un ancho intrínseco
+// propio (tres subcampos más el icono del calendario) y, si el contenedor es
+// más estrecho, el control se sale de su caja en vez de encogerse. Con esto
+// nunca desborda aunque alguien lo meta en una columna angosta.
 const baseControl =
-  "w-full min-h-11 rounded-tile bg-[var(--input-bg)] border border-[var(--input-border)] px-3.5 " +
+  "w-full min-w-0 max-w-full min-h-11 rounded-tile bg-[var(--input-bg)] border border-[var(--input-border)] px-3.5 " +
   "text-ink placeholder:text-muted " +
   "focus:outline-none focus:border-primary-fg focus:bg-[var(--input-bg-focus)] transition-colors";
 

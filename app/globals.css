@@ -377,22 +377,18 @@ body {
   color: #fff;
 }
 
-/* Ilustraciones de los estados vacíos (ver components/ui/Illustration.tsx).
-   Las URLs llegan como custom props desde el componente, así que esto son dos
-   reglas para las 11 ilustraciones en vez de 22. */
-.illustration {
-  background: var(--illu) center / contain no-repeat;
+/* Ilustraciones de los estados vacíos (components/ui/Illustration.tsx). Van
+   en línea en el DOM, así que consumen los tokens directamente: un solo
+   dibujo vale para claro y oscuro, sin una segunda copia por tema. */
+.illustration .ill-line {
+  stroke: var(--color-primary-fg);
 }
-[data-mode="dark"] .illustration {
-  background-image: var(--illu-dark);
+.illustration .ill-soft {
+  stroke: var(--color-line-strong);
 }
-
-/* Al imprimir se fuerza el tema claro (ver @media print arriba), así que la
-   ilustración también tiene que volver a su versión clara. */
-@media print {
-  [data-mode="dark"] .illustration {
-    background-image: var(--illu);
-  }
+.illustration .ill-fill {
+  fill: var(--color-primary-fg);
+  stroke: none;
 }
 
 /* Números tabulares para montos y tablas. overflow-wrap es un último recurso

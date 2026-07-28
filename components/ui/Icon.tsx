@@ -151,10 +151,11 @@ interface IconProps {
   "aria-label"?: string;
 }
 
-// "regular" da un trazo más fino y redondeado que el "bold" anterior — look
-// más minimalista sin cambiar de librería (Phosphor ya cubre esto con un
-// prop de peso). Se propaga solo a las ~40 llamadas existentes sin tocarlas.
-export function Icon({ name, size = 22, className, weight = "regular", ...props }: IconProps) {
+// "light": el trazo más fino que sigue siendo legible a 14-16px. Phosphor va
+// regular → light → thin; "thin" ya se rompe en los tamaños chicos de las
+// filas de lista. El peso se cambia UNA vez acá y se propaga a las ~42
+// llamadas de la app sin tocar ninguna.
+export function Icon({ name, size = 22, className, weight = "light", ...props }: IconProps) {
   const Component = icons[name];
   return <Component size={size} weight={weight} className={className} aria-hidden="true" {...props} />;
 }

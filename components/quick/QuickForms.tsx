@@ -267,15 +267,12 @@ export function QuickForms({
         <Field label="Monto total" htmlFor={`${idPrefix}-debt-amount`} required>
           <MoneyInput id={`${idPrefix}-debt-amount`} name="total_amount" required />
         </Field>
-        {/* Un <input type="date"> vacío en un campo w-full se ve como una caja
-            enorme casi sin contenido, todo el aire a la derecha del
-            "dd/mm/aaaa" — se limita el ancho al del propio campo. */}
-        <Field
-          label="Fecha de pago"
-          htmlFor={`${idPrefix}-debt-due`}
-          hint="Opcional."
-          className="max-w-[180px]"
-        >
+        {/* Este campo tenía max-w-[180px] para que un date vacío no se viera
+            como una caja enorme. Pero un <input type="date"> tiene un ancho
+            mínimo propio (los tres subcampos + el icono del calendario) que a
+            16px de texto supera esos 180px: el control se desbordaba de su
+            caja. Ancho completo, como todos los demás campos. */}
+        <Field label="Fecha de pago" htmlFor={`${idPrefix}-debt-due`} hint="Opcional.">
           <Input id={`${idPrefix}-debt-due`} name="due_date" type="date" />
         </Field>
         <Field label="Nota" htmlFor={`${idPrefix}-debt-note`}>
