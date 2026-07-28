@@ -29,7 +29,7 @@ export function GoalsRing({ saved, target, size = 108 }: GoalsRingProps) {
         aria-label={`${Math.round(pct)}% de tus metas de ahorro`}
         className="shrink-0"
       >
-        <circle cx={cx} cy={cy} r={r} fill="none" stroke="rgba(0,0,0,0.07)" strokeWidth={stroke} />
+        <circle cx={cx} cy={cy} r={r} fill="none" stroke="var(--color-surface-sunken)" strokeWidth={stroke} />
         <circle
           cx={cx}
           cy={cy}
@@ -49,7 +49,7 @@ export function GoalsRing({ saved, target, size = 108 }: GoalsRingProps) {
 
       <div className="min-w-0">
         <p className="text-xs font-medium text-muted">Ahorrado en tus metas</p>
-        <p className="text-money-md font-extrabold text-primary tabular">{formatDOP(saved, false)}</p>
+        <p className="money-md font-extrabold text-primary-fg tabular">{formatDOP(saved, false)}</p>
         <p className="text-xs text-muted mt-0.5 tabular">de {formatDOP(target, false)}</p>
       </div>
     </div>

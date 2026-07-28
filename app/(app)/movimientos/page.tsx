@@ -7,29 +7,24 @@ import {
 } from "@/lib/data";
 import { runSubscriptionCatchUp } from "@/lib/subscriptions";
 import { runSalaryCatchUp } from "@/lib/salary";
-import { formatDateLong, formatDateShort, todayISO } from "@/lib/format";
+import { formatDateLong, todayISO } from "@/lib/format";
 import { groupByDate } from "@/lib/group";
 import { isExpense, isIncome } from "@/lib/balances";
 import { RANGE_LABEL, parseRangePreset, rangeBounds, type RangePreset } from "@/lib/range";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { GlassCard } from "@/components/ui/GlassCard";
-import { CollapsibleCard } from "@/components/ui/CollapsibleCard";
+import { Card } from "@/components/ui/Card";
+import { StatTile } from "@/components/ui/StatTile";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { Badge } from "@/components/ui/Badge";
 import { IconBubble } from "@/components/ui/IconBubble";
 import { Icon } from "@/components/ui/Icon";
 import { DeleteButton } from "@/components/ui/DeleteButton";
 import { Money } from "@/components/ui/Money";
 import { SearchBar } from "@/components/ui/SearchBar";
 import { DayPicker } from "@/components/ui/DayPicker";
+import { FilterMenu } from "@/components/ui/FilterMenu";
 import { Field, Input, Select, MoneyInput } from "@/components/ui/Field";
 import { FormModal } from "@/components/ui/FormModal";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/DropdownMenu";
+import { cn } from "@/lib/cn";
 import { addMovement, deleteMovement } from "../balance/actions";
 import type { MovementSource, SavingsAccount } from "@/lib/types";
 import { undoDelete } from "../undo-actions";
@@ -154,13 +149,18 @@ export default async function MovimientosPage({
         title="Movimientos"
         subtitle="Todo lo que entra y sale de tus cuentas"
         action={
-          <div className="flex items-center gap-2">
+          /* Dos acciones competían aquí con el mismo peso. "Importar" es
+             algo que se hace una vez al mes contra un estado de cuenta;
+             registrar un movimiento es lo diario. La primera queda como
+             ícono sin relleno, la segunda conserva la píldora. */
+          <div className="flex items-center gap-1">
             <Link
               href="/movimientos/importar"
-              className="inline-flex items-center justify-center gap-1.5 min-h-11 rounded-full font-semibold text-sm cursor-pointer transition-colors active:scale-[0.97] bg-black/5 text-ink hover:bg-black/10 px-3"
+              aria-label="Importar estado de cuenta"
+              title="Importar estado de cuenta"
+              className="grid place-items-center size-11 rounded-pill text-muted hover:bg-surface-sunken hover:text-ink transition-colors shrink-0"
             >
-              <Icon name="bank" size={16} />
-              Importar
+              <Icon name="bank" size={20} />
             </Link>
             <NewMovementForm accounts={accounts} today={today} triggerLabel="Movimiento" trigger="pill" />
           </div>
@@ -168,117 +168,112 @@ export default async function MovimientosPage({
       />
 
       {movements.length > 0 && (
-        <div className="flex flex-col gap-2 mb-4">
-          <SearchBar placeholder="Buscar por nota o cuenta…" />
-          <div className="flex items-center gap-2 flex-wrap">
-            <DropdownMenu>
-              <DropdownMenuTrigger className="glass inline-flex items-center gap-1.5 rounded-2xl px-3 min-h-11 text-sm font-semibold text-ink cursor-pointer">
-                <Icon name="chevronDown" size={14} />
-                {filterLabel}
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start">
-                <DropdownMenuItem asChild>
-                  <Link href={hrefFor({ tipo: undefined })}>Todos</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href={hrefFor({ tipo: "ingresos" })}>Ingresos</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href={hrefFor({ tipo: "gastos" })}>Gastos</Link>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <div className="glass inline-flex gap-1 rounded-2xl p-1">
-              {(Object.keys(RANGE_LABEL) as RangePreset[]).map((r) => (
-                <Link
-                  key={r}
-                  href={hrefFor({ range: r, dia: null })}
-                  className={`flex items-center rounded-xl px-2.5 min-h-9 text-xs font-semibold transition-colors ${
-                    !day && r === range ? "bg-primary text-white" : "text-ink/70"
-                  }`}
-                >
-                  {RANGE_LABEL[r]}
-                </Link>
-              ))}
-            </div>
-            {/* R06: ver un solo día. Gana sobre el preset de rango. Los demás
-                controles (búsqueda, tipo, rango) se quedan visibles: elegir
-                un día no debe obligar a perderlos de vista. */}
-            <DayPicker value={day} availableDays={availableDays} />
-          </div>
-
-          {/* El filtro por día es el más restrictivo de todos: se anuncia
-              aparte y con su propia salida, en vez de quedar mezclado con
-              el resto de los controles de arriba. */}
-          {day && (
-            <div className="flex items-center gap-2 rounded-2xl bg-primary-soft px-3 py-2">
-              <Icon name="calendar" size={16} className="text-primary shrink-0" />
-              <p className="text-sm text-ink min-w-0 flex-1">
-                Viendo solo el <span className="font-bold capitalize">{formatDateLong(day)}</span>
-              </p>
-              <Link href={hrefFor({ dia: null })} className="shrink-0 text-sm font-bold text-primary">
-                Ver todos
-              </Link>
-            </div>
-          )}
-
-          {/* Analítica del filtro activo (R06), colapsada por defecto: es
-              detalle que responde "¿cuánto entró/salió?", no la primera
-              lectura de la pantalla — que es la lista misma (Bloque 3). El
-              resumen de una línea ya adelanta el neto sin tener que abrirla. */}
+        <>
+          {/* El neto del filtro activo era una línea de texto corrido dentro
+              del `summary` de un colapsable: la pantalla no tenía NINGUNA
+              cifra dominante. Ahora manda, y los dos totales que lo componen
+              quedan debajo, más chicos. */}
           {(stats?.cantidad ?? visible.length) > 0 && (
-            <CollapsibleCard
-              title="Análisis del período"
-              summary={
-                <>
-                  Ingresos <Money value={totalIngresos} decimals={false} /> · Egresos{" "}
-                  <Money value={totalEgresos} decimals={false} /> · Neto{" "}
-                  <Money value={total} decimals={false} />
-                </>
-              }
-            >
-              <div className="grid grid-cols-3 gap-2 text-center">
-                <div>
-                  <p className="text-[0.775rem] text-muted">Ingresos</p>
-                  <p className="text-sm font-bold text-primary">
-                    <Money value={totalIngresos} decimals={false} />
-                  </p>
-                </div>
-                <div>
-                  <p className="text-[0.775rem] text-muted">Egresos</p>
-                  <p className="text-sm font-bold text-danger">
-                    <Money value={totalEgresos} decimals={false} />
-                  </p>
-                </div>
-                <div>
-                  <p className="text-[0.775rem] text-muted">Neto</p>
-                  <p className="text-sm font-bold text-ink">
-                    <Money value={total} decimals={false} />
-                  </p>
-                </div>
+            <section className="mb-5">
+              <StatTile
+                emphasis="hero"
+                label={day ? "Neto de ese día" : `Neto · ${RANGE_LABEL[range].toLowerCase()}`}
+                value={
+                  <>
+                    {total >= 0 ? "+" : "−"}
+                    <Money value={Math.abs(total)} decimals={false} />
+                  </>
+                }
+                sub={`${stats?.cantidad ?? visible.length} ${
+                  (stats?.cantidad ?? visible.length) === 1 ? "movimiento" : "movimientos"
+                }${day ? ` · ${formatDateLong(day)}` : ""}`}
+                icon={total >= 0 ? "trendUp" : "trendDown"}
+                tone={total >= 0 ? "income" : "expense"}
+              />
+              <div className="grid grid-cols-2 gap-2.5 mt-2.5">
+                <StatTile
+                  emphasis="quiet"
+                  label="Entró"
+                  value={<Money value={totalIngresos} decimals={false} />}
+                  icon="arrowDownLeft"
+                  tone="income"
+                />
+                <StatTile
+                  emphasis="quiet"
+                  label="Salió"
+                  value={<Money value={totalEgresos} decimals={false} />}
+                  icon="arrowUpRight"
+                  tone="expense"
+                />
               </div>
               {stats?.busiest_date && (stats.busiest_count ?? 0) > 0 && (
-                <p className="text-xs text-muted border-t border-black/5 pt-2 mt-2">
+                <p className="text-xs text-muted mt-2.5 px-1">
                   Día con más movimientos:{" "}
-                  <Link href={hrefFor({ dia: stats.busiest_date })} className="font-semibold text-primary">
+                  <Link
+                    href={hrefFor({ dia: stats.busiest_date })}
+                    className="font-semibold text-primary-fg"
+                  >
                     {formatDateLong(stats.busiest_date)}
                   </Link>{" "}
                   · {stats.busiest_count}{" "}
                   {stats.busiest_count === 1 ? "movimiento" : "movimientos"} · neto{" "}
-                  <Money value={stats.busiest_neto ?? 0} decimals={false} className="font-semibold text-ink" />
+                  <Money
+                    value={stats.busiest_neto ?? 0}
+                    decimals={false}
+                    className="font-semibold text-ink"
+                  />
                 </p>
               )}
-            </CollapsibleCard>
+            </section>
           )}
 
-          {visible.length > 0 && (
-            <p className="text-xs text-muted px-1">
-              {stats?.cantidad ?? visible.length}{" "}
-              {(stats?.cantidad ?? visible.length) === 1 ? "movimiento" : "movimientos"}
-              {day ? ` · ${formatDateLong(day)}` : ""}
-            </p>
-          )}
-        </div>
+          {/* Filtros: todos secundarios y del mismo peso. Antes eran cuatro
+              grupos con tres tratamientos distintos (dropdown + píldoras
+              rellenas + selector de día) y ocupaban casi un viewport
+              completo antes de la primera fila de la lista. */}
+          <div className="flex flex-col gap-2.5 mb-5">
+            <SearchBar placeholder="Buscar por nota o cuenta…" />
+            <div className="flex items-center gap-2 flex-wrap">
+              <FilterMenu
+                label="Tipo"
+                value={filterLabel}
+                options={[
+                  { label: "Todos", href: hrefFor({ tipo: undefined }), active: !sp.tipo },
+                  { label: "Ingresos", href: hrefFor({ tipo: "ingresos" }), active: sp.tipo === "ingresos" },
+                  { label: "Gastos", href: hrefFor({ tipo: "gastos" }), active: sp.tipo === "gastos" },
+                ]}
+              />
+              <FilterMenu
+                label="Rango"
+                value={day ? "Un día" : RANGE_LABEL[range]}
+                options={(Object.keys(RANGE_LABEL) as RangePreset[]).map((r) => ({
+                  label: RANGE_LABEL[r],
+                  href: hrefFor({ range: r, dia: null }),
+                  active: !day && r === range,
+                }))}
+              />
+              {/* R06: ver un solo día. Gana sobre el preset de rango. */}
+              <DayPicker value={day} availableDays={availableDays} />
+            </div>
+
+            {/* El filtro por día es el más restrictivo: se anuncia aparte y
+                con su propia salida. */}
+            {day && (
+              <div className="flex items-center gap-2 rounded-tile bg-tint-brand px-3 py-2.5">
+                <Icon name="calendar" size={16} className="text-primary-fg shrink-0" />
+                <p className="text-sm text-ink min-w-0 flex-1">
+                  Viendo solo el <span className="font-bold capitalize">{formatDateLong(day)}</span>
+                </p>
+                <Link
+                  href={hrefFor({ dia: null })}
+                  className="shrink-0 text-sm font-bold text-primary-fg"
+                >
+                  Ver todos
+                </Link>
+              </div>
+            )}
+          </div>
+        </>
       )}
 
       {visible.length === 0 && movements.length === 0 ? (
@@ -295,16 +290,16 @@ export default async function MovimientosPage({
           title="Sin resultados"
           message="Ningún movimiento coincide con este filtro."
           action={
-            <Link href="/movimientos" className="text-sm font-semibold text-primary">
+            <Link href="/movimientos" className="text-sm font-semibold text-primary-fg">
               Quitar filtros
             </Link>
           }
         />
       ) : (
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-5">
           {grouped.map((group) => (
             <div key={group.date}>
-              <p className="text-xs font-semibold text-muted px-1 mb-1.5 capitalize">
+              <p className="text-xs font-semibold text-muted px-1 mb-2 capitalize">
                 {formatDateLong(group.date)}
               </p>
               <ul className="flex flex-col gap-2">
@@ -314,41 +309,51 @@ export default async function MovimientosPage({
                   const standalone = m.source === "manual" && !m.source_ref_id;
                   return (
                     <li key={m.id}>
-                      <GlassCard className="flex items-center gap-3 py-2.5">
+                      {/* El Badge estaba INTERCALADO entre el texto y el
+                          monto, así que la cifra bailaba de posición según lo
+                          largo de la etiqueta y nunca quedaba alineada con
+                          las de arriba y abajo. Ahora baja a la línea de
+                          metadatos y el monto es el último elemento: columna
+                          derecha fija, tabular, con el color de dirección. */}
+                      <Card className="flex items-center gap-3 py-3">
                         <IconBubble
                           icon={isTransfer ? "movements" : isDep ? "arrowDownLeft" : "arrowUpRight"}
-                          tone={isTransfer ? "info" : isDep ? "neutral" : "danger"}
+                          tone={isTransfer ? "info" : isDep ? "income" : "expense"}
                           size="sm"
                         />
                         <div className="min-w-0 flex-1">
-                          <p className="font-semibold text-ink truncate">
+                          <p className="text-sm font-semibold text-ink truncate">
                             {m.note ?? (isTransfer ? "Transferencia" : isDep ? "Ingreso" : "Gasto")}
                           </p>
                           <p className="text-xs text-muted truncate">
                             {isTransfer && m.to_account_id
                               ? `${accountName(m.account_id)} → ${accountName(m.to_account_id)}`
-                              : accountName(m.account_id)}{" "}
-                            · {formatDateShort(m.date)}
+                              : accountName(m.account_id)}
+                            {" · "}
+                            {isTransfer ? "Entre cuentas" : sourceLabel[m.source]}
                           </p>
                         </div>
-                        <Badge tone={isTransfer ? "info" : isDep ? "primary" : "neutral"}>
-                          {isTransfer ? "Entre cuentas" : sourceLabel[m.source]}
-                        </Badge>
-                        <p className="font-semibold text-ink shrink-0">
-                          {/* Una transferencia no suma ni resta al total: el
-                              dinero solo cambió de cuenta. */}
+                        <p
+                          className={cn(
+                            "text-sm font-bold tabular shrink-0 text-right",
+                            // Una transferencia no suma ni resta al total: el
+                            // dinero solo cambió de cuenta, así que tampoco
+                            // lleva color de dirección.
+                            isTransfer ? "text-muted" : isDep ? "text-income" : "text-expense",
+                          )}
+                        >
                           {isTransfer ? "" : isDep ? "+" : "−"}
                           <Money value={Number(m.amount)} />
                         </p>
                         {standalone && (
                           <DeleteButton
                             action={deleteMovement.bind(null, m.id)}
-                        undoAction={undoDelete}
+                            undoAction={undoDelete}
                             title="¿Eliminar movimiento?"
                             message="Se recalculará el saldo de la cuenta."
                           />
                         )}
-                      </GlassCard>
+                      </Card>
                     </li>
                   );
                 })}

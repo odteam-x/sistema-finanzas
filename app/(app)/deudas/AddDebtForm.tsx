@@ -49,7 +49,7 @@ export function AddDebtForm({
       {compact ? (
         <button
           onClick={openModal}
-          className="inline-flex items-center justify-center gap-1.5 min-h-11 rounded-full font-semibold text-sm cursor-pointer transition-colors active:scale-[0.97] bg-primary-soft text-primary hover:bg-primary/15"
+          className="inline-flex items-center justify-center gap-1.5 min-h-11 rounded-pill font-semibold text-sm cursor-pointer transition-colors active:scale-[0.97] bg-primary-soft text-primary-fg hover:bg-primary-soft"
         >
           <Icon name="plus" size={16} />
           {triggerLabel}
@@ -119,7 +119,7 @@ export function AddDebtForm({
               <Input id="due_date" name="due_date" type="date" />
             </Field>
           ) : (
-            <div className="flex flex-col gap-4 rounded-2xl bg-black/[0.03] p-3">
+            <div className="flex flex-col gap-4 rounded-tile bg-surface-sunken p-3">
               <div className="grid grid-cols-2 gap-3">
                 <Field label="N.º de cuotas" htmlFor="installments_count" required>
                   <Input
@@ -181,7 +181,7 @@ export function AddDebtForm({
 
           {error && (
             <p
-              className="text-sm font-medium text-danger bg-danger-soft rounded-2xl px-3 py-2 flex items-center gap-2"
+              className="text-sm font-medium text-danger bg-tint-expense rounded-tile px-3 py-2 flex items-center gap-2"
               role="alert"
             >
               <Icon name="alert" size={18} />

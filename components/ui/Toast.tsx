@@ -62,7 +62,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
             role="status"
             aria-live="polite"
             // Por encima de la barra inferior para no taparla.
-            className="fixed bottom-[6.5rem] lg:bottom-6 left-3 right-3 lg:left-auto lg:right-6 lg:max-w-sm z-[95] sheet-surface rounded-2xl shadow-lg shadow-black/25 px-4 py-3 flex items-center gap-3"
+            className="fixed bottom-[6.5rem] lg:bottom-6 left-3 right-3 lg:left-auto lg:right-6 lg:max-w-sm z-[95] surface-sheet rounded-tile shadow-raised px-4 py-3 flex items-center gap-3"
             initial={rm ? undefined : { opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 16 }}
@@ -73,7 +73,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
               <button
                 onClick={handleUndo}
                 disabled={undoing}
-                className="shrink-0 inline-flex items-center gap-1 rounded-full bg-primary-soft px-3 min-h-11 text-sm font-bold text-primary cursor-pointer disabled:opacity-60"
+                className="shrink-0 inline-flex items-center gap-1 rounded-pill bg-primary-soft px-3 min-h-11 text-sm font-bold text-primary-fg cursor-pointer disabled:opacity-60"
               >
                 <Icon name="repeat" size={15} />
                 {undoing ? "…" : "Deshacer"}
@@ -82,7 +82,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
             <button
               onClick={dismiss}
               aria-label="Cerrar aviso"
-              className="shrink-0 grid place-items-center size-11 rounded-full text-muted hover:bg-black/5 cursor-pointer"
+              className="shrink-0 grid place-items-center size-11 rounded-pill text-muted hover:bg-surface-sunken cursor-pointer"
             >
               <Icon name="close" size={16} />
             </button>

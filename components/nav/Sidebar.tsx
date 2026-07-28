@@ -28,7 +28,7 @@ export function Sidebar({ email }: { email: string | null }) {
         </div>
       </div>
 
-      <nav className="glass-nav border overflow-hidden rounded-[var(--radius-glass)] p-2 flex flex-col gap-0.5">
+      <nav className="surface-nav border overflow-hidden rounded-card p-2 flex flex-col gap-0.5">
         {NAV_ROUTES.map((r) => {
           const active = pathname === r.href;
           return (
@@ -37,10 +37,10 @@ export function Sidebar({ email }: { email: string | null }) {
               href={r.href}
               aria-current={active ? "page" : undefined}
               className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-2xl text-[1.05rem] font-semibold transition-colors",
+                "flex items-center gap-3 px-3 py-2.5 rounded-tile text-[1.05rem] font-semibold transition-colors",
                 active
-                  ? "bg-primary text-white shadow-sm"
-                  : "text-ink/80 hover:bg-black/5",
+                  ? "bg-gradient-brand text-white"
+                  : "text-muted hover:bg-surface-sunken hover:text-ink",
               )}
             >
               <Icon name={r.icon} size={20} weight={active ? "fill" : "regular"} />
@@ -50,7 +50,7 @@ export function Sidebar({ email }: { email: string | null }) {
         })}
       </nav>
 
-      <div className="mt-auto glass-nav border rounded-[var(--radius-glass)] p-3">
+      <div className="mt-auto surface-nav border rounded-card p-3">
         {email && (
           <p className="text-xs text-muted px-1 mb-2 truncate" title={email}>
             {email}

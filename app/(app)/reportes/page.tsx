@@ -4,16 +4,11 @@ import { formatDateLong, formatDOP, formatMonthShort, todayISO, toISODate } from
 import { monthPeriods } from "@/lib/periods";
 import { cn } from "@/lib/cn";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { GlassCard } from "@/components/ui/GlassCard";
+import { Card } from "@/components/ui/Card";
 import { StatTile } from "@/components/ui/StatTile";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Icon } from "@/components/ui/Icon";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/DropdownMenu";
+import { FilterMenu } from "@/components/ui/FilterMenu";
 import { BarCompare, type Bar } from "@/components/charts/BarCompare";
 import { DonutChart } from "@/components/charts/DonutChart";
 import { Money } from "@/components/ui/Money";
@@ -201,67 +196,44 @@ export default async function ReportesPage({
         Cachin&apos; · Reporte generado el {formatDateLong(today)}
       </p>
 
-      <div className="flex flex-wrap items-center gap-2 mb-4 print:hidden">
-        <div className="glass inline-flex gap-1 rounded-2xl p-1">
-          {(["quincena", "mes"] as const).map((m) => (
-            <Link
-              key={m}
-              href={hrefFor({ modo: m })}
-              className={cn(
-                "rounded-xl px-3 py-1.5 text-sm font-semibold transition-colors capitalize",
-                mode === m ? "bg-primary text-white" : "text-muted",
-              )}
-            >
-              {m}
-            </Link>
-          ))}
-        </div>
-
-        <div className="glass inline-flex gap-1 rounded-2xl p-1">
-          {HISTORY_OPTIONS.map((m) => {
-            const active = m === monthsCount;
-            const disabled = !active && !availableOptions.includes(m);
-            return disabled ? (
-              <span
-                key={m}
-                aria-disabled="true"
-                title={`Aún no tienes ${m} meses de historial`}
-                className="rounded-xl px-3 py-1.5 text-sm font-semibold text-muted/40 cursor-not-allowed"
-              >
-                {m}M
-              </span>
-            ) : (
-              <Link
-                key={m}
-                href={hrefFor({ months: m, tag: tagFilter })}
-                className={cn(
-                  "rounded-xl px-3 py-1.5 text-sm font-semibold transition-colors",
-                  active ? "bg-primary text-white" : "text-muted",
-                )}
-              >
-                {m}M
-              </Link>
-            );
-          })}
-        </div>
-
+      {/* Filtros. Antes eran dos filas de píldoras RELLENAS (la activa en
+          teal sólido, con el mismo peso que un botón de acción) más un
+          dropdown de otro tamaño: tres controles compitiendo entre sí y con
+          la acción primaria. Ahora los tres son el mismo selector
+          secundario, y el valor activo se lee dentro del disparador. */}
+      <div className="flex flex-wrap items-center gap-2 mb-6 print:hidden">
+        <FilterMenu
+          label="Periodo"
+          value={mode === "mes" ? "Mes" : "Quincena"}
+          options={[
+            { label: "Quincena", href: hrefFor({ modo: "quincena" }), active: mode === "quincena" },
+            { label: "Mes", href: hrefFor({ modo: "mes" }), active: mode === "mes" },
+          ]}
+        />
+        <FilterMenu
+          label="Historial"
+          value={`${monthsCount} meses`}
+          options={HISTORY_OPTIONS.map((m) => ({
+            label: `${m} meses`,
+            href: hrefFor({ months: m, tag: tagFilter }),
+            active: m === monthsCount,
+            disabled: m !== monthsCount && !availableOptions.includes(m),
+            disabledReason: `Aún no tienes ${m} meses de historial`,
+          }))}
+        />
         {tags.length > 0 && (
-          <DropdownMenu>
-            <DropdownMenuTrigger className="glass inline-flex items-center gap-1.5 rounded-2xl px-3 py-1.5 text-sm font-semibold text-ink cursor-pointer">
-              <Icon name="chevronDown" size={14} />
-              {activeTagName ?? "Todas las etiquetas"}
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start">
-              <DropdownMenuItem asChild>
-                <Link href={hrefFor({ months: monthsCount })}>Todas las etiquetas</Link>
-              </DropdownMenuItem>
-              {tags.map((t) => (
-                <DropdownMenuItem key={t.id} asChild>
-                  <Link href={hrefFor({ months: monthsCount, tag: t.id })}>{t.name}</Link>
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <FilterMenu
+            label="Etiqueta"
+            value={activeTagName ?? "Todas"}
+            options={[
+              { label: "Todas las etiquetas", href: hrefFor({ months: monthsCount }), active: !tagFilter },
+              ...tags.map((t) => ({
+                label: t.name,
+                href: hrefFor({ months: monthsCount, tag: t.id }),
+                active: t.id === tagFilter,
+              })),
+            ]}
+          />
         )}
       </div>
 
@@ -274,7 +246,7 @@ export default async function ReportesPage({
           action={
             <Link
               href="/presupuesto"
-              className="inline-flex items-center justify-center gap-2 rounded-full font-semibold min-h-11 px-4 text-[1.05rem] bg-gradient-brand text-white shadow-sm hover:brightness-[0.97] active:brightness-95"
+              className="inline-flex items-center justify-center gap-2 rounded-pill font-semibold min-h-11 px-4 text-[1.05rem] bg-gradient-brand text-white shadow-sm hover:brightness-[0.97] active:brightness-95"
             >
               <Icon name="plus" size={18} />
               Registrar gasto
@@ -283,41 +255,78 @@ export default async function ReportesPage({
         />
       ) : (
         <>
-          <div className="grid grid-cols-2 gap-3 mb-4">
+          {/* LA cifra dominante de la pantalla. El kit pide un total arriba;
+              en una pantalla de reportes ese total tiene que hablar del
+              período que se está reportando, no del saldo de la billetera
+              (que ya manda en Inicio y en Balance). Antes no había ninguna
+              cifra dominante: cinco StatTile del mismo tamaño. */}
+          <section className="mb-6 rounded-hero bg-gradient-brand px-5 py-6 shadow-hero print:shadow-none">
+            <p className="text-sm font-medium text-on-brand-muted">
+              {hasIncomeHistory ? "Neto del período" : "Gasto del período"}
+            </p>
+            <p className="money-hero font-extrabold text-on-brand tabular mt-0.5">
+              {hasIncomeHistory ? (
+                <>
+                  {currentNet >= 0 ? "+" : "−"}
+                  {formatDOP(Math.abs(currentNet), false)}
+                </>
+              ) : (
+                formatDOP(currentTotal, false)
+              )}
+            </p>
+            <p className="mt-1.5 text-xs text-on-brand-muted capitalize">
+              {current.barLabel}
+              {hasIncomeHistory && (
+                <span className="normal-case">
+                  {currentNet >= 0 ? " · te sobró dinero" : " · gastaste más de lo que entró"}
+                </span>
+              )}
+            </p>
+          </section>
+
+          {/* Las dos tarjetas que sostienen esa cifra: de dónde salió.
+              Flecha abajo = entra, flecha arriba = sale. */}
+          {hasIncomeHistory && (
+            <div className="grid grid-cols-2 gap-2.5 mb-4">
+              <StatTile
+                label="Ingreso"
+                value={<Money value={currentIncome} decimals={false} />}
+                icon="arrowDownLeft"
+                tone="income"
+              />
+              <StatTile
+                label="Gasto"
+                value={<Money value={currentTotal} decimals={false} />}
+                icon="arrowUpRight"
+                tone="expense"
+              />
+            </div>
+          )}
+
+          {/* Contexto, en `quiet`: no compiten con las dos de arriba. */}
+          <div className="grid grid-cols-2 gap-2.5 mb-6">
+            {!hasIncomeHistory && (
+              <StatTile
+                emphasis="quiet"
+                label="Gasto en este período"
+                value={<Money value={currentTotal} decimals={false} />}
+                icon="wallet"
+                tone="neutral"
+              />
+            )}
             <StatTile
-              label="Gasto en este período"
-              value={<Money value={currentTotal} decimals={false} />}
-              icon="wallet"
-              tone="neutral"
-            />
-            <StatTile
+              emphasis="quiet"
               label="Cambio vs período anterior"
               value={`${change >= 0 ? "+" : ""}${Math.round(change)}%`}
               sub={`Antes: ${formatDOP(previousTotal, false)}`}
               icon={change > 0 ? "trendUp" : "trendDown"}
-              tone={change > 0 ? "danger" : "primary"}
+              tone={change > 0 ? "expense" : "income"}
             />
-            {hasIncomeHistory && (
-              <>
-                <StatTile
-                  label="Ingreso en este período"
-                  value={<Money value={currentIncome} decimals={false} />}
-                  icon="arrowDownLeft"
-                  tone="primary"
-                />
-                <StatTile
-                  label="Neto en este período"
-                  value={<Money value={currentNet} decimals={false} />}
-                  sub={currentNet >= 0 ? "Ahorraste" : "Gastaste de más"}
-                  icon={currentNet >= 0 ? "trendUp" : "trendDown"}
-                  tone={currentNet >= 0 ? "primary" : "danger"}
-                />
-              </>
-            )}
             {topCategory && (
               <StatTile
-                className="col-span-2"
-                label="Categoría más costosa del período"
+                emphasis="quiet"
+                className={hasIncomeHistory ? undefined : "col-span-2"}
+                label="Categoría más costosa"
                 value={topCategory.name}
                 sub={formatDOP(topCategory.value, false)}
                 icon="chart"
@@ -326,66 +335,75 @@ export default async function ReportesPage({
             )}
           </div>
 
-          <GlassCard className="mb-4 print:break-inside-avoid">
-            <h2 className="font-bold text-ink mb-3">Gasto total por período</h2>
-            <BarCompare bars={bars} />
-          </GlassCard>
+          <section className="mb-6 print:break-inside-avoid">
+            <h2 className="text-sm font-bold text-ink px-1 mb-2.5">Gasto total por período</h2>
+            <Card>
+              <BarCompare bars={bars} />
+            </Card>
+          </section>
 
           {/* Ingresos vs gastos: solo si hay al menos un sueldo confirmado en
               la ventana — si nunca se ha usado Ingresos, esta sección se
               vería vacía sin explicar por qué. */}
+          {/* Ingresos vs gastos: solo si hay al menos un sueldo confirmado en
+              la ventana — si nunca se ha usado Ingresos, esta sección se
+              vería vacía sin explicar por qué. */}
           {hasIncomeHistory && (
-            <GlassCard className="mb-4 print:break-inside-avoid">
-              <h2 className="font-bold text-ink mb-1">Ingresos vs. gastos</h2>
-              <p className="text-sm text-muted mb-3">
-                Verde = te sobró dinero ese período · Rojo = gastaste más de lo que entró.
-              </p>
-              <div className="flex flex-col gap-4">
-                {netByPeriod.map((p) => (
-                  <div key={p.name}>
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-sm text-ink capitalize">{p.name}</span>
-                      <span
-                        className={cn(
-                          "text-sm font-bold tabular",
-                          p.net >= 0 ? "text-primary" : "text-danger",
-                        )}
-                      >
-                        {p.net >= 0 ? "+" : "−"}
-                        {formatDOP(Math.abs(p.net), false)}
-                      </span>
+            <section className="mb-6 print:break-inside-avoid">
+              <h2 className="text-sm font-bold text-ink px-1 mb-2.5">Ingresos vs. gastos</h2>
+              <Card>
+                {/* Leyenda arriba y separada por espacio, no por una línea
+                    debajo del gráfico: se lee ANTES de mirar las barras, que
+                    es cuando hace falta. */}
+                <div className="flex items-center gap-4 mb-5 text-xs text-muted">
+                  <span className="inline-flex items-center gap-1.5">
+                    <span className="size-2.5 rounded-pill bg-income" /> Ingreso
+                  </span>
+                  <span className="inline-flex items-center gap-1.5">
+                    <span className="size-2.5 rounded-pill bg-expense" /> Gasto
+                  </span>
+                </div>
+                <div className="flex flex-col gap-4">
+                  {netByPeriod.map((p) => (
+                    <div key={p.name}>
+                      <div className="flex items-center justify-between gap-3 mb-1.5">
+                        <span className="text-sm text-muted capitalize min-w-0 truncate">{p.name}</span>
+                        <span
+                          className={cn(
+                            "text-sm font-bold tabular shrink-0",
+                            p.net >= 0 ? "text-income" : "text-expense",
+                          )}
+                        >
+                          {p.net >= 0 ? "+" : "−"}
+                          {formatDOP(Math.abs(p.net), false)}
+                        </span>
+                      </div>
+                      <div className="flex gap-1">
+                        <div
+                          className="h-2.5 rounded-pill bg-income"
+                          style={{ width: `${(p.income / maxFlow) * 100}%` }}
+                          title={`Ingreso: ${formatDOP(p.income, false)}`}
+                        />
+                        <div
+                          className="h-2.5 rounded-pill bg-expense"
+                          style={{ width: `${(p.expense / maxFlow) * 100}%` }}
+                          title={`Gasto: ${formatDOP(p.expense, false)}`}
+                        />
+                      </div>
                     </div>
-                    <div className="flex gap-1">
-                      <div
-                        className="h-2.5 rounded-full bg-primary"
-                        style={{ width: `${(p.income / maxFlow) * 100}%` }}
-                        title={`Ingreso: ${formatDOP(p.income, false)}`}
-                      />
-                      <div
-                        className="h-2.5 rounded-full bg-danger/70"
-                        style={{ width: `${(p.expense / maxFlow) * 100}%` }}
-                        title={`Gasto: ${formatDOP(p.expense, false)}`}
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <div className="flex items-center gap-4 mt-3 pt-3 border-t border-black/5 text-xs text-muted">
-                <span className="inline-flex items-center gap-1.5">
-                  <span className="size-2.5 rounded-full bg-primary" /> Ingreso
-                </span>
-                <span className="inline-flex items-center gap-1.5">
-                  <span className="size-2.5 rounded-full bg-danger/70" /> Gasto
-                </span>
-              </div>
-            </GlassCard>
+                  ))}
+                </div>
+              </Card>
+            </section>
           )}
 
           {donutData.length > 0 && (
-            <GlassCard className="print:break-inside-avoid">
-              <h2 className="font-bold text-ink mb-3">Distribución de este período</h2>
-              <DonutChart data={donutData} centerLabel="Este período" />
-            </GlassCard>
+            <section className="print:break-inside-avoid">
+              <h2 className="text-sm font-bold text-ink px-1 mb-2.5">Distribución de este período</h2>
+              <Card>
+                <DonutChart data={donutData} centerLabel="Este período" />
+              </Card>
+            </section>
           )}
         </>
       )}

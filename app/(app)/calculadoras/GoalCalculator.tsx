@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { Field, Input, MoneyInput } from "@/components/ui/Field";
-import { GlassCard } from "@/components/ui/GlassCard";
 import { FormModal } from "@/components/ui/FormModal";
 import { formatDOP, todayISO } from "@/lib/format";
 import { periodAfterN } from "@/lib/periods";
@@ -22,6 +21,20 @@ export function GoalCalculator() {
 
   return (
     <div className="flex flex-col gap-4">
+      {/* El resultado ARRIBA, no debajo de los campos: se actualiza en vivo
+          mientras escribes, y en móvil quedaba fuera de la pantalla justo
+          cuando el teclado está abierto — o sea, invisible siempre que
+          servía de algo. */}
+      <div className="rounded-hero bg-gradient-brand px-5 py-6 text-center shadow-hero">
+        <p className="text-sm font-medium text-on-brand-muted">Debes ahorrar por quincena</p>
+        <p className="money-lg font-extrabold text-on-brand tabular mt-0.5">
+          {perPeriod != null ? formatDOP(perPeriod, false) : "—"}
+        </p>
+        <p className="text-xs text-on-brand-muted mt-1.5">
+          {targetN > 0 ? `Faltan ${formatDOP(remaining, false)}` : "Completa el objetivo y las quincenas"}
+        </p>
+      </div>
+
       <Field label="Monto objetivo" htmlFor="goal-target" required>
         <MoneyInput id="goal-target" value={target} onChange={(e) => setTarget(e.target.value)} />
       </Field>
@@ -38,16 +51,6 @@ export function GoalCalculator() {
           onChange={(e) => setPeriods(e.target.value)}
         />
       </Field>
-
-      <GlassCard className="text-center">
-        <p className="text-xs text-muted">Debes ahorrar por quincena</p>
-        <p className="text-money-md font-extrabold text-primary tabular mt-1">
-          {perPeriod != null ? formatDOP(perPeriod, false) : "—"}
-        </p>
-        {targetN > 0 && (
-          <p className="text-xs text-muted mt-1">Faltan {formatDOP(remaining, false)}</p>
-        )}
-      </GlassCard>
 
       {targetN > 0 && (
         <FormModal

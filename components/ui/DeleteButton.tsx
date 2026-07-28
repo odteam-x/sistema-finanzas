@@ -59,7 +59,7 @@ export function DeleteButton({
       <button
         onClick={() => setOpen(true)}
         aria-label={label}
-        className="grid place-items-center size-11 rounded-full text-muted hover:text-danger hover:bg-danger-soft transition-colors cursor-pointer"
+        className="grid place-items-center size-11 rounded-pill text-muted hover:text-danger hover:bg-tint-expense transition-colors cursor-pointer"
       >
         <Icon name="trash" size={18} />
       </button>

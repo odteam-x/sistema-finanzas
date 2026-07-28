@@ -1,47 +1,73 @@
 @import "tailwindcss";
 
 /* ---------------------------------------------------------------------------
-   Design tokens — Bolsillo Seguro
+   Design tokens — Cachin'
    Una sola marca (teal), light + dark — ver [data-mode="dark"] más abajo.
-   El selector de 5 colores se retiró en la Fase 3 del rediseño: todos los
-   componentes ya consumían estas variables, así que recolorear aquí basta,
-   sin tocar componentes.
+
+   Rediseño "Mobile E-Wallet": el sistema es de SUPERFICIES SÓLIDAS. No hay
+   backdrop-filter en ningún lado. Lo que antes se separaba por vidrio (nav,
+   modal, hoja, header) ahora se separa por superficie opaca + sombra + línea.
+   Los tokens que quedan con nombre `--glass-*` son alias de compatibilidad
+   mientras se migran los últimos componentes; no añadir usos nuevos.
 --------------------------------------------------------------------------- */
 @theme {
-  /* Fondo base — antes "cream" (aun con un valor casi blanco en claro):
-     el mismo nombre de token en ambos modos leía como si el oscuro fuera
-     "el crema oscurecido". Son valores elegidos por separado; el nombre
-     ya no sugiere esa relación. */
+  /* Fondo base de la app (detrás de las tarjetas). */
   --color-bg: #eef6f6;
 
-  /* brand: verificado con checker de contraste real (WCAG) — vs. blanco da
-     5.53:1 (AA normal). El dark-mode de abajo usa un teal apenas más claro
-     que sigue pasando AA con texto blanco (ver nota ahí: una marca más
-     brillante en dark que además exija texto oscuro no pasa 4.5:1 con
-     ningún teal "vivo" — se comprobó numéricamente — así que el texto sobre
-     superficies de marca se queda blanco en ambos modos). */
+  /* Marca. Verificado con checker de contraste real (WCAG):
+     primary vs blanco 5.53:1 y primary-active vs blanco 9.71:1 (AA normal en
+     ambos) — son los dos extremos del gradiente, así que el texto blanco pasa
+     AA en TODO el recorrido, no solo en un punto. `accent` queda FUERA del
+     gradiente a propósito: blanco sobre accent da 3.66:1, que no pasa AA
+     normal; accent se reserva a rellenos y barras, nunca a fondo de texto. */
   --color-primary: #127478;
   --color-primary-hover: #0f5f63;
   --color-primary-active: #0c4c4f;
   --color-primary-soft: #dceeee;
   --color-accent: #1d9498;
 
-  /* Bloque 4 — gris neutro real, no teal apagado. Antes ink/muted/subtle
-     tenían un tinte teal deliberado, así que TODO lo que los usa (texto
-     secundario, bordes, íconos "neutral") heredaba ese tinte — resultado
-     percibido: "solo hay 2 colores", aunque el sistema de tokens ya tenía
-     4 semánticos (abajo). Cada valor nuevo es la versión gris pura (R=G=B)
-     de MISMA LUMINANCIA que el original — no un gris cualquiera: preserva
-     exactamente los contrastes AA ya verificados (ink ~16:1, muted 4.80:1,
-     subtle 3.87:1 vs. blanco), solo le quita el tinte. El teal queda
-     reservado a marca/CTAs (--color-primary/accent, sin tocar). */
+  /* Teal COMO TEXTO sobre una superficie (enlaces "Ver todos", montos
+     destacados). En claro coincide con primary; en oscuro NO puede: primary
+     sobre la superficie oscura da 3.34:1 y falla AA. El override de dark usa
+     un teal más luminoso (5.39:1). Sin este token, cada enlace teal de la app
+     era ilegible en modo oscuro. */
+  --color-primary-fg: #127478;
+
+  /* Contenido SOBRE el gradiente de marca (hero). El gradiente tiene dos
+     extremos, así que todo lo que va encima se verifica contra el más claro:
+     - on-brand: blanco, 5.53:1 (claro) / 6.72:1 (oscuro).
+     - on-brand-muted: el label secundario. NO es blanco con opacidad — una
+       alfa sobre un gradiente da un contraste distinto en cada punto. Es un
+       blanco teñido fijo: 4.65:1 (claro) / 5.15:1 (oscuro).
+     - on-brand-well: pozo sólido para chips e íconos que se apoyan sobre el
+       gradiente. Reemplaza a los `bg-white/15..25`, que dependían de qué
+       tono del gradiente les tocara debajo. */
+  --color-on-brand: #ffffff;
+  --color-on-brand-muted: #dcefef;
+  --color-on-brand-well: #0a4245;
+
+  /* Neutros: gris real (R=G=B), no teal apagado. El teal queda reservado a
+     marca/CTAs.
+     `muted` era #727272, verificado contra BLANCO (4.81:1) — pero la mitad
+     del texto secundario de la app no vive sobre blanco: vive sobre el fondo
+     de página (#eef6f6, teñido) o sobre la superficie hundida, donde caía a
+     4.39 y 4.30 y fallaba AA. El valor nuevo se verificó contra el peor de
+     los tres fondos reales (4.76:1).
+     `subtle` queda solo para texto deshabilitado, que WCAG 1.4.3 exime; los
+     placeholders, que NO están exentos, pasaron a usar `muted`. */
   --color-ink: #212121;
-  --color-muted: #727272;
+  --color-muted: #6b6b6b;
   --color-subtle: #848484;
 
-  /* Semánticos: fijos siempre (verde=bien, rojo=mal, sin importar el modo).
-     Terracota/ámbar/verde cercanos a los valores originales del sitio —
-     ya estaban en la misma familia que pedía el rediseño. */
+  /* Texto secundario SOBRE UN TINTE (labels de StatTile, filas teñidas).
+     `muted` se verificó contra blanco (4.81:1), pero los tintes son más
+     oscuros que el blanco y ahí cae a 3.89:1 — falla AA. No hay margen para
+     arreglarlo aclarando los tintes: muted sobre blanco puro ya está a
+     4.81, así que ningún fondo real le da 4.5 con holgura. La solución es
+     un tono propio, verificado contra el PEOR de los seis tintes (5.41:1). */
+  --color-on-tint: #5c5c5c;
+
+  /* Semánticos de ESTADO: fijos en ambos modos (verde=bien, rojo=mal). */
   --color-danger: #d2503f;
   --color-danger-soft: #fae2de;
   --color-warning: #b87213;
@@ -51,25 +77,59 @@
   --color-info: #5c7690;
   --color-info-soft: #e6ebee;
 
-  /* Relleno de ícono "neutral" (IconBubble) — mismo cálculo de luminancia
-     que arriba, esta vez igualado a --color-primary-soft para conservar el
-     mismo peso visual pero en gris, no en teal. */
+  /* Semánticos de DIRECCIÓN DEL DINERO — distintos de los de estado a
+     propósito: "entra/sale dinero" no es "bien/mal" (un gasto planificado no
+     es un error). Antes esto se resolvía ad hoc y distinto en cada pantalla:
+     `primary` en Reportes, `neutral` en Movimientos e Inicio.
+     Los valores NO son alias directos de success/danger: como texto sobre
+     blanco, danger da 4.23:1 y falla AA — el monto de un gasto es justo lo
+     que el rediseño exige que se lea bien.
+     Y no basta con verificarlos sobre blanco: el monto de un StatTile de
+     ingreso/gasto se pinta sobre su PROPIO tinte, que es más oscuro. Con
+     #2b7c51/#c2412f eso daba 4.32 y 4.15 — otra vez por debajo de AA. Estos
+     pasan sobre el tinte (5.29 y 5.00) y de sobra sobre blanco. */
+  --color-income: #256d46;
+  --color-expense: #b03626;
+
+  /* Superficies. Todas OPACAS. Tres niveles: la página (bg), la tarjeta
+     (surface), y lo que se eleva sobre la tarjeta (raised) o se hunde en ella
+     (sunken: tracks de barras, filas internas, celdas). */
+  --color-surface: #ffffff;
+  --color-surface-raised: #ffffff;
+  --color-surface-sunken: #eef3f3;
+  --color-surface-nav: #ffffff;
+  --color-surface-modal: #ffffff;
+  --color-surface-sheet: #ffffff;
+
+  /* Líneas. `line` separa sin pesar (filas de una lista). `line-strong` es
+     para bordes que SÍ delimitan un control (botón secundario, input) —
+     ahí el relleno propio del control es el indicador principal, la línea
+     solo lo remata. */
+  --color-line: #e2ebeb;
+  --color-line-strong: #b9cccc;
+
+  /* Tintes SÓLIDOS para tiles e IconBubble. Reemplazan a los `-soft` con
+     alpha: sobre una tarjeta clara se veían igual, pero sobre una oscura el
+     resultado dependía de qué hubiera debajo. */
+  --color-tint-brand: #dceeee;
+  --color-tint-income: #dff0e6;
+  --color-tint-expense: #fae2de;
+  --color-tint-warning: #faebd6;
+  --color-tint-info: #e6ebee;
+  --color-tint-neutral: #eaeaea;
+
+  /* Relleno de ícono "neutral" (IconBubble). Alias histórico de tint-neutral. */
   --color-neutral-soft: #eaeaea;
 
   --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, -apple-system,
     "Segoe UI", Roboto, sans-serif;
 
-  /* R16 (+ ronda J4) — escala tipográfica de la app. Se redefine la escala
-     ENTERA acá en vez de tocar cada componente: como todo el código usa las
-     clases estándar (text-sm, text-xl…), subir estos tokens propaga a las
-     ~50 pantallas de una vez y mantiene las proporciones entre tamaños.
-     La primera pasada (R16) subió ~10% sobre el default de Tailwind pero
-     seguía viéndose chico; esta ronda sube otro escalón y fija pisos
-     redondos: text-sm = 16px (el mínimo mobile que evita el zoom automático
-     de iOS al enfocar un input) y text-base = 18px de cuerpo. Los tamaños
-     grandes (2xl+, números clave como el balance) suben más que los chicos
-     — la info importante debe distinguirse de la normal, no solo escalar
-     junta con ella. */
+  /* Escala tipográfica de la app: se redefine ENTERA acá en vez de tocar cada
+     componente — como todo el código usa las clases estándar (text-sm,
+     text-xl…), subir estos tokens propaga a las ~50 pantallas de una vez y
+     mantiene las proporciones. Pisos redondos: text-sm = 16px (el mínimo
+     mobile que evita el zoom automático de iOS al enfocar un input) y
+     text-base = 18px de cuerpo. */
   --text-xs: 0.875rem;    /* 14px — metadatos, nunca cuerpo de texto */
   --text-xs--line-height: 1.45;
   --text-sm: 1rem;        /* 16px */
@@ -89,88 +149,121 @@
   --text-5xl: 3.5rem;     /* 56px */
   --text-5xl--line-height: 1.05;
 
-  --radius-glass: 20px;
-  --radius-glass-sm: 14px;
+  /* Radios grandes del lenguaje e-wallet. `hero` es el bloque superior
+     (esquinas inferiores), `card` las tarjetas, `tile` los cuadrados del
+     grid y los stat tiles. */
+  --radius-hero: 28px;
+  --radius-card: 24px;
+  --radius-tile: 20px;
+  --radius-pill: 999px;
+
+  /* Elevación. Todas con desplazamiento Y + difuminado suave (una sombra sin
+     offset es un halo decorativo, no elevación). El tinte se define por modo
+     más abajo, así que la misma sombra funciona en claro y oscuro. */
+  --shadow-card: 0 1px 2px var(--elev-tint), 0 8px 24px -14px var(--elev-tint-strong);
+  --shadow-raised: 0 2px 4px var(--elev-tint), 0 16px 36px -18px var(--elev-tint-strong);
+  --shadow-nav: 0 -1px 2px var(--elev-tint), 0 -10px 30px -16px var(--elev-tint-strong);
+  --shadow-fab: 0 4px 10px -2px var(--elev-tint-strong), 0 14px 30px -10px var(--elev-tint-strong);
+  --shadow-hero: 0 4px 12px -4px var(--elev-tint-strong), 0 20px 44px -22px var(--elev-tint-strong);
 }
 
 :root {
   color-scheme: light;
 
-  /* Superficies sólidas para tarjetas de contenido (StatTile, GlassCard,
-     EmptyState...). Antes eran translúcidas con blur ("glassmorfismo") pero
-     eso quedaba reservado a elementos que SÍ flotan sobre otro contenido
-     (nav, modal, sheet) — el resto ahora es opaco, sin blur, más liviano en
-     móvil y sin el ruido visual de ver el fondo a través de la tarjeta. */
-  --glass-bg: #ffffff;
-  --glass-bg-strong: #ffffff;
-  /* Estas tres SÍ flotan sobre otro contenido: mantienen translucidez.
-     (Antes con un tinte cálido tipo crema — 252,250,246 — se pasan a un
-     blanco frío, a tono con el resto de la paleta.) */
-  --glass-bg-modal: rgba(248, 252, 252, 0.98);
-  --glass-bg-sheet: rgba(248, 252, 252, 0.97);
-  --glass-bg-nav: rgba(255, 255, 255, 0.78);
-  --glass-border: rgba(20, 30, 24, 0.06);
+  /* Extremos del gradiente de marca. Son tokens propios (no reusan
+     primary/primary-active directamente) porque el extremo claro tiene que
+     ser MÁS OSCURO en modo oscuro: con el `primary` de dark (#148185) ni el
+     blanco puro llega a 4.5:1, así que un label secundario encima no podría
+     pasar AA por más que se ajuste su color. Ver el override de abajo. */
+  --brand-grad-from: #0c4c4f;
+  --brand-grad-to: #127478;
 
-  /* Inputs (Field.tsx): superficie propia, distinta de las tarjetas —
-     así un input dentro de una tarjeta oscura se ve "elevado" y nunca
-     queda claro fijo sin importar el modo. */
+  /* Tinte de las sombras (ver --shadow-* arriba). */
+  --elev-tint: rgba(31, 42, 35, 0.06);
+  --elev-tint-strong: rgba(31, 42, 35, 0.22);
+
+  /* Inputs: superficie propia, distinta de la tarjeta que los contiene — así
+     un input dentro de una tarjeta oscura se lee "elevado" y nunca queda
+     claro fijo sin importar el modo. Ese relleno propio es el indicador de
+     control; el borde solo lo remata (por eso no necesita llegar a 3:1). */
   --input-bg: #ffffff;
   --input-bg-focus: #ffffff;
-  --input-border: rgba(20, 30, 24, 0.14);
-  --glass-border-strong: rgba(20, 30, 24, 0.08);
-  --glass-shadow: rgba(31, 42, 35, 0.14);
+  --input-border: #cbdada;
 }
 
 /* ---------------------------------------------------------------------------
-   Modo oscuro — [data-mode="dark"] en <html>. Una sola marca (teal): el
-   selector de 5 colores se retiró en la Fase 3. El teal de acá NO es el
-   claro invertido — es un poco más vívido (dark mode "sube de luminosidad"
-   respecto al claro) pero se mantuvo dentro del rango que sigue pasando AA
-   con texto blanco (4.66:1 verificado); un teal más brillante que el spec
-   original sugería deja de pasar 4.5:1 con blanco en cualquier combinación
-   probada — habría que invertir el texto a oscuro en botones/tabs/nav, que
-   es un cambio de componentes (Fase 4), no de tokens.
+   Modo oscuro — [data-mode="dark"] en <html>. El teal de acá NO es el claro
+   invertido: es un poco más vívido (dark mode "sube de luminosidad") pero
+   dentro del rango que sigue pasando AA con texto blanco en AMBOS extremos
+   del gradiente (8.67:1 y 4.66:1 verificados).
 --------------------------------------------------------------------------- */
 [data-mode="dark"] {
   color-scheme: dark;
   --color-bg: #0a1213;
-  /* Mismo criterio que en claro: gris real de igual luminancia al teal-gris
-     original, no un valor elegido a ojo. */
+
   --color-ink: #f0f0f0;
   --color-muted: #a9a9a9;
   --color-subtle: #828282;
-  --color-neutral-soft: #313131;
+  /* En oscuro los tintes son más OSCUROS que la superficie, así que el
+     mismo gris de `muted` ya pasa con holgura (5.27:1 en el peor tinte). */
+  --color-on-tint: #a9a9a9;
 
   --color-primary: #148185;
   --color-primary-hover: #106669;
   --color-primary-active: #0d5457;
   --color-primary-soft: #123638;
   --color-accent: #1b9599;
+  /* Ver la nota de --color-primary-fg arriba: primary sobre la superficie
+     oscura da 3.34:1 (falla). Este da 5.39:1. */
+  --color-primary-fg: #25a8ac;
+
+  /* El extremo claro del gradiente baja a primary-hover: con #148185 el
+     blanco solo llega a 4.66:1 y no queda margen para un label secundario.
+     Con #106669 el blanco da 6.72:1 y el label teñido 5.15:1 — los dos AA. */
+  --brand-grad-from: #0d5457;
+  --brand-grad-to: #106669;
+  --color-on-brand: #ffffff;
+  --color-on-brand-muted: #cfe6e6;
+  --color-on-brand-well: #072e30;
 
   --color-danger: #e8705c;
-  --color-danger-soft: rgba(232, 112, 92, 0.18);
+  --color-danger-soft: #3a2a25;
   --color-warning: #dfa043;
-  --color-warning-soft: rgba(223, 160, 67, 0.2);
+  --color-warning-soft: #3b2f1a;
   --color-success: #52b788;
-  --color-success-soft: rgba(82, 183, 136, 0.18);
-  --color-info-soft: rgba(92, 118, 144, 0.22);
+  --color-success-soft: #1e3a2c;
+  /* En claro este token no se declaraba en dark y heredaba #5c7690, que sobre
+     fondo oscuro es prácticamente ilegible. */
+  --color-info: #8aa4bd;
+  --color-info-soft: #232d38;
 
-  /* Tarjetas de contenido: superficie sólida elevada (más clara que el
-     fondo), sin blur — mismo criterio que en modo claro. */
-  --glass-bg: #1c2622;
-  --glass-bg-strong: #212d28;
-  --glass-bg-modal: rgba(18, 23, 20, 0.97);
-  --glass-bg-sheet: rgba(18, 23, 20, 0.96);
-  --glass-bg-nav: rgba(14, 18, 16, 0.82);
-  --glass-border: rgba(255, 255, 255, 0.08);
-  --glass-border-strong: rgba(255, 255, 255, 0.1);
-  --glass-shadow: rgba(0, 0, 0, 0.5);
+  --color-income: #52b788;
+  --color-expense: #e8705c;
 
-  /* Inputs: más claros que la tarjeta que los contiene, para leerse como
-     "elevados" en vez de fundirse con el fondo oscuro. */
+  --color-surface: #1c2622;
+  --color-surface-raised: #212d28;
+  --color-surface-sunken: #151d1a;
+  --color-surface-nav: #141d1a;
+  --color-surface-modal: #212d28;
+  --color-surface-sheet: #1c2622;
+
+  --color-line: #2b3833;
+  --color-line-strong: #48584f;
+
+  --color-tint-brand: #123638;
+  --color-tint-income: #1e3a2c;
+  --color-tint-expense: #3a2a25;
+  --color-tint-warning: #3b2f1a;
+  --color-tint-info: #232d38;
+  --color-tint-neutral: #313131;
+  --color-neutral-soft: #313131;
+
+  --elev-tint: rgba(0, 0, 0, 0.4);
+  --elev-tint-strong: rgba(0, 0, 0, 0.6);
+
   --input-bg: #26332d;
   --input-bg-focus: #2c3b34;
-  --input-border: rgba(255, 255, 255, 0.14);
+  --input-border: #46564e;
 }
 
 html {
@@ -178,55 +271,32 @@ html {
   background-color: var(--color-bg);
 }
 
-/* Exportar PDF (Reportes, R09): window.print() reusa el HTML ya renderizado
-   en vez de generarlo aparte con una librería — pero el modo oscuro no debe
+/* Exportar PDF (Reportes): window.print() reusa el HTML ya renderizado en vez
+   de generarlo aparte con una librería — pero el modo oscuro no debe
    imprimirse oscuro (desperdicia tinta y puede no leerse en papel), así que
-   se fuerza claro sin importar [data-mode] activo. Los blobs decorativos de
-   fondo tampoco aportan nada en una hoja. */
+   se fuerza claro sin importar el [data-mode] activo. */
 @media print {
   :root,
   [data-mode="dark"] {
     color-scheme: light;
     --color-bg: #ffffff;
     --color-ink: #212121;
-    --color-muted: #727272;
+    --color-muted: #6b6b6b;
     --color-subtle: #848484;
-    --glass-bg: #ffffff;
-    --glass-bg-strong: #ffffff;
-    --glass-border: rgba(20, 30, 24, 0.12);
-    --glass-border-strong: rgba(20, 30, 24, 0.16);
-    --glass-shadow: transparent;
+    --color-on-tint: #5c5c5c;
+    --color-primary-fg: #127478;
+    --brand-grad-from: #0c4c4f;
+    --brand-grad-to: #127478;
+    --color-on-brand-muted: #dcefef;
+    --color-on-brand-well: #0a4245;
+    --color-surface: #ffffff;
+    --color-surface-raised: #ffffff;
+    --color-surface-sunken: #f2f5f5;
+    --color-line: #d3dede;
+    --color-line-strong: #b9cccc;
+    --elev-tint: transparent;
+    --elev-tint-strong: transparent;
   }
-  body::before {
-    display: none;
-  }
-}
-
-/* Fondo con blobs suaves (capa fija, sin background-attachment para evitar
-   jank/repaint en móvil) para que el vidrio tenga sobre qué reflejar.
-   Los tonos siguen al tema activo. */
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  background-image:
-    radial-gradient(
-      42rem 42rem at 12% -8%,
-      color-mix(in srgb, var(--color-accent) 16%, transparent),
-      transparent 60%
-    ),
-    radial-gradient(
-      38rem 38rem at 108% 12%,
-      color-mix(in srgb, var(--color-primary) 14%, transparent),
-      transparent 58%
-    ),
-    radial-gradient(
-      46rem 46rem at 50% 118%,
-      rgba(176, 111, 16, 0.08),
-      transparent 60%
-    );
 }
 
 body {
@@ -238,65 +308,59 @@ body {
 }
 
 /* ---------------------------------------------------------------------------
-   Superficies — todas consumen variables, así que el modo oscuro y los
-   temas de color las recolorean automáticamente. El translúcido/blur
-   ("vidrio") queda reservado a lo que SÍ flota sobre otro contenido (nav,
-   modal, sheet, más abajo); .glass/.glass-strong son ahora superficies
-   sólidas para tarjetas normales de la página — sin blur, más livianas en
-   móvil y sin transparentar el fondo detrás.
+   Superficies. Todas sólidas: la separación viene de un cambio de color real
+   + sombra + línea, no de transparencia. Cambiar los tokens de arriba
+   recolorea las cuatro sin tocar componentes.
 --------------------------------------------------------------------------- */
 @layer components {
-  .glass {
-    background: var(--glass-bg);
-    border: 1px solid var(--glass-border);
-    box-shadow: 0 8px 30px -12px var(--glass-shadow);
+  .card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-line);
+    box-shadow: var(--shadow-card);
     overflow: hidden;
   }
 
-  .glass-strong {
-    background: var(--glass-bg-strong);
-    border: 1px solid var(--glass-border-strong);
-    box-shadow: 0 12px 40px -14px var(--glass-shadow);
+  .card-raised {
+    background: var(--color-surface-raised);
+    border: 1px solid var(--color-line-strong);
+    box-shadow: var(--shadow-raised);
     overflow: hidden;
   }
 
-  /* Barra de navegación translúcida */
-  .glass-nav {
-    background: var(--glass-bg-nav);
-    border-color: var(--glass-border);
-    @apply backdrop-blur-md backdrop-saturate-150;
+  /* Barra de navegación: superficie opaca, sombra hacia arriba. */
+  .surface-nav {
+    background: var(--color-surface-nav);
+    border-color: var(--color-line);
+    box-shadow: var(--shadow-nav);
   }
 
-  /* Superficie de modal: casi opaca para que el fondo no se transparente */
-  .modal-surface {
-    background: var(--glass-bg-modal);
-    border: 1px solid var(--glass-border-strong);
-    box-shadow:
-      0 24px 60px -18px var(--glass-shadow),
-      inset 0 1px 0 rgba(255, 255, 255, 0.16);
-    @apply backdrop-blur-xl;
+  .surface-modal {
+    background: var(--color-surface-modal);
+    border: 1px solid var(--color-line-strong);
+    box-shadow: var(--shadow-raised);
   }
 
-  /* Superficie de hoja inferior (menú "Más"): casi opaca y SIN blur.
-     A diferencia de .modal-surface, esta cubre pantalla completa y anima
-     con spring en cada toque — un backdrop-filter ahí genera jank visible
-     en móviles de gama media/alta al recomponer capas de vidrio debajo. */
-  .sheet-surface {
-    background: var(--glass-bg-sheet);
-    border: 1px solid var(--glass-border-strong);
-    box-shadow: 0 -8px 30px -12px var(--glass-shadow);
+  .surface-sheet {
+    background: var(--color-surface-sheet);
+    border: 1px solid var(--color-line-strong);
+    box-shadow: var(--shadow-nav);
   }
 }
 
 /* ---------------------------------------------------------------------------
-   Marca: degradado (antes solo color sólido). Los semánticos (abajo) se
-   quedan sólidos — el gradiente es solo para el teal principal, que es el
-   único elemento saturado por pantalla.
+   Marca: gradiente teal OSCURO → MEDIO. La dirección importa para el
+   contraste, no solo para el gusto: el extremo oscuro (9.71:1 con blanco)
+   queda arriba, donde viven el avatar, la campana y el label; el medio
+   (5.53:1, también AA normal) queda abajo, bajo la cifra grande. Los
+   semánticos se quedan planos — el gradiente es solo del teal, el único
+   elemento saturado por pantalla.
 --------------------------------------------------------------------------- */
 .bg-gradient-brand {
-  /* primary → primary-active (no accent): en ambos extremos el texto
-     blanco pasa AA normal (verificado, no solo AA "grande"). */
-  background-image: linear-gradient(135deg, var(--color-primary), var(--color-primary-active));
+  background-image: linear-gradient(
+    160deg,
+    var(--brand-grad-from) 0%,
+    var(--brand-grad-to) 100%
+  );
 }
 .bg-gradient-danger {
   background-color: var(--color-danger);
@@ -308,43 +372,64 @@ body {
   background-color: var(--color-info);
 }
 
-/* Badge de ícono: color sólido + halo suave */
+/* Badge de ícono sobre relleno de marca: solo color, sin halo de vidrio. */
 .icon-badge {
   color: #fff;
-  box-shadow:
-    0 6px 16px -6px color-mix(in srgb, var(--color-primary) 55%, transparent),
-    inset 0 1px 0 rgba(255, 255, 255, 0.3);
 }
 
-/* Números tabulares para montos y tablas. overflow-wrap es un último
-   recurso (un monto largo, ej. "-RD$12,450.00", no tiene espacios donde
-   partirse) — el tamaño fluido de .text-money-* de abajo ya evita que se
-   necesite en la práctica, encogiendo el número en vez de cortarlo. */
+/* Ilustraciones de los estados vacíos (ver components/ui/Illustration.tsx).
+   Las URLs llegan como custom props desde el componente, así que esto son dos
+   reglas para las 11 ilustraciones en vez de 22. */
+.illustration {
+  background: var(--illu) center / contain no-repeat;
+}
+[data-mode="dark"] .illustration {
+  background-image: var(--illu-dark);
+}
+
+/* Al imprimir se fuerza el tema claro (ver @media print arriba), así que la
+   ilustración también tiene que volver a su versión clara. */
+@media print {
+  [data-mode="dark"] .illustration {
+    background-image: var(--illu);
+  }
+}
+
+/* Números tabulares para montos y tablas. overflow-wrap es un último recurso
+   (un monto como "-RD$12,450.00" no tiene espacios donde partirse) — los
+   tamaños fluidos de abajo ya evitan que se necesite, encogiendo el número
+   en vez de cortarlo. */
 .tabular {
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum";
   overflow-wrap: anywhere;
 }
 
-/* Tamaños fluidos para montos: el número se encoge en pantallas angostas
-   en vez de partirse a la mitad. El S22+ mide ~360px CSS de ancho (no
-   ~384 — 1080px físicos / DPR 3), por eso el piso es más chico que antes:
-   a 360px una cifra como "RD$12,450.00" ya no cabía en una tarjeta de
-   1 columna con el tamaño anterior. */
-.text-money-sm {
+/* Tamaños fluidos para montos: el número se encoge en pantallas angostas en
+   vez de partirse a la mitad. El piso está calculado para 360px CSS de ancho
+   (un S22+ son 1080px físicos / DPR 3, no 384). `hero` es la cifra dominante
+   de una pantalla — solo una por pantalla. */
+.money-hero {
+  font-size: clamp(2.25rem, 1.4rem + 4.6vw, 3.5rem);
+  line-height: 1.02;
+  letter-spacing: -0.03em;
+}
+.money-lg {
+  font-size: clamp(1.5rem, 1rem + 3.2vw, 2.5rem);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+.money-md {
+  font-size: clamp(1.3rem, 0.9rem + 2.5vw, 2rem);
+  line-height: 1.1;
+  letter-spacing: -0.015em;
+}
+.money-sm {
   font-size: clamp(0.95rem, 0.72rem + 1.6vw, 1.55rem);
   line-height: 1.15;
 }
-.text-money-md {
-  font-size: clamp(1.3rem, 0.9rem + 2.5vw, 2rem);
-  line-height: 1.1;
-}
-.text-money-lg {
-  font-size: clamp(1.5rem, 1rem + 3.2vw, 2.5rem);
-  line-height: 1.1;
-}
 
-/* Áreas seguras (barra de gestos S22+, notch) */
+/* Áreas seguras (barra de gestos, notch) */
 .safe-bottom {
   padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
 }
@@ -354,9 +439,14 @@ body {
 
 /* Foco visible y accesible en toda la app */
 :where(a, button, input, select, textarea, [tabindex]):focus-visible {
-  outline: 2px solid var(--color-primary);
+  outline: 2px solid var(--color-primary-fg);
   outline-offset: 2px;
   border-radius: 6px;
+}
+
+/* Sobre el gradiente de marca el foco teal se pierde: ahí va blanco. */
+.bg-gradient-brand :where(a, button, [tabindex]):focus-visible {
+  outline-color: #ffffff;
 }
 
 /* Respeta reduce-motion */
@@ -374,5 +464,5 @@ body {
 /* Scrollbar sutil */
 * {
   scrollbar-width: thin;
-  scrollbar-color: color-mix(in srgb, var(--color-primary) 35%, transparent) transparent;
+  scrollbar-color: var(--color-line-strong) transparent;
 }

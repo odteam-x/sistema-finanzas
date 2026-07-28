@@ -41,7 +41,7 @@ export function LoginForm() {
             type="button"
             onClick={() => setShowPw((s) => !s)}
             aria-label={showPw ? "Ocultar contraseña" : "Mostrar contraseña"}
-            className="absolute right-2 top-1/2 -translate-y-1/2 grid place-items-center size-8 rounded-full text-muted hover:bg-black/5 cursor-pointer"
+            className="absolute right-2 top-1/2 -translate-y-1/2 grid place-items-center size-8 rounded-pill text-muted hover:bg-surface-sunken cursor-pointer"
           >
             <Icon name={showPw ? "eyeOff" : "eye"} size={18} />
           </button>
@@ -50,7 +50,7 @@ export function LoginForm() {
 
       {state.error && (
         <p
-          className="text-sm font-medium text-danger bg-danger-soft rounded-2xl px-3 py-2 flex items-center gap-2"
+          className="text-sm font-medium text-danger bg-tint-expense rounded-tile px-3 py-2 flex items-center gap-2"
           role="alert"
         >
           <Icon name="alert" size={18} />

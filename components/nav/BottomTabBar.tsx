@@ -43,7 +43,7 @@ export function BottomTabBar({
           <div className="lg:hidden fixed inset-0 z-[90]" role="dialog" aria-modal="true">
             <motion.button
               aria-label="Cerrar menú"
-              className="absolute inset-0 bg-black/40"
+              className="absolute inset-0 bg-black/55"
               onClick={() => setMoreOpen(false)}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -51,7 +51,7 @@ export function BottomTabBar({
               transition={{ duration: 0.18 }}
             />
             <motion.div
-              className="sheet-surface absolute inset-x-0 bottom-0 rounded-t-[26px] p-4 pb-[max(1rem,env(safe-area-inset-bottom))]"
+              className="surface-sheet absolute inset-x-0 bottom-0 rounded-t-hero p-4 pb-[max(1rem,env(safe-area-inset-bottom))]"
               style={{ willChange: "transform" }}
               initial={rm ? false : { y: "100%" }}
               animate={{ y: 0 }}
@@ -71,9 +71,13 @@ export function BottomTabBar({
                 onPointerDown={(e) => dragControls.start(e)}
                 className="-mt-1 mb-2 flex justify-center py-2 touch-none cursor-grab active:cursor-grabbing"
               >
-                <div className="h-1.5 w-11 rounded-full bg-black/20" />
+                <div className="h-1.5 w-11 rounded-pill bg-line-strong" />
               </div>
-              <div className="grid grid-cols-4 gap-2">
+              {/* Rejilla de tiles: el ícono vive en un cuadrado de tinte
+                  sólido y la etiqueta va debajo, fuera del tile — así 11
+                  secciones se escanean por forma y color en vez de leerse
+                  como una lista de texto de 11 líneas. */}
+              <div className="grid grid-cols-4 gap-x-2 gap-y-3">
                 {SECONDARY_ROUTES.map((r) => {
                   const active = pathname === r.href;
                   return (
@@ -81,19 +85,34 @@ export function BottomTabBar({
                       key={r.href}
                       href={r.href}
                       onClick={() => setMoreOpen(false)}
-                      className={cn(
-                        "flex flex-col items-center gap-1.5 py-3 rounded-2xl font-semibold text-xs transition-colors active:scale-[0.97]",
-                        active ? "bg-primary text-white" : "text-ink/80 hover:bg-black/5",
-                      )}
+                      aria-current={active ? "page" : undefined}
+                      className="flex flex-col items-center gap-1.5 group active:scale-[0.97] transition-transform"
                     >
-                      <Icon name={r.icon} size={22} weight={active ? "fill" : "regular"} />
-                      {r.label}
+                      <span
+                        className={cn(
+                          "grid place-items-center size-14 rounded-tile transition-colors",
+                          active
+                            ? "bg-gradient-brand text-white"
+                            : "bg-tint-brand text-primary-fg group-hover:bg-primary-soft",
+                        )}
+                      >
+                        <Icon name={r.icon} size={24} weight={active ? "fill" : "regular"} />
+                      </span>
+                      <span
+                        className={cn(
+                          "text-xs font-semibold text-center leading-tight",
+                          active ? "text-primary-fg" : "text-muted",
+                        )}
+                      >
+                        {r.label}
+                      </span>
                     </Link>
                   );
                 })}
               </div>
-              <div className="mt-2 border-t border-black/5 pt-2">
-                {email && <p className="text-xs text-muted px-1 mb-1 truncate">{email}</p>}
+              {/* Separado por espacio, no por línea. */}
+              <div className="mt-6">
+                {email && <p className="text-xs text-muted px-1 mb-1.5 truncate">{email}</p>}
                 <LogoutButton />
               </div>
             </motion.div>
@@ -105,7 +124,7 @@ export function BottomTabBar({
           El FAB vive fuera del <nav> (que recorta con overflow-hidden para el
           borde redondeado) para poder sobresalir por encima sin que se corte. */}
       <div className="lg:hidden fixed bottom-[max(0.75rem,env(safe-area-inset-bottom))] left-3 right-3 z-[80]">
-        <nav className="glass-nav border rounded-full overflow-hidden shadow-lg shadow-black/15">
+        <nav className="surface-nav border rounded-pill overflow-hidden">
           <ul className="grid grid-cols-5 px-2">
             {PRIMARY_ROUTES.slice(0, 2).map((r) => {
               const active = pathname === r.href;
@@ -116,7 +135,7 @@ export function BottomTabBar({
                     aria-current={active ? "page" : undefined}
                     className={cn(
                       "flex flex-col items-center justify-center gap-0.5 pt-2 pb-1.5 min-h-[52px] text-[0.75rem] font-semibold transition-colors active:scale-95",
-                      active ? "text-primary" : "text-muted",
+                      active ? "text-primary-fg" : "text-muted",
                     )}
                   >
                     <Icon name={r.icon} size={23} weight={active ? "fill" : "regular"} />
@@ -135,7 +154,7 @@ export function BottomTabBar({
                     aria-current={active ? "page" : undefined}
                     className={cn(
                       "flex flex-col items-center justify-center gap-0.5 pt-2 pb-1.5 min-h-[52px] text-[0.75rem] font-semibold transition-colors active:scale-95",
-                      active ? "text-primary" : "text-muted",
+                      active ? "text-primary-fg" : "text-muted",
                     )}
                   >
                     <Icon name={r.icon} size={23} weight={active ? "fill" : "regular"} />
@@ -150,7 +169,7 @@ export function BottomTabBar({
                 aria-label="Más secciones"
                 className={cn(
                   "flex flex-col items-center justify-center gap-0.5 pt-2 pb-1.5 min-h-[52px] w-full text-[0.75rem] font-semibold transition-colors cursor-pointer active:scale-95",
-                  onSecondary ? "text-primary" : "text-muted",
+                  onSecondary ? "text-primary-fg" : "text-muted",
                 )}
               >
                 <Icon name="menu" size={23} weight={onSecondary ? "fill" : "regular"} />

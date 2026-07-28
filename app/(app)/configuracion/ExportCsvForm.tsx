@@ -37,7 +37,7 @@ export function ExportCsvForm() {
       <a
         href={href}
         download
-        className="inline-flex items-center justify-center self-start rounded-full font-semibold min-h-9 px-4 text-sm bg-gradient-brand text-white shadow-sm hover:brightness-[0.97] active:brightness-95 transition-[filter] duration-150 cursor-pointer"
+        className="inline-flex items-center justify-center self-start rounded-pill font-semibold min-h-9 px-4 text-sm bg-gradient-brand text-white shadow-sm hover:brightness-[0.97] active:brightness-95 transition-[filter] duration-150 cursor-pointer"
       >
         Descargar CSV
       </a>

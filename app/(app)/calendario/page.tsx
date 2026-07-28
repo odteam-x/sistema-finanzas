@@ -10,7 +10,7 @@ import { toISODate, formatMonth, todayISO } from "@/lib/format";
 import { countWorkdays, exceptionsMap } from "@/lib/calendar";
 import { monthPeriods, paydaysInMonthFrom } from "@/lib/periods";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { GlassCard } from "@/components/ui/GlassCard";
+import { Card } from "@/components/ui/Card";
 import { StatTile } from "@/components/ui/StatTile";
 import { Icon } from "@/components/ui/Icon";
 import { CalendarView } from "./CalendarView";
@@ -113,13 +113,13 @@ export default async function CalendarioPage({
         subtitle="Lunes a sábado laborable · domingo libre"
       />
 
-      <GlassCard className="mb-4">
+      <Card className="mb-4">
         {/* Cabecera del mes */}
         <div className="flex items-center justify-between mb-4">
           <Link
             href={prevHref}
             aria-label="Mes anterior"
-            className="grid place-items-center size-10 rounded-full hover:bg-black/5 text-ink cursor-pointer"
+            className="grid place-items-center size-10 rounded-pill hover:bg-surface-sunken text-ink cursor-pointer"
           >
             <Icon name="chevronLeft" size={22} />
           </Link>
@@ -129,7 +129,7 @@ export default async function CalendarioPage({
           <Link
             href={nextHref}
             aria-label="Mes siguiente"
-            className="grid place-items-center size-10 rounded-full hover:bg-black/5 text-ink cursor-pointer"
+            className="grid place-items-center size-10 rounded-pill hover:bg-surface-sunken text-ink cursor-pointer"
           >
             <Icon name="chevronRight" size={22} />
           </Link>
@@ -146,7 +146,7 @@ export default async function CalendarioPage({
         <p className="text-xs text-muted mt-4">
           Toca cualquier día para marcarlo como feriado, libre o trabajado.
         </p>
-      </GlassCard>
+      </Card>
 
       {/* Conteos */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
@@ -160,7 +160,7 @@ export default async function CalendarioPage({
         <StatTile label="2ª quincena" value={String(workedQ2)} tone="neutral" />
       </div>
 
-      <div className="flex items-center justify-between gap-3 glass rounded-[var(--radius-glass)] p-4">
+      <div className="flex items-center justify-between gap-3 card rounded-card p-4">
         <p className="text-sm text-muted">
           ¿Nuevo año? Carga los feriados dominicanos oficiales y luego ajusta los
           que necesites.

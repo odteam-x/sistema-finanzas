@@ -7,8 +7,9 @@ import {
 import { collectedOf, isCollected, pendingOf, totalPending } from "@/lib/receivables";
 import { formatDateLong, formatDateShort, todayISO, daysBetween } from "@/lib/format";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { GlassCard } from "@/components/ui/GlassCard";
+import { Card } from "@/components/ui/Card";
 import { StatTile } from "@/components/ui/StatTile";
+import { SegmentedLinks } from "@/components/ui/SegmentedLinks";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Badge } from "@/components/ui/Badge";
 import { DeleteButton } from "@/components/ui/DeleteButton";
@@ -128,14 +129,19 @@ export default async function CobrosPage({
         action={<NewReceivableForm today={today} triggerLabel="Nuevo" trigger="pill" />}
       />
 
-      <div className="grid grid-cols-2 gap-3 mb-4">
+      {/* Dos tiles idénticos enfrentados: ninguno mandaba. Manda el dinero
+          que va a ENTRAR (es lo que se viene a consultar); lo prestado queda
+          como contexto debajo. */}
+      <div className="mb-5 flex flex-col gap-2.5">
         <StatTile
+          emphasis="hero"
           label="Te deben"
           value={<Money value={pendingCobros} decimals={false} />}
           icon="arrowDownLeft"
-          tone={pendingCobros > 0 ? "info" : "neutral"}
+          tone={pendingCobros > 0 ? "income" : "neutral"}
         />
         <StatTile
+          emphasis="quiet"
           label="Prestaste"
           value={<Money value={pendingPrestamos} decimals={false} />}
           icon="wallet"
@@ -144,7 +150,7 @@ export default async function CobrosPage({
       </div>
 
       {nextDue && (
-        <GlassCard className="mb-4 flex items-center gap-3 py-3">
+        <Card className="mb-4 flex items-center gap-3 py-3">
           <IconBubble icon="clock" tone="neutral" size="sm" />
           <p className="text-sm text-muted">
             Próximo cobro esperado:{" "}
@@ -154,22 +160,19 @@ export default async function CobrosPage({
               return d < 0 ? " · vencido" : d === 0 ? " · hoy" : ` · en ${d} días`;
             })()}
           </p>
-        </GlassCard>
+        </Card>
       )}
 
       {receivables.length > 0 && (
-        <div className="glass inline-flex gap-1 rounded-2xl p-1 mb-4">
-          {KIND_TABS.map((t) => (
-            <Link
-              key={t.value}
-              href={t.value === "todo" ? "/cobros" : `/cobros?tipo=${t.value}`}
-              className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition-colors ${
-                t.value === kindFilter ? "bg-primary text-white" : "text-ink/70"
-              }`}
-            >
-              {t.label}
-            </Link>
-          ))}
+        <div className="mb-5">
+          <SegmentedLinks
+            label="Tipo"
+            segments={KIND_TABS.map((t) => ({
+              label: t.label,
+              href: t.value === "todo" ? "/cobros" : `/cobros?tipo=${t.value}`,
+              active: t.value === kindFilter,
+            }))}
+          />
         </div>
       )}
 
@@ -187,7 +190,7 @@ export default async function CobrosPage({
           title="Sin resultados"
           message="No hay registros de este tipo."
           action={
-            <Link href="/cobros" className="text-sm font-semibold text-primary">
+            <Link href="/cobros" className="text-sm font-semibold text-primary-fg">
               Ver todos
             </Link>
           }
@@ -202,7 +205,7 @@ export default async function CobrosPage({
             const pendiente = pendingOf(r, installments);
             return (
               <li key={r.id}>
-                <GlassCard>
+                <Card>
                   <div className="flex items-start gap-3">
                     <IconBubble
                       icon={r.kind === "prestamo" ? "wallet" : "arrowDownLeft"}
@@ -248,7 +251,7 @@ export default async function CobrosPage({
                         Cuotas cobradas: {paidCount}/{ins.length}
                         {r.frequency ? ` · ${r.frequency}` : ""}
                       </p>
-                      <div className="flex flex-col divide-y divide-black/5">
+                      <div className="flex flex-col divide-y divide-line">
                         {ins.map((i) => (
                           <ReceivableInstallmentRow
                             key={i.id}
@@ -273,7 +276,7 @@ export default async function CobrosPage({
                       />
                     </div>
                   )}
-                </GlassCard>
+                </Card>
               </li>
             );
           })}

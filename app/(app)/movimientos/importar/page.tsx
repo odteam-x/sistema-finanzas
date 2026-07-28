@@ -21,7 +21,7 @@ export default async function ImportarPage() {
           action={
             <a
               href="/balance"
-              className="inline-flex items-center justify-center gap-2 rounded-full font-semibold min-h-11 px-4 text-[1.05rem] bg-gradient-brand text-white shadow-sm hover:brightness-[0.97] active:brightness-95"
+              className="inline-flex items-center justify-center gap-2 rounded-pill font-semibold min-h-11 px-4 text-[1.05rem] bg-gradient-brand text-white shadow-sm hover:brightness-[0.97] active:brightness-95"
             >
               Ir a Balance
             </a>

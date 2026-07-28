@@ -5,10 +5,13 @@ import * as SelectPrimitive from "@radix-ui/react-select";
 import { cn } from "@/lib/cn";
 import { Icon } from "./Icon";
 
+// El relleno propio (--input-bg, distinto del de la tarjeta que lo contiene)
+// es lo que delimita el control; el borde solo lo remata. Por eso el borde
+// puede quedarse discreto sin perder accesibilidad.
 const baseControl =
-  "w-full min-h-11 rounded-2xl bg-[var(--input-bg)] border border-[var(--input-border)] px-3.5 " +
-  "text-ink placeholder:text-muted/60 shadow-inner " +
-  "focus:outline-none focus:border-primary focus:bg-[var(--input-bg-focus)] transition-colors";
+  "w-full min-h-11 rounded-tile bg-[var(--input-bg)] border border-[var(--input-border)] px-3.5 " +
+  "text-ink placeholder:text-muted " +
+  "focus:outline-none focus:border-primary-fg focus:bg-[var(--input-bg-focus)] transition-colors";
 
 interface FieldProps {
   label: string;
@@ -38,7 +41,11 @@ export function Field({
       >
         {label}
         {required && (
-          <span className="text-danger" aria-hidden="true">
+          /* text-expense, no text-danger: danger sobre blanco da 4.23:1.
+             Aunque el asterisco esté aria-hidden (el `required` del input ya
+             lo anuncia), sigue siendo el único indicador VISUAL de campo
+             obligatorio. */
+          <span className="text-expense" aria-hidden="true">
             *
           </span>
         )}
@@ -132,7 +139,7 @@ export function Select({
         aria-label={ariaLabel}
         className={cn(
           baseControl,
-          "flex items-center justify-between gap-2 cursor-pointer data-[placeholder]:text-muted/60",
+          "flex items-center justify-between gap-2 cursor-pointer data-[placeholder]:text-muted",
           className,
         )}
       >
@@ -145,7 +152,7 @@ export function Select({
         <SelectPrimitive.Content
           position="popper"
           sideOffset={6}
-          className="z-[110] w-[var(--radix-select-trigger-width)] max-h-[var(--radix-select-content-available-height)] overflow-hidden rounded-2xl border border-[var(--input-border)] bg-[var(--glass-bg-modal)] shadow-lg shadow-black/15 backdrop-blur-xl"
+          className="z-[110] w-[var(--radix-select-trigger-width)] max-h-[var(--radix-select-content-available-height)] overflow-hidden rounded-tile border border-line-strong bg-surface-modal shadow-raised"
         >
           <SelectPrimitive.Viewport className="p-1">
             {options.map((opt) => (

@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { SetupNotice } from "@/components/SetupNotice";
-import { GlassCard } from "@/components/ui/GlassCard";
+import { Card } from "@/components/ui/Card";
 import { LoginForm } from "./LoginForm";
 
 export const metadata = { title: "Entrar · Cachin'" };
@@ -27,9 +27,9 @@ export default function LoginPage() {
           </p>
         </div>
 
-        <GlassCard strong className="p-6">
+        <Card raised className="p-6">
           <LoginForm />
-        </GlassCard>
+        </Card>
       </div>
     </div>
   );

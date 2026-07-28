@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { GlassCard } from "@/components/ui/GlassCard";
+import { Card } from "@/components/ui/Card";
 import { Icon } from "@/components/ui/Icon";
 import { Field, Input, MoneyInput } from "@/components/ui/Field";
 import { Money } from "@/components/ui/Money";
@@ -21,13 +21,13 @@ export function DailySpendCalculator() {
   const perDay = valid ? amountN / daysN : 0;
 
   return (
-    <GlassCard>
+    <Card>
       <button
         onClick={() => setOpen((v) => !v)}
         className="flex items-center justify-between gap-3 w-full text-left cursor-pointer"
       >
         <span className="flex items-center gap-2 min-w-0">
-          <Icon name="calc" size={18} className="text-primary shrink-0" />
+          <Icon name="calc" size={18} className="text-primary-fg shrink-0" />
           <span className="min-w-0">
             <span className="block text-sm font-bold text-ink">Calcular gasto por día</span>
             <span className="block text-xs text-muted">
@@ -43,7 +43,7 @@ export function DailySpendCalculator() {
       </button>
 
       {open && (
-        <div className="mt-3 pt-3 border-t border-black/5 flex flex-col gap-3">
+        <div className="mt-3 pt-3 border-t border-line flex flex-col gap-3">
           <div className="grid grid-cols-2 gap-3">
             <Field label="Monto disponible" htmlFor="calc-amount">
               <MoneyInput
@@ -66,9 +66,9 @@ export function DailySpendCalculator() {
             </Field>
           </div>
 
-          <div className="rounded-2xl bg-primary-soft p-3 text-center">
+          <div className="rounded-tile bg-primary-soft p-3 text-center">
             <p className="text-xs text-muted">Puedes gastar por día</p>
-            <p className="text-2xl font-extrabold text-primary mt-0.5">
+            <p className="text-2xl font-extrabold text-primary-fg mt-0.5">
               {valid ? <Money value={perDay} /> : "—"}
             </p>
             {valid && (
@@ -80,6 +80,6 @@ export function DailySpendCalculator() {
           </div>
         </div>
       )}
-    </GlassCard>
+    </Card>
   );
 }

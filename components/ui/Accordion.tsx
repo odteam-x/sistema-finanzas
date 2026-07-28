@@ -10,7 +10,7 @@ interface AccordionItemProps {
  *  estar siempre visible (a diferencia de las alertas, que sí importan). */
 export function AccordionItem({ title, children }: AccordionItemProps) {
   return (
-    <details className="group glass rounded-[var(--radius-glass-sm)]">
+    <details className="group card rounded-tile">
       <summary className="flex items-center justify-between gap-3 p-3.5 cursor-pointer list-none font-semibold text-sm text-ink [&::-webkit-details-marker]:hidden">
         {title}
         <Icon

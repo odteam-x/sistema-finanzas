@@ -43,10 +43,10 @@ export function PersonalizeModal({ open, onClose }: PersonalizeModalProps) {
               onClick={() => update(m.value)}
               aria-pressed={active}
               className={cn(
-                "flex flex-col items-center justify-center gap-1.5 min-h-16 rounded-2xl font-semibold text-xs cursor-pointer transition-colors active:scale-[0.97]",
+                "flex flex-col items-center justify-center gap-1.5 min-h-16 rounded-tile font-semibold text-xs cursor-pointer transition-colors active:scale-[0.97]",
                 active
                   ? "bg-primary text-white"
-                  : "border border-black/10 text-ink hover:bg-black/5",
+                  : "border border-line-strong text-ink hover:bg-surface-sunken",
               )}
             >
               <Icon name={m.icon} size={18} />

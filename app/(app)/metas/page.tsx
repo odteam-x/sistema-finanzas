@@ -11,7 +11,7 @@ import { goalProgress } from "@/lib/goals";
 import { formatDateShort, clampPct, todayISO, daysBetween } from "@/lib/format";
 import { quincenasUntil } from "@/lib/periods";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { GlassCard } from "@/components/ui/GlassCard";
+import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { Badge } from "@/components/ui/Badge";
@@ -118,31 +118,51 @@ export default async function MetasPage() {
         action={<NewGoalForm triggerLabel="Meta" trigger="pill" />}
       />
 
+      {/* La cifra de la pantalla. Estaba a media página, dentro de una
+          tarjeta que enfrentaba "Ahorrado" y "Objetivo" al MISMO tamaño
+          (text-xl los dos), así que ninguna de las dos mandaba — y encima
+          los saldos de ahorro general de arriba iban a text-lg, un tercer
+          nivel casi idéntico. Ahora hay un solo protagonista arriba. */}
+      {goals.length > 0 && (
+        <section className="mb-6 rounded-hero bg-gradient-brand px-5 py-6 shadow-hero">
+          <p className="text-sm font-medium text-on-brand-muted">Ahorrado en total</p>
+          <MoneyValue
+            value={totalSaved}
+            decimals={false}
+            className="block money-hero font-extrabold text-on-brand tabular mt-0.5"
+          />
+          <p className="mt-1.5 text-xs text-on-brand-muted">
+            De un objetivo de <Money value={totalTarget} decimals={false} /> ·{" "}
+            {goals.length} {goals.length === 1 ? "meta" : "metas"}
+          </p>
+        </section>
+      )}
+
       {/* Ahorro general: guardar dinero sin atarlo a una meta específica. */}
       <div className="flex items-center justify-between px-1 mb-2">
         <h2 className="text-sm font-bold text-ink">Ahorro general</h2>
         {generalSavings.length > 0 && <NewSavingsAccountForm triggerLabel="Nueva cuenta" />}
       </div>
       {generalSavings.length === 0 ? (
-        <GlassCard className="mb-4 flex items-center gap-3">
+        <Card className="mb-4 flex items-center gap-3">
           <IconBubble icon="piggy" tone="brand" />
           <div className="min-w-0 flex-1">
             <p className="text-sm font-semibold text-ink">Aún no tienes ahorro general</p>
             <p className="text-xs text-muted mt-0.5">Guarda dinero sin atarlo a ninguna meta.</p>
           </div>
           <NewSavingsAccountForm triggerLabel="Crear" />
-        </GlassCard>
+        </Card>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
           {generalSavings.map((a) => {
             const balance = accountBalance(a.id);
             return (
-              <GlassCard key={a.id} className="flex flex-col gap-3 min-w-0">
+              <Card key={a.id} className="flex flex-col gap-3 min-w-0">
                 <div className="flex items-center gap-3">
                   <IconBubble icon="piggy" tone="brand" />
                   <div className="min-w-0 flex-1">
                     <p className="font-bold text-ink truncate">{a.name}</p>
-                    <MoneyValue value={balance} decimals={false} className="text-lg font-extrabold text-primary" />
+                    <MoneyValue value={balance} decimals={false} className="text-lg font-extrabold text-ink" />
                   </div>
                   {/* R04: editar y eliminar el ahorro desde ESTA pantalla —
                       antes solo se podía desde Balance, aunque la cuenta sea
@@ -206,34 +226,13 @@ export default async function MetasPage() {
                     </Field>
                   </FormModal>
                 </div>
-              </GlassCard>
+              </Card>
             );
           })}
         </div>
       )}
 
       <h2 className="text-sm font-bold text-ink px-1 mb-2">Tus metas</h2>
-
-      {goals.length > 0 && (
-        <GlassCard className="mb-4 flex items-center justify-between gap-3">
-          <div className="min-w-0">
-            <p className="text-xs text-muted">Ahorrado en total</p>
-            <MoneyValue
-              value={totalSaved}
-              decimals={false}
-              className="text-xl font-extrabold text-ink"
-            />
-          </div>
-          <div className="min-w-0 text-right">
-            <p className="text-xs text-muted">Objetivo total</p>
-            <MoneyValue
-              value={totalTarget}
-              decimals={false}
-              className="text-xl font-extrabold text-primary"
-            />
-          </div>
-        </GlassCard>
-      )}
 
       {goals.length === 0 ? (
         <EmptyState
@@ -257,7 +256,7 @@ export default async function MetasPage() {
                 ? (Number(g.target_amount) - currentAmount) / quincenasUntil(today, g.deadline)
                 : null;
             return (
-              <GlassCard key={g.id} className="flex flex-col gap-3 min-w-0">
+              <Card key={g.id} className="flex flex-col gap-3 min-w-0">
                 <div className="flex items-start gap-3">
                   <div className="min-w-0 flex-1">
                     <p className="font-bold text-ink truncate">{g.name}</p>
@@ -284,7 +283,7 @@ export default async function MetasPage() {
                 {/* R14: de dónde viene el progreso — aportes vs. pago de
                     deudas vinculadas, con enlace a la deuda. */}
                 {progress.fromDebts > 0 && (
-                  <div className="rounded-2xl bg-black/[0.03] p-2.5 text-xs">
+                  <div className="rounded-tile bg-surface-sunken p-2.5 text-xs">
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-muted">De ahorros</span>
                       <span className="font-semibold text-ink">
@@ -422,7 +421,7 @@ export default async function MetasPage() {
                 </div>
 
                 <LinkDebtButton goalId={g.id} available={unlinkedDebts} />
-              </GlassCard>
+              </Card>
             );
           })}
         </div>

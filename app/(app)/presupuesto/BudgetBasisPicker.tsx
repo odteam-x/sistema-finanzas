@@ -86,7 +86,7 @@ export function BudgetBasisPicker({
     <>
       <button
         onClick={openModal}
-        className="inline-flex items-center gap-1 text-sm font-semibold text-primary cursor-pointer"
+        className="inline-flex items-center gap-1 text-sm font-semibold text-primary-fg cursor-pointer"
       >
         <Icon name="edit" size={16} />
         {mode === "personalizado" ? `${days} días elegidos` : "Ajustar días"}
@@ -102,14 +102,14 @@ export function BudgetBasisPicker({
           <button
             onClick={() => setLocalMode("trabajados")}
             className={cn(
-              "flex items-start gap-3 rounded-2xl border p-3 text-left cursor-pointer transition-colors",
-              !isCustom ? "border-primary bg-primary-soft" : "border-black/10",
+              "flex items-start gap-3 rounded-tile border p-3 text-left cursor-pointer transition-colors",
+              !isCustom ? "border-primary bg-primary-soft" : "border-line-strong",
             )}
           >
             <span
               className={cn(
-                "grid place-items-center size-5 rounded-full border-2 shrink-0 mt-0.5",
-                !isCustom ? "bg-primary border-primary text-white" : "border-black/20 text-transparent",
+                "grid place-items-center size-5 rounded-pill border-2 shrink-0 mt-0.5",
+                !isCustom ? "bg-primary border-primary text-white" : "border-line-strong text-transparent",
               )}
             >
               <Icon name="check" size={12} />
@@ -125,14 +125,14 @@ export function BudgetBasisPicker({
           <button
             onClick={() => setLocalMode("personalizado")}
             className={cn(
-              "flex items-start gap-3 rounded-2xl border p-3 text-left cursor-pointer transition-colors",
-              isCustom ? "border-primary bg-primary-soft" : "border-black/10",
+              "flex items-start gap-3 rounded-tile border p-3 text-left cursor-pointer transition-colors",
+              isCustom ? "border-primary bg-primary-soft" : "border-line-strong",
             )}
           >
             <span
               className={cn(
-                "grid place-items-center size-5 rounded-full border-2 shrink-0 mt-0.5",
-                isCustom ? "bg-primary border-primary text-white" : "border-black/20 text-transparent",
+                "grid place-items-center size-5 rounded-pill border-2 shrink-0 mt-0.5",
+                isCustom ? "bg-primary border-primary text-white" : "border-line-strong text-transparent",
               )}
             >
               <Icon name="check" size={12} />
@@ -186,7 +186,7 @@ export function BudgetBasisPicker({
                     onClick={() => toggleDay(iso)}
                     className={cn(
                       "aspect-square rounded-xl text-xs font-semibold transition-colors cursor-pointer",
-                      on ? "bg-primary text-white" : "bg-black/5 text-ink/70 hover:bg-black/10",
+                      on ? "bg-primary text-white" : "bg-surface-sunken text-muted hover:bg-surface-sunken",
                     )}
                   >
                     {Number(iso.slice(8, 10))}

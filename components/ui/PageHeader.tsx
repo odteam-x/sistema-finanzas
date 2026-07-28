@@ -15,13 +15,15 @@ interface PageHeaderProps {
  *  choca con nada. Sigue siendo `sticky` para no perder de vista en qué
  *  sección estás al hacer scroll. Dos zonas simples (título a la izq.,
  *  acción a la der.) — el isotipo no se repite en cada pantalla (competía
- *  con el título/la acción); vive solo en GreetingHero, la de Inicio.
+ *  con el título/la acción); vive solo en el hero de Inicio.
+ *  El fondo es OPACO (antes era `/85` + `backdrop-blur-md`): al hacer scroll,
+ *  el contenido pasa por debajo sin verse difuminado a través de la barra.
  *  Requiere que ningún ancestro anime `transform` (ver PageTransition.tsx
  *  — solo anima opacity). */
 export function PageHeader({ title, subtitle, action, showBack = true }: PageHeaderProps) {
   return (
     <header
-      className="sticky top-0 z-30 -mx-4 sm:-mx-6 px-4 sm:px-6 pb-3 mb-3 flex items-center justify-between gap-2 bg-[var(--color-bg)]/85 backdrop-blur-md"
+      className="sticky top-0 z-30 -mx-4 sm:-mx-6 px-4 sm:px-6 pb-3 mb-4 flex items-center justify-between gap-2 bg-bg"
       style={{ paddingTop: "max(1rem, env(safe-area-inset-top))" }}
     >
       <div className="flex items-center gap-1 min-w-0">

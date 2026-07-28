@@ -22,7 +22,7 @@ export function ProgressBar({
   const pct = Math.min(100, Math.max(0, value));
   return (
     <div
-      className={cn("h-2.5 w-full rounded-full bg-black/8 overflow-hidden", className)}
+      className={cn("h-2.5 w-full rounded-pill bg-surface-sunken overflow-hidden", className)}
       role="progressbar"
       aria-valuenow={Math.round(pct)}
       aria-valuemin={0}
@@ -30,7 +30,7 @@ export function ProgressBar({
       aria-label={label}
     >
       <div
-        className={cn("h-full rounded-full transition-[width] duration-500", tones[tone])}
+        className={cn("h-full rounded-pill transition-[width] duration-500", tones[tone])}
         style={{ width: `${pct}%` }}
       />
     </div>

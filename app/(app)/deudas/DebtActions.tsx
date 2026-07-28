@@ -59,14 +59,14 @@ export function IncrementHistory({
     <div className="mt-2">
       <button
         onClick={() => setOpen((v) => !v)}
-        className="inline-flex items-center gap-1 text-xs font-semibold text-primary cursor-pointer"
+        className="inline-flex items-center gap-1 text-xs font-semibold text-primary-fg cursor-pointer"
       >
         <Icon name={open ? "chevronDown" : "chevronRight"} size={13} />
         {increments.length} {increments.length === 1 ? "aumento" : "aumentos"}
       </button>
 
       {open && (
-        <ul className="mt-1.5 flex flex-col gap-1 border-l-2 border-black/10 pl-2.5">
+        <ul className="mt-1.5 flex flex-col gap-1 border-l border-line-strong pl-2.5">
           <li className="flex items-center justify-between gap-2 text-xs">
             <span className="text-muted">Monto original</span>
             <span className="font-semibold text-ink">
@@ -91,7 +91,7 @@ export function IncrementHistory({
                   }
                   disabled={pending}
                   aria-label="Eliminar este aumento"
-                  className="grid place-items-center size-6 rounded-full text-muted hover:text-danger hover:bg-danger-soft transition-colors cursor-pointer disabled:opacity-50"
+                  className="grid place-items-center size-6 rounded-pill text-muted hover:text-danger hover:bg-tint-expense transition-colors cursor-pointer disabled:opacity-50"
                 >
                   <Icon name="trash" size={12} />
                 </button>
@@ -122,7 +122,7 @@ export function ReopenDebtButton({ debtId, debtName }: { debtId: string; debtNam
     <>
       <button
         onClick={() => setOpen(true)}
-        className="inline-flex items-center gap-1 text-xs font-semibold text-primary cursor-pointer"
+        className="inline-flex items-center gap-1 text-xs font-semibold text-primary-fg cursor-pointer"
       >
         <Icon name="repeat" size={13} />
         Reabrir

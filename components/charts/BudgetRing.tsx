@@ -20,7 +20,9 @@ export function BudgetRing({ spent, budget, size = 108 }: BudgetRingProps) {
   const cy = size / 2;
   const circ = 2 * Math.PI * r;
   const len = (pct / 100) * circ;
-  const color = over ? "var(--color-danger)" : "var(--color-primary)";
+  // El trazo del anillo es forma, no texto: puede usar el color saturado.
+  // La CIFRA de abajo no — ahí va el token legible sobre superficie.
+  const ringColor = over ? "var(--color-expense)" : "var(--color-primary)";
 
   return (
     <div className="flex items-center gap-4">
@@ -32,13 +34,13 @@ export function BudgetRing({ spent, budget, size = 108 }: BudgetRingProps) {
         aria-label={`${Math.round(pct)}% del presupuesto usado`}
         className="shrink-0"
       >
-        <circle cx={cx} cy={cy} r={r} fill="none" stroke="rgba(0,0,0,0.07)" strokeWidth={stroke} />
+        <circle cx={cx} cy={cy} r={r} fill="none" stroke="var(--color-surface-sunken)" strokeWidth={stroke} />
         <circle
           cx={cx}
           cy={cy}
           r={r}
           fill="none"
-          stroke={color}
+          stroke={ringColor}
           strokeWidth={stroke}
           strokeDasharray={`${len} ${circ - len}`}
           strokeLinecap="round"
@@ -50,15 +52,18 @@ export function BudgetRing({ spent, budget, size = 108 }: BudgetRingProps) {
         </text>
       </svg>
 
+      {/* Es la cifra dominante de la pantalla de Gastos: sube a `money-lg`
+          para que nada más de esa pantalla compita con ella. */}
       <div className="min-w-0">
-        <p className="text-xs font-medium text-muted">{over ? "Excedido" : "Restante"}</p>
+        <p className="text-sm font-medium text-muted">
+          {over ? "Excedido" : "Te queda esta quincena"}
+        </p>
         <p
-          className="text-money-md font-extrabold tabular"
-          style={{ color: over ? "var(--color-danger)" : "var(--color-primary)" }}
+          className={`money-lg font-extrabold tabular ${over ? "text-expense" : "text-primary-fg"}`}
         >
           {formatDOP(Math.abs(remaining), false)}
         </p>
-        <p className="text-xs text-muted mt-0.5 tabular">
+        <p className="text-xs text-muted mt-1 tabular">
           {formatDOP(spent, false)} de {formatDOP(budget, false)}
         </p>
       </div>

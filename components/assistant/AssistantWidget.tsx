@@ -59,13 +59,14 @@ export function AssistantWidget() {
   return (
     <>
       <div className="fixed bottom-24 right-4 lg:bottom-6 lg:right-6 z-[70] grid place-items-center">
-        {/* Anillo de brillo pulsante — distingue esta burbuja del resto de
-         *  la UI (todo lo demás es teal sólido); el gradiente violeta-teal
-         *  y el pulso son la señal visual de "esto es IA". */}
+        {/* Anillo pulsante — la señal de "esto es IA". Antes esa señal era un
+         *  gradiente violeta→teal, el único color fuera de la paleta en toda
+         *  la app. La lleva ahora el movimiento (el pulso) más el ícono de
+         *  destello, que no exigen romper el sistema de color. */}
         {!open && (
           <motion.span
             aria-hidden="true"
-            className="absolute inset-0 rounded-full bg-[linear-gradient(135deg,#8b5cf6,#14b8a6)]"
+            className="absolute inset-0 rounded-pill bg-gradient-brand"
             animate={rm ? undefined : { scale: [1, 1.35, 1], opacity: [0.55, 0, 0.55] }}
             transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
           />
@@ -73,7 +74,7 @@ export function AssistantWidget() {
         <button
           onClick={() => setOpen((v) => !v)}
           aria-label={open ? "Cerrar asistente" : "Abrir asistente"}
-          className="relative grid place-items-center size-14 rounded-full bg-[linear-gradient(135deg,#8b5cf6,#14b8a6)] text-white shadow-lg shadow-black/30 cursor-pointer active:scale-95 transition-transform"
+          className="relative grid place-items-center size-14 rounded-pill bg-gradient-brand text-white shadow-fab cursor-pointer active:scale-95 transition-transform"
         >
           <Icon name={open ? "close" : "sparkle"} size={24} weight={open ? "bold" : "fill"} />
         </button>
@@ -82,15 +83,15 @@ export function AssistantWidget() {
       <AnimatePresence>
         {open && (
           <motion.div
-            className="fixed bottom-[9.5rem] right-4 left-4 sm:left-auto lg:bottom-24 lg:right-6 z-[70] sm:w-96 max-w-full sheet-surface rounded-[26px] shadow-lg shadow-black/25 flex flex-col overflow-hidden"
+            className="fixed bottom-[9.5rem] right-4 left-4 sm:left-auto lg:bottom-24 lg:right-6 z-[70] sm:w-96 max-w-full surface-sheet rounded-hero shadow-raised flex flex-col overflow-hidden"
             style={{ height: "min(28rem, 60vh)" }}
             initial={rm ? undefined : { opacity: 0, scale: 0.95, y: 12 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 12 }}
             transition={{ type: "spring", stiffness: 380, damping: 34 }}
           >
-            <div className="px-4 py-3 border-b border-black/5 flex items-center gap-2">
-              <span className="grid place-items-center size-7 rounded-full bg-[linear-gradient(135deg,#8b5cf6,#14b8a6)] text-white shrink-0">
+            <div className="px-4 py-3 border-b border-line flex items-center gap-2">
+              <span className="grid place-items-center size-7 rounded-pill bg-gradient-brand text-white shrink-0">
                 <Icon name="sparkle" size={14} weight="fill" />
               </span>
               <p className="font-bold text-ink text-sm">Asistente de Cachin&apos;</p>
@@ -107,7 +108,7 @@ export function AssistantWidget() {
                   <div
                     key={i}
                     role="alert"
-                    className="self-start max-w-[92%] rounded-2xl bg-warning-soft px-3 py-2 text-sm text-ink flex items-start gap-2"
+                    className="self-start max-w-[92%] rounded-tile bg-tint-warning px-3 py-2 text-sm text-ink flex items-start gap-2"
                   >
                     <Icon name="alert" size={17} className="text-warning shrink-0 mt-0.5" />
                     <span>{m.text}</span>
@@ -115,10 +116,10 @@ export function AssistantWidget() {
                 ) : (
                   <div
                     key={i}
-                    className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm ${
+                    className={`max-w-[85%] rounded-tile px-3 py-2 text-sm ${
                       m.role === "user"
                         ? "self-end bg-primary text-white"
-                        : "self-start bg-black/5 text-ink"
+                        : "self-start bg-surface-sunken text-ink"
                     }`}
                   >
                     {m.text}
@@ -126,13 +127,13 @@ export function AssistantWidget() {
                 ),
               )}
               {sending && (
-                <div className="self-start rounded-2xl px-3 py-2 text-sm bg-black/5 text-muted">
+                <div className="self-start rounded-tile px-3 py-2 text-sm bg-surface-sunken text-muted">
                   Pensando…
                 </div>
               )}
             </div>
 
-            <div className="p-3 border-t border-black/5 flex items-center gap-2">
+            <div className="p-3 border-t border-line flex items-center gap-2">
               <input
                 type="text"
                 value={input}
@@ -144,13 +145,13 @@ export function AssistantWidget() {
                   }
                 }}
                 placeholder="Escribe tu pregunta…"
-                className="flex-1 min-h-10 rounded-full bg-[var(--input-bg)] border border-[var(--input-border)] px-3.5 text-sm text-ink placeholder:text-muted/60 focus:outline-none focus:border-primary"
+                className="flex-1 min-h-10 rounded-pill bg-[var(--input-bg)] border border-[var(--input-border)] px-3.5 text-sm text-ink placeholder:text-subtle focus:outline-none focus:border-primary"
               />
               <button
                 onClick={send}
                 disabled={sending || !input.trim()}
                 aria-label="Enviar"
-                className="grid place-items-center size-10 rounded-full bg-primary text-white disabled:opacity-40 cursor-pointer shrink-0"
+                className="grid place-items-center size-10 rounded-pill bg-primary text-white disabled:opacity-40 cursor-pointer shrink-0"
               >
                 <Icon name="arrowUpRight" size={18} />
               </button>

@@ -10,7 +10,7 @@ import type { Salary } from "@/lib/types";
  *  franja chica, no una tarjeta protagonista. */
 export function PendingSalaryNotice({ salary }: { salary: Salary }) {
   return (
-    <div className="bg-warning-soft border border-black/5 rounded-[var(--radius-glass-sm)] p-3.5 mb-4 flex items-center gap-3 flex-wrap">
+    <div className="bg-tint-warning border border-line rounded-tile p-3.5 mb-4 flex items-center gap-3 flex-wrap">
       <Icon name="clock" size={18} className="text-warning shrink-0" />
       <p className="text-sm text-ink min-w-0 flex-1">
         <span className="font-semibold">
@@ -18,7 +18,7 @@ export function PendingSalaryNotice({ salary }: { salary: Salary }) {
         </span>{" "}
         <span className="text-muted">No cuenta en tu balance hasta que lo confirmes.</span>
       </p>
-      <ConfirmSalaryButton salaryId={salary.id} compact />
+      <ConfirmSalaryButton salaryId={salary.id} />
     </div>
   );
 }

@@ -8,7 +8,7 @@ export const Tabs = TabsPrimitive.Root;
 export function TabsList({ className, ...props }: React.ComponentProps<typeof TabsPrimitive.List>) {
   return (
     <TabsPrimitive.List
-      className={cn("glass inline-flex gap-1 rounded-2xl p-1", className)}
+      className={cn("glass inline-flex gap-1 rounded-tile p-1", className)}
       {...props}
     />
   );

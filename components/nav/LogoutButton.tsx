@@ -20,7 +20,7 @@ export function LogoutButton() {
     <button
       onClick={logout}
       disabled={loading}
-      className="flex w-full items-center gap-2.5 px-3 py-2.5 rounded-2xl text-sm font-semibold text-ink/80 hover:bg-black/5 transition-colors cursor-pointer disabled:opacity-50"
+      className="flex w-full items-center gap-2.5 px-3 py-2.5 rounded-tile text-sm font-semibold text-muted hover:bg-surface-sunken transition-colors cursor-pointer disabled:opacity-50"
     >
       <Icon name="logout" size={19} />
       Cerrar sesión

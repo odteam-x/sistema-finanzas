@@ -19,11 +19,11 @@ interface EmptyStateProps {
 
 export function EmptyState({ icon, title, message, action, illustration }: EmptyStateProps) {
   return (
-    <div className="glass rounded-[var(--radius-glass)] p-6 text-center flex flex-col items-center gap-2.5">
+    <div className="card rounded-card p-6 text-center flex flex-col items-center gap-2.5">
       {illustration ? (
         <Illustration name={illustration} width={148} className="mb-1" />
       ) : (
-        <span className="grid place-items-center size-12 rounded-full bg-primary-soft text-primary">
+        <span className="grid place-items-center size-12 rounded-pill bg-primary-soft text-primary-fg">
           <Icon name={icon} size={24} />
         </span>
       )}

@@ -1,6 +1,6 @@
 "use client";
 
-import { GlassCard } from "@/components/ui/GlassCard";
+import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
 
@@ -12,8 +12,8 @@ export default function AppError({
 }) {
   return (
     <div className="min-h-dvh grid place-items-center p-5">
-      <GlassCard strong className="max-w-md w-full text-center">
-        <span className="grid place-items-center size-12 rounded-2xl bg-danger-soft text-danger mx-auto mb-3">
+      <Card raised className="max-w-md w-full text-center">
+        <span className="grid place-items-center size-12 rounded-tile bg-tint-expense text-danger mx-auto mb-3">
           <Icon name="alert" size={26} />
         </span>
         <h1 className="text-xl font-extrabold text-ink">Algo salió mal</h1>
@@ -23,7 +23,7 @@ export default function AppError({
         <Button onClick={reset} full>
           Reintentar
         </Button>
-      </GlassCard>
+      </Card>
     </div>
   );
 }

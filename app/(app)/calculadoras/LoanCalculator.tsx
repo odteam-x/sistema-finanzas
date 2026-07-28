@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { Field, Input, MoneyInput, Select } from "@/components/ui/Field";
-import { GlassCard } from "@/components/ui/GlassCard";
 import { formatDOP } from "@/lib/format";
 
 const FREQ_LABEL: Record<string, string> = {
@@ -28,6 +27,20 @@ export function LoanCalculator() {
 
   return (
     <div className="flex flex-col gap-4">
+      {/* Igual que en GoalCalculator: el resultado vive arriba, donde se ve
+          mientras se escriben los campos. */}
+      <div className="rounded-hero bg-gradient-brand px-5 py-6 text-center shadow-hero">
+        <p className="text-sm font-medium text-on-brand-muted">Cuota {FREQ_LABEL[frequency]}</p>
+        <p className="money-lg font-extrabold text-on-brand tabular mt-0.5">
+          {installmentAmount != null ? formatDOP(installmentAmount, false) : "—"}
+        </p>
+        <p className="text-xs text-on-brand-muted mt-1.5">
+          {amountN > 0 && rateN > 0
+            ? `Total con interés: ${formatDOP(totalWithInterest, false)}`
+            : "Completa el monto y las cuotas"}
+        </p>
+      </div>
+
       <Field label="Monto del préstamo" htmlFor="loan-amount" required>
         <MoneyInput id="loan-amount" value={amount} onChange={(e) => setAmount(e.target.value)} />
       </Field>
@@ -51,16 +64,6 @@ export function LoanCalculator() {
       <Field label="Interés total" htmlFor="loan-rate" hint="Opcional. % sobre el monto total del préstamo.">
         <Input id="loan-rate" inputMode="decimal" value={rate} onChange={(e) => setRate(e.target.value)} />
       </Field>
-
-      <GlassCard className="text-center">
-        <p className="text-xs text-muted">Cuota {FREQ_LABEL[frequency]}</p>
-        <p className="text-money-md font-extrabold text-primary tabular mt-1">
-          {installmentAmount != null ? formatDOP(installmentAmount, false) : "—"}
-        </p>
-        {amountN > 0 && rateN > 0 && (
-          <p className="text-xs text-muted mt-1">Total con interés: {formatDOP(totalWithInterest, false)}</p>
-        )}
-      </GlassCard>
     </div>
   );
 }

@@ -14,12 +14,18 @@ interface ButtonProps extends Omit<HTMLMotionProps<"button">, "children"> {
   children?: React.ReactNode;
 }
 
+// `secondary` antes era card-raised + hover:bg-white/85 — un blanco fijo que
+// en modo oscuro aclaraba el botón en vez de oscurecerlo. Ahora las tres
+// variantes no primarias se apoyan en superficies del sistema, así que
+// responden al modo. Solo la primaria lleva gradiente: es la regla de
+// jerarquía (una acción con peso por pantalla).
 const variants: Record<Variant, string> = {
   primary:
-    "bg-gradient-brand text-white shadow-sm hover:brightness-[0.97] active:brightness-95",
-  secondary: "glass-strong text-ink hover:bg-white/85 active:bg-white/90",
-  danger: "bg-gradient-danger text-white hover:brightness-[0.97] active:brightness-95",
-  ghost: "text-ink hover:bg-black/5 active:bg-black/10",
+    "bg-gradient-brand text-white shadow-card hover:brightness-110 active:brightness-95",
+  secondary:
+    "bg-surface-raised text-ink border border-line-strong hover:bg-surface-sunken active:bg-surface-sunken",
+  danger: "bg-gradient-danger text-white hover:brightness-110 active:brightness-95",
+  ghost: "text-ink hover:bg-surface-sunken active:bg-surface-sunken",
 };
 
 const sizes: Record<Size, string> = {
@@ -42,7 +48,7 @@ export function Button({
       whileTap={{ scale: 0.96 }}
       transition={{ type: "spring", stiffness: 500, damping: 30 }}
       className={cn(
-        "inline-flex items-center justify-center rounded-full font-semibold",
+        "inline-flex items-center justify-center rounded-pill font-semibold",
         "transition-[filter,background-color] duration-150 cursor-pointer select-none",
         "disabled:opacity-50 disabled:cursor-not-allowed",
         variants[variant],
@@ -55,7 +61,7 @@ export function Button({
     >
       {loading && (
         <span
-          className="size-4 rounded-full border-2 border-current border-t-transparent animate-spin"
+          className="size-4 rounded-pill border-2 border-current border-t-transparent animate-spin"
           aria-hidden="true"
         />
       )}

@@ -3,7 +3,7 @@ import { getSavingsAccounts, getTags } from "@/lib/data";
 import { todayISO } from "@/lib/format";
 import { TIPS } from "@/lib/tips";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { GlassCard } from "@/components/ui/GlassCard";
+import { Card } from "@/components/ui/Card";
 import { IconBubble } from "@/components/ui/IconBubble";
 import { AccordionItem } from "@/components/ui/Accordion";
 import { Money } from "@/components/ui/Money";
@@ -43,7 +43,7 @@ export default async function SugerenciasPage() {
           <h2 className="text-sm font-bold text-ink px-1 mb-2">Posibles suscripciones</h2>
           <div className="flex flex-col gap-2 mb-6">
             {s.subscriptionCandidates.map((c, i) => (
-              <GlassCard key={i} className="flex items-center gap-3">
+              <Card key={i} className="flex items-center gap-3">
                 <IconBubble icon="repeat" tone="info" />
                 <div className="min-w-0 flex-1">
                   <p className="font-bold text-ink text-sm truncate">{c.name}</p>
@@ -60,7 +60,7 @@ export default async function SugerenciasPage() {
                   defaultName={c.name}
                   defaultAmount={c.amount}
                 />
-              </GlassCard>
+              </Card>
             ))}
           </div>
         </>
@@ -69,25 +69,25 @@ export default async function SugerenciasPage() {
       {/* Alertas personalizadas */}
       <h2 className="text-sm font-bold text-ink px-1 mb-2">Para ti ahora</h2>
       {s.alerts.length === 0 ? (
-        <GlassCard className="mb-6 flex items-center gap-3">
+        <Card className="mb-6 flex items-center gap-3">
           <IconBubble icon="check" tone="brand" />
           <p className="text-sm text-muted">
             Todo en orden por ahora. Sigue registrando tus datos para recibir
             alertas útiles.
           </p>
-        </GlassCard>
+        </Card>
       ) : (
         <div className="flex flex-col gap-2 mb-6">
           {s.alerts.map((a, i) => {
             const st = alertStyle[a.tone];
             return (
-              <GlassCard key={i} className="flex items-start gap-3">
+              <Card key={i} className="flex items-start gap-3">
                 <IconBubble icon={st.name} tone={st.tone} />
                 <div>
                   <p className="font-bold text-ink text-sm">{a.title}</p>
                   <p className="text-sm text-muted mt-0.5">{a.message}</p>
                 </div>
-              </GlassCard>
+              </Card>
             );
           })}
         </div>

@@ -58,7 +58,7 @@ export function DonutChart({ data, centerLabel = "Total" }: DonutChartProps) {
           .join(", ")}`}
         className="shrink-0"
       >
-        <circle cx={cx} cy={cy} r={r} fill="none" stroke="rgba(0,0,0,0.06)" strokeWidth={stroke} />
+        <circle cx={cx} cy={cy} r={r} fill="none" stroke="var(--color-surface-sunken)" strokeWidth={stroke} />
         {slices.map((_, i) => (
           <circle
             key={i}
@@ -98,7 +98,7 @@ export function DonutChart({ data, centerLabel = "Total" }: DonutChartProps) {
         {slices.map((s, i) => (
           <li key={i} className="flex items-center gap-2 text-sm">
             <span
-              className="size-3 rounded-full shrink-0"
+              className="size-3 rounded-pill shrink-0"
               style={{ backgroundColor: COLORS[i % COLORS.length] }}
             />
             <span className="text-ink flex-1 truncate">{s.name}</span>

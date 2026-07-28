@@ -47,7 +47,7 @@ export function SearchBar({ placeholder = "Buscar…" }: { placeholder?: string 
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full min-h-11 rounded-2xl bg-[var(--input-bg)] border border-[var(--input-border)] pl-10 pr-3.5 text-ink placeholder:text-muted/60 shadow-inner focus:outline-none focus:border-primary focus:bg-[var(--input-bg-focus)] transition-colors"
+        className="w-full min-h-11 rounded-tile bg-[var(--input-bg)] border border-[var(--input-border)] pl-10 pr-3.5 text-ink placeholder:text-subtle shadow-inner focus:outline-none focus:border-primary focus:bg-[var(--input-bg-focus)] transition-colors"
       />
     </div>
   );

@@ -11,7 +11,7 @@ import { balanceOfAccount } from "@/lib/balances";
 import { formatMoneyIn, ratesMap, toDOP } from "@/lib/currency";
 import { formatDateShort, todayISO } from "@/lib/format";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { GlassCard } from "@/components/ui/GlassCard";
+import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Badge } from "@/components/ui/Badge";
 import { Field, Input, Select, MoneyInput } from "@/components/ui/Field";
@@ -89,8 +89,11 @@ function TransferForm({ accounts, today }: { accounts: SavingsAccount[]; today: 
       title="Mover entre cuentas"
       action={addTransfer}
       submitLabel="Transferir"
-      trigger="pill"
-      triggerIcon="plus"
+      /* La acción que define esta pantalla: crear una cuenta se hace una vez,
+         mover dinero entre ellas es lo recurrente. Es la única de /balance
+         que lleva peso de botón primario. */
+      trigger="button"
+      triggerIcon="movements"
       triggerLabel="Mover entre cuentas"
       triggerFull
     >
@@ -231,15 +234,15 @@ export default async function BalancePage() {
       />
 
       {/* Total */}
-      <div className="bg-gradient-brand rounded-[var(--radius-glass)] p-4 sm:p-5 mb-4 flex items-center justify-between gap-3 overflow-hidden shadow-lg shadow-black/10">
+      <div className="bg-gradient-brand rounded-card p-4 sm:p-5 mb-4 flex items-center justify-between gap-3 overflow-hidden shadow-hero">
         <div className="min-w-0">
-          <p className="text-sm font-medium text-white/80">Total en cuentas</p>
-          <MoneyValue value={totalSaved} className="block text-money-lg font-extrabold text-white mt-1" />
-          <p className="text-xs text-white/70 mt-1">
+          <p className="text-sm font-medium text-on-brand-muted">Total en cuentas</p>
+          <MoneyValue value={totalSaved} className="block money-lg font-extrabold text-on-brand mt-1" />
+          <p className="text-xs text-on-brand-muted mt-1">
             {accounts.length} {accounts.length === 1 ? "cuenta" : "cuentas"}
           </p>
         </div>
-        <span className="grid place-items-center size-14 rounded-full bg-white/20 text-white shrink-0">
+        <span className="grid place-items-center size-14 rounded-pill bg-on-brand-well text-on-brand shrink-0">
           <Icon name="wallet" size={28} />
         </span>
       </div>
@@ -270,7 +273,7 @@ export default async function BalancePage() {
             const isForeign = a.currency !== "DOP";
             const rateKnown = !isForeign || rates[a.currency] > 0;
             return (
-              <GlassCard key={a.id}>
+              <Card key={a.id}>
                   <div className="flex items-start gap-3">
                     <IconBubble icon={info.icon} tone="brand" />
                     <div className="min-w-0 flex-1">
@@ -279,9 +282,13 @@ export default async function BalancePage() {
                         <Badge tone="neutral">{info.label}</Badge>
                         {isForeign && <Badge tone="neutral">{a.currency}</Badge>}
                       </div>
+                      {/* text-lg / text-ink, no `money-sm text-primary-fg`:
+                          el saldo de cada tarjeta compite de frente con el
+                          total del hero si va en teal y a tamaño de monto.
+                          Aquí es dato de fila, no la cifra de la pantalla. */}
                       {isForeign ? (
                         <>
-                          <p className="text-money-sm font-extrabold text-primary leading-tight tabular">
+                          <p className="text-lg font-extrabold text-ink leading-tight tabular">
                             {formatMoneyIn(balance, a.currency)}
                           </p>
                           <p className="text-xs text-muted">
@@ -295,7 +302,7 @@ export default async function BalancePage() {
                       ) : (
                         <MoneyValue
                           value={balance}
-                          className="block text-money-sm font-extrabold text-primary leading-tight tabular"
+                          className="block text-lg font-extrabold text-ink leading-tight tabular"
                         />
                       )}
                       <p className="text-xs text-muted">
@@ -341,7 +348,7 @@ export default async function BalancePage() {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 mt-3 pt-3 border-t border-black/5">
+                  <div className="flex items-center gap-2 mt-3 pt-3 border-t border-line">
                     <FormModal
                       title={`Depositar en “${a.name}”`}
                       action={addMovement}
@@ -387,7 +394,7 @@ export default async function BalancePage() {
                   </div>
 
                   {a.is_cushion && a.cushion_payout_amount != null && (
-                    <div className="flex items-center justify-between gap-2 mt-3 pt-3 border-t border-black/5">
+                    <div className="flex items-center justify-between gap-2 mt-3 pt-3 border-t border-line">
                       <div className="min-w-0">
                         <p className="text-xs text-muted">Cuenta colchón</p>
                         <p className="text-sm font-semibold text-ink">
@@ -398,7 +405,7 @@ export default async function BalancePage() {
                       <PayCushionButton />
                     </div>
                   )}
-              </GlassCard>
+              </Card>
             );
           })}
         </PeekCarousel>
@@ -413,7 +420,7 @@ export default async function BalancePage() {
               const isDep = m.kind === "deposito";
               return (
                 <li key={m.id}>
-                  <GlassCard className="flex items-center gap-3 py-2.5">
+                  <Card className="flex items-center gap-3 py-2.5">
                     <IconBubble
                       icon={isDep ? "arrowDownLeft" : "arrowUpRight"}
                       tone={isDep ? "neutral" : "danger"}
@@ -437,7 +444,7 @@ export default async function BalancePage() {
                       title="¿Eliminar movimiento?"
                       message="Se recalculará el saldo de la cuenta."
                     />
-                  </GlassCard>
+                  </Card>
                 </li>
               );
             })}

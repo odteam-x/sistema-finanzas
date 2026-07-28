@@ -1,0 +1,273 @@
+"use client";
+
+import Image from "next/image";
+import Link from "next/link";
+import { useState, useSyncExternalStore } from "react";
+import { MoneyValue } from "./MoneyValue";
+import { Money } from "./Money";
+import { Icon, type IconName } from "./Icon";
+import { QuickForms, type QuickForm } from "@/components/quick/QuickForms";
+import { readPrimaryAccount, writePrimaryAccount } from "@/lib/preferences";
+import { readProfile } from "@/lib/profile";
+import { hourInDR } from "@/lib/time";
+import { formatMoneyIn, toDOP } from "@/lib/currency";
+import { cn } from "@/lib/cn";
+import type { Currency, SavingsAccount } from "@/lib/types";
+
+export interface AccountBalance {
+  id: string;
+  name: string;
+  type: SavingsAccount["type"];
+  balance: number;
+  isSavings: boolean;
+  currency: Currency;
+}
+
+interface HomeHeroProps {
+  accounts: AccountBalance[];
+  /** Tasas de cambio a RD$ (DOP = 1) — de lib/summary.ts, para convertir
+   *  cuentas en moneda extranjera al totalizar (ver lib/currency.ts). */
+  rates: Record<Currency, number>;
+  /** Nombre desde la BD (fuente de verdad, sin parpadeo en SSR). Si no llega,
+   *  se usa el espejo en localStorage como respaldo. */
+  displayName?: string;
+  periodLabel: string;
+  alertCount: number;
+}
+
+function timeGreeting(): string {
+  // Hora de RD, no la del dispositivo (que puede estar mal configurado).
+  const h = hourInDR();
+  if (h < 12) return "Buenos días";
+  if (h < 19) return "Buenas tardes";
+  return "Buenas noches";
+}
+
+function subscribeNoop() {
+  return () => {};
+}
+
+/** Bloque superior del Inicio: identidad, saldo y acciones — en ese orden.
+ *
+ *  Sustituye a GreetingHero + BalanceHero, que eran dos bloques con DOS
+ *  cifras grandes compitiendo ("Balance actual" de una cuenta a 56px y
+ *  "Balance total" a 35px, más grande que cualquier otra cosa de la
+ *  pantalla). Ahora manda el total; la cuenta seleccionada baja a una línea
+ *  de apoyo de 14px. El desglose cuenta por cuenta ya no vive aquí: lo tiene
+ *  entero /balance, y aquí se recorre tocando los chips. */
+export function HomeHero({
+  accounts,
+  rates,
+  displayName,
+  periodLabel,
+  alertCount,
+}: HomeHeroProps) {
+  const greeting = useSyncExternalStore(subscribeNoop, timeGreeting, () => "Hola");
+  // Init perezoso (seguro: en el servidor no hay localStorage y readProfile
+  // devuelve el default; el nombre no depende de la hora, así que no hay
+  // riesgo de mismatch de hidratación).
+  const [localName] = useState<string>(() => readProfile().displayName);
+  const name = displayName || localName;
+
+  const [selectedId, setSelectedId] = useState<string>(() => {
+    const saved = readPrimaryAccount();
+    if (saved && accounts.some((a) => a.id === saved)) return saved;
+    return accounts.find((a) => a.type === "efectivo")?.id ?? accounts[0]?.id ?? "";
+  });
+  const [activeForm, setActiveForm] = useState<QuickForm>(null);
+
+  const selected = accounts.find((a) => a.id === selectedId) ?? accounts[0];
+  // El total es un monto ÚNICO en RD$: cada cuenta se convierte según su
+  // propia moneda antes de sumar.
+  const total = accounts.reduce((s, a) => s + toDOP(a.balance, a.currency, rates), 0);
+  const savingsPart = accounts
+    .filter((a) => a.isSavings)
+    .reduce((s, a) => s + toDOP(a.balance, a.currency, rates), 0);
+
+  function pick(id: string) {
+    setSelectedId(id);
+    writePrimaryAccount(id);
+  }
+
+  const hasAccounts = accounts.length > 0;
+
+  return (
+    <>
+      <header
+        className="-mx-4 sm:-mx-6 mb-5 bg-gradient-brand rounded-b-hero px-4 sm:px-6 pb-6 shadow-hero"
+        style={{ paddingTop: "max(1rem, env(safe-area-inset-top))" }}
+      >
+        {/* 1. Identidad */}
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <Image
+              src="/icons/logo-mark-white.png"
+              alt=""
+              width={44}
+              height={44}
+              className="size-11 shrink-0 rounded-pill bg-on-brand-well p-2"
+              priority
+            />
+            <div className="min-w-0">
+              <p className="text-xs text-on-brand-muted truncate">{greeting}</p>
+              <h1 className="text-sm font-bold text-on-brand truncate">
+                {name || "Bienvenido"}
+              </h1>
+            </div>
+          </div>
+          <Link
+            href="/sugerencias"
+            aria-label={
+              alertCount > 0
+                ? `Avisos: ${alertCount} ${alertCount === 1 ? "pendiente" : "pendientes"}`
+                : "Avisos"
+            }
+            className="relative grid place-items-center size-11 shrink-0 rounded-pill bg-on-brand-well text-on-brand active:scale-95 transition-transform"
+          >
+            <Icon name="bell" size={20} />
+            {alertCount > 0 && (
+              <span
+                aria-hidden="true"
+                className="absolute top-1.5 right-1.5 size-2.5 rounded-pill bg-warning ring-2 ring-[var(--brand-grad-from)]"
+              />
+            )}
+          </Link>
+        </div>
+
+        {/* 2. La cifra dominante de la pantalla. Nada más aquí llega a este
+            tamaño — todo lo de abajo es apoyo. */}
+        <div className="mt-7">
+          <p className="text-sm font-medium text-on-brand-muted">Balance total</p>
+          <MoneyValue
+            value={total}
+            decimals={false}
+            className="block money-hero font-extrabold text-on-brand tabular mt-0.5"
+          />
+          <p className="mt-1.5 text-xs text-on-brand-muted">
+            Quincena {periodLabel}
+            {savingsPart !== 0 && (
+              <>
+                {" · incluye "}
+                <Money value={savingsPart} decimals={false} />
+                {" en ahorros"}
+              </>
+            )}
+          </p>
+        </div>
+
+        {/* 3. Cuenta a mano — apoyo, no protagonista. */}
+        {hasAccounts ? (
+          <div className="mt-5">
+            {accounts.length > 1 && (
+              <div className="flex gap-1.5 overflow-x-auto -mx-1 px-1 pb-1">
+                {accounts.map((a) => {
+                  const isActive = a.id === selected?.id;
+                  return (
+                    <button
+                      key={a.id}
+                      onClick={() => pick(a.id)}
+                      aria-pressed={isActive}
+                      className={cn(
+                        "shrink-0 rounded-pill px-4 min-h-11 text-xs font-semibold transition-colors cursor-pointer",
+                        isActive
+                          ? "bg-on-brand text-primary"
+                          : "bg-on-brand-well text-on-brand-muted hover:text-on-brand",
+                      )}
+                    >
+                      {a.name}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+            <p className="mt-2 text-xs text-on-brand-muted">
+              En {selected?.name}:{" "}
+              <span className="font-bold text-on-brand tabular">
+                {selected && selected.currency !== "DOP" ? (
+                  formatMoneyIn(selected.balance, selected.currency, false)
+                ) : (
+                  <Money value={selected?.balance ?? 0} decimals={false} />
+                )}
+              </span>
+            </p>
+          </div>
+        ) : (
+          <Link
+            href="/balance"
+            className="mt-5 inline-flex items-center gap-1.5 rounded-pill bg-on-brand-well px-4 min-h-11 text-sm font-semibold text-on-brand"
+          >
+            <Icon name="plus" size={16} />
+            Crea tu primera cuenta
+          </Link>
+        )}
+
+        {/* 4. Acciones. Suben al primer viewport: antes registrar un gasto
+            —lo más frecuente de la app— solo se podía desde el FAB. */}
+        <div className="mt-7 grid grid-cols-4 gap-1">
+          <QuickAction
+            icon="arrowUpRight"
+            label="Gasto"
+            onClick={() => setActiveForm("gasto")}
+          />
+          <QuickAction
+            icon="arrowDownLeft"
+            label="Ingreso"
+            onClick={() => setActiveForm("ingreso")}
+          />
+          {hasAccounts ? (
+            <QuickAction
+              icon="movements"
+              label="Mover"
+              onClick={() => setActiveForm("movimiento")}
+            />
+          ) : (
+            <QuickAction icon="debt" label="Deuda" onClick={() => setActiveForm("deuda")} />
+          )}
+          <QuickAction icon="clock" label="Historial" href="/movimientos" />
+        </div>
+      </header>
+
+      <QuickForms
+        accounts={accounts}
+        active={activeForm}
+        onClose={() => setActiveForm(null)}
+        idPrefix="hero"
+      />
+    </>
+  );
+}
+
+/** Tile plano sobre el propio hero: círculo de tinte sólido + etiqueta
+ *  debajo. Sin tarjeta ni vidrio — el fondo del hero ya separa el bloque. */
+function QuickAction({
+  icon,
+  label,
+  onClick,
+  href,
+}: {
+  icon: IconName;
+  label: string;
+  onClick?: () => void;
+  href?: string;
+}) {
+  const content = (
+    <>
+      <span className="grid place-items-center size-12 rounded-tile bg-on-brand-well text-on-brand">
+        <Icon name={icon} size={22} />
+      </span>
+      <span className="text-xs font-semibold text-on-brand-muted">{label}</span>
+    </>
+  );
+  const className =
+    "flex flex-col items-center gap-1.5 py-1 cursor-pointer active:scale-95 transition-transform";
+
+  return href ? (
+    <Link href={href} className={className}>
+      {content}
+    </Link>
+  ) : (
+    <button onClick={onClick} className={className}>
+      {content}
+    </button>
+  );
+}

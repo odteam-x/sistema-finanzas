@@ -12,7 +12,7 @@ import { groupByDate } from "@/lib/group";
 import { RANGE_LABEL, parseRangePreset, rangeBounds, type RangePreset } from "@/lib/range";
 import { SearchBar } from "@/components/ui/SearchBar";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { GlassCard } from "@/components/ui/GlassCard";
+import { Card } from "@/components/ui/Card";
 import { StatTile } from "@/components/ui/StatTile";
 import { Badge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -192,18 +192,22 @@ export default async function IngresosPage({
       />
 
       {/* Recibido este mes */}
-      <div className="bg-gradient-brand rounded-[var(--radius-glass)] p-4 sm:p-5 mb-3 flex items-center justify-between gap-3 overflow-hidden shadow-lg shadow-black/10">
+      <div className="bg-gradient-brand rounded-card p-4 sm:p-5 mb-3 flex items-center justify-between gap-3 overflow-hidden shadow-hero">
         <div className="min-w-0">
-          <p className="text-sm font-medium text-white/80">Recibido este mes</p>
-          <MoneyValue value={monthTotal} className="block text-money-lg font-extrabold text-white mt-1" />
+          <p className="text-sm font-medium text-on-brand-muted">Recibido este mes</p>
+          <MoneyValue value={monthTotal} className="block money-lg font-extrabold text-on-brand mt-1" />
         </div>
-        <span className="grid place-items-center size-14 rounded-full bg-white/20 text-white shrink-0">
+        <span className="grid place-items-center size-14 rounded-pill bg-on-brand-well text-on-brand shrink-0">
           <Icon name="wallet" size={28} />
         </span>
       </div>
 
-      <div className="mb-4">
+      {/* `quiet`: a ancho completo y con tamaño de monto era un segundo hero
+          pegado al primero — dos cifras grandes seguidas. Es contexto de una
+          fecha, no la cifra de la pantalla. */}
+      <div className="mb-6">
         <StatTile
+          emphasis="quiet"
           label="Próximo ingreso"
           value={nextPay ? formatDateShort(nextPay) : "—"}
           sub={
@@ -221,7 +225,7 @@ export default async function IngresosPage({
       </div>
 
       {/* Configuración del sueldo */}
-      <GlassCard className="mb-4">
+      <Card className="mb-4">
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
             <p className="text-sm font-bold text-ink">Configuración del sueldo</p>
@@ -288,14 +292,14 @@ export default async function IngresosPage({
             </Field>
           </FormModal>
         </div>
-      </GlassCard>
+      </Card>
 
       {/* Historial */}
       <div className="flex items-center justify-between px-1 mb-2">
         <h2 className="text-sm font-bold text-ink">Historial de ingresos</h2>
         {tags.length > 0 && salaries.length > 0 && (
           <DropdownMenu>
-            <DropdownMenuTrigger className="glass inline-flex items-center gap-1.5 rounded-2xl px-3 py-1.5 text-xs font-semibold text-ink cursor-pointer">
+            <DropdownMenuTrigger className="card inline-flex items-center gap-1.5 rounded-tile px-3 py-1.5 text-xs font-semibold text-ink cursor-pointer">
               <Icon name="chevronDown" size={12} />
               {tagFilter ? (tags.find((t) => t.id === tagFilter)?.name ?? "Filtrar") : "Todos"}
             </DropdownMenuTrigger>
@@ -317,13 +321,13 @@ export default async function IngresosPage({
         <div className="flex flex-col gap-2 mb-3">
           <SearchBar placeholder="Buscar por nota o etiqueta…" />
           <div className="flex items-center justify-between gap-2 flex-wrap">
-            <div className="glass inline-flex gap-1 rounded-2xl p-1">
+            <div className="card inline-flex gap-1 rounded-tile p-1">
               {(Object.keys(RANGE_LABEL) as RangePreset[]).map((r) => (
                 <Link
                   key={r}
                   href={hrefFor({ range: r })}
                   className={`rounded-xl px-2.5 py-1 text-xs font-semibold transition-colors ${
-                    r === range ? "bg-primary text-white" : "text-ink/70"
+                    r === range ? "bg-primary text-on-brand" : "text-muted"
                   }`}
                 >
                   {RANGE_LABEL[r]}
@@ -362,7 +366,7 @@ export default async function IngresosPage({
           title="Sin resultados"
           message="Ningún ingreso coincide con este filtro."
           action={
-            <Link href="/ingresos" className="text-sm font-semibold text-primary">
+            <Link href="/ingresos" className="text-sm font-semibold text-primary-fg">
               Quitar filtros
             </Link>
           }
@@ -377,7 +381,7 @@ export default async function IngresosPage({
               <ul className="flex flex-col gap-2">
                 {group.items.map((s) => (
                   <li key={s.id}>
-                    <GlassCard className="flex items-center gap-3 py-3">
+                    <Card className="flex items-center gap-3 py-3">
                       <IconBubble icon={s.kind === "extra" ? "trendUp" : "wallet"} tone="neutral" />
                       <div className="min-w-0 flex-1">
                         <p className="font-bold text-ink"><Money value={Number(s.amount)} /></p>
@@ -386,7 +390,7 @@ export default async function IngresosPage({
                       {!s.confirmed ? (
                         <>
                           <Badge tone="warning">Pendiente</Badge>
-                          <ConfirmSalaryButton salaryId={s.id} compact />
+                          <ConfirmSalaryButton salaryId={s.id} />
                         </>
                       ) : (
                         <Badge tone={s.kind === "extra" ? "warning" : "primary"}>
@@ -398,7 +402,7 @@ export default async function IngresosPage({
                         title="¿Eliminar ingreso?"
                         message="Se quitará este ingreso del historial."
                       />
-                    </GlassCard>
+                    </Card>
                   </li>
                 ))}
               </ul>

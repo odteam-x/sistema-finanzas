@@ -4,43 +4,8 @@ import { useState } from "react";
 import { AnimatePresence, motion, useDragControls, useReducedMotion } from "framer-motion";
 import { Icon, type IconName } from "@/components/ui/Icon";
 import { IconBubble } from "@/components/ui/IconBubble";
-import { Field, Input, Select, MoneyInput } from "@/components/ui/Field";
-import { FormModal } from "@/components/ui/FormModal";
-import { addExpense } from "@/app/(app)/presupuesto/actions";
-import { addSalary } from "@/app/(app)/ingresos/actions";
-import { addMovement } from "@/app/(app)/balance/actions";
-import { addDebt } from "@/app/(app)/deudas/actions";
-import { todayISO, formatDOP } from "@/lib/format";
-import { parseAmount, type ActionResult } from "@/lib/actions-shared";
-import { submitOfflineAware } from "@/lib/offlineQueue";
+import { QuickForms, type QuickForm } from "@/components/quick/QuickForms";
 import type { SavingsAccount } from "@/lib/types";
-
-type QuickForm = "gasto" | "ingreso" | "movimiento" | "deuda" | null;
-
-// Los 3 formularios "sobre la marcha" del FAB pasan por la cola offline-first
-// (Bloque 12, ver lib/offlineQueue.ts) — si no hay red, se encolan en vez de
-// fallar. "Nueva deuda" queda fuera de este alcance: registrar una deuda no
-// es un caso de "estoy en la calle sin señal" tan frecuente como estos 3.
-function submitGasto(formData: FormData): Promise<ActionResult> {
-  const amount = parseAmount(formData.get("amount"));
-  return submitOfflineAware("gasto", addExpense, formData, `Gasto · ${formatDOP(amount || 0, false)}`);
-}
-
-function submitIngreso(formData: FormData): Promise<ActionResult> {
-  const amount = parseAmount(formData.get("amount"));
-  return submitOfflineAware("ingreso", addSalary, formData, `Ingreso · ${formatDOP(amount || 0, false)}`);
-}
-
-function submitMovimiento(formData: FormData): Promise<ActionResult> {
-  const amount = parseAmount(formData.get("amount"));
-  const isDeposito = String(formData.get("kind") ?? "") === "deposito";
-  return submitOfflineAware(
-    "movimiento",
-    addMovement,
-    formData,
-    `${isDeposito ? "Ingreso" : "Gasto"} · ${formatDOP(amount || 0, false)}`,
-  );
-}
 
 function QuickRow({
   icon,
@@ -50,7 +15,7 @@ function QuickRow({
   onClick,
 }: {
   icon: IconName;
-  tone: "brand" | "danger" | "warning" | "info" | "neutral";
+  tone: "brand" | "income" | "expense" | "warning" | "info" | "neutral";
   title: string;
   sub: string;
   onClick: () => void;
@@ -58,7 +23,7 @@ function QuickRow({
   return (
     <button
       onClick={onClick}
-      className="flex items-center gap-3 w-full p-2.5 rounded-2xl hover:bg-black/5 active:scale-[0.98] transition-colors text-left cursor-pointer"
+      className="flex items-center gap-3 w-full p-2.5 rounded-tile hover:bg-surface-sunken active:scale-[0.98] transition-colors text-left cursor-pointer"
     >
       <IconBubble icon={icon} tone={tone} />
       <div className="min-w-0">
@@ -69,16 +34,15 @@ function QuickRow({
   );
 }
 
-/** Botón flotante central de la tab bar: abre una hoja con 3 accesos
- *  directos (Gasto/Ingreso/Movimiento) para registrar dinero sin salir de
- *  la pantalla en la que el usuario está. Reutiliza las mismas server
- *  actions que Presupuesto/Ingresos/Balance — nada de lógica duplicada. */
+/** Botón flotante central de la tab bar: abre una hoja con los accesos
+ *  directos para registrar dinero sin salir de la pantalla en la que estés.
+ *  Los formularios en sí viven en QuickForms, compartidos con la fila de
+ *  acciones rápidas del Inicio. */
 export function QuickAddFab({ accounts }: { accounts: SavingsAccount[] }) {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [activeForm, setActiveForm] = useState<QuickForm>(null);
   const rm = useReducedMotion();
   const dragControls = useDragControls();
-  const today = todayISO();
 
   function pick(form: QuickForm) {
     setSheetOpen(false);
@@ -90,7 +54,7 @@ export function QuickAddFab({ accounts }: { accounts: SavingsAccount[] }) {
       <button
         onClick={() => setSheetOpen(true)}
         aria-label="Agregar"
-        className="absolute left-1/2 -translate-x-1/2 -top-5 grid place-items-center size-14 rounded-full bg-gradient-brand text-white shadow-lg shadow-black/25 cursor-pointer active:scale-95 transition-transform"
+        className="absolute left-1/2 -translate-x-1/2 -top-5 grid place-items-center size-14 rounded-pill bg-gradient-brand text-on-brand shadow-fab cursor-pointer active:scale-95 transition-transform"
       >
         <Icon name="plus" size={26} />
       </button>
@@ -100,7 +64,7 @@ export function QuickAddFab({ accounts }: { accounts: SavingsAccount[] }) {
           <div className="lg:hidden fixed inset-0 z-[95]" role="dialog" aria-modal="true">
             <motion.button
               aria-label="Cerrar"
-              className="absolute inset-0 bg-black/40"
+              className="absolute inset-0 bg-black/55"
               onClick={() => setSheetOpen(false)}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -108,7 +72,7 @@ export function QuickAddFab({ accounts }: { accounts: SavingsAccount[] }) {
               transition={{ duration: 0.18 }}
             />
             <motion.div
-              className="sheet-surface absolute inset-x-0 bottom-0 rounded-t-[26px] p-4 pb-[max(1rem,env(safe-area-inset-bottom))]"
+              className="surface-sheet absolute inset-x-0 bottom-0 rounded-t-hero p-4 pb-[max(1rem,env(safe-area-inset-bottom))]"
               style={{ willChange: "transform" }}
               initial={rm ? false : { y: "100%" }}
               animate={{ y: 0 }}
@@ -127,20 +91,20 @@ export function QuickAddFab({ accounts }: { accounts: SavingsAccount[] }) {
                 onPointerDown={(e) => dragControls.start(e)}
                 className="-mt-1 mb-2 flex justify-center py-2 touch-none cursor-grab active:cursor-grabbing"
               >
-                <div className="h-1.5 w-11 rounded-full bg-black/20" />
+                <div className="h-1.5 w-11 rounded-pill bg-line-strong" />
               </div>
               <p className="text-sm font-bold text-ink px-1 mb-2">Agregar</p>
               <div className="flex flex-col gap-1">
                 <QuickRow
                   icon="arrowUpRight"
-                  tone="danger"
+                  tone="expense"
                   title="Gasto"
                   sub="Registra un gasto rápido"
                   onClick={() => pick("gasto")}
                 />
                 <QuickRow
                   icon="arrowDownLeft"
-                  tone="brand"
+                  tone="income"
                   title="Ingreso"
                   sub="Sueldo o ingreso extra"
                   onClick={() => pick("ingreso")}
@@ -167,137 +131,12 @@ export function QuickAddFab({ accounts }: { accounts: SavingsAccount[] }) {
         )}
       </AnimatePresence>
 
-      <FormModal
-        title="Registrar gasto"
-        action={submitGasto}
-        submitLabel="Registrar"
-        hideTrigger
-        open={activeForm === "gasto"}
-        onOpenChange={(v) => !v && setActiveForm(null)}
-      >
-        <Field label="Monto" htmlFor="qa-exp-amount" required>
-          <MoneyInput id="qa-exp-amount" name="amount" required />
-        </Field>
-        <Field label="Fecha" htmlFor="qa-exp-date" required>
-          <Input id="qa-exp-date" name="date" type="date" defaultValue={today} required />
-        </Field>
-        {accounts.length > 0 && (
-          <Field label="Cuenta" htmlFor="qa-exp-account" hint="De dónde sale el dinero.">
-            <Select id="qa-exp-account" name="account_id" defaultValue="">
-              <option value="">Sin asociar</option>
-              {accounts.map((a) => (
-                <option key={a.id} value={a.id}>
-                  {a.name}
-                </option>
-              ))}
-            </Select>
-          </Field>
-        )}
-        <Field label="Nota" htmlFor="qa-exp-note">
-          <Input id="qa-exp-note" name="note" placeholder="Opcional" />
-        </Field>
-      </FormModal>
-
-      <FormModal
-        title="Registrar ingreso"
-        action={submitIngreso}
-        submitLabel="Registrar"
-        hideTrigger
-        open={activeForm === "ingreso"}
-        onOpenChange={(v) => !v && setActiveForm(null)}
-      >
-        <Field label="Monto" htmlFor="qa-inc-amount" required>
-          <MoneyInput id="qa-inc-amount" name="amount" required />
-        </Field>
-        <Field label="Fecha del pago" htmlFor="qa-inc-date" required>
-          <Input id="qa-inc-date" name="pay_date" type="date" defaultValue={today} required />
-        </Field>
-        <Field label="¿Cómo cobras?" htmlFor="qa-inc-method" hint="A esa cuenta se acredita, salvo que elijas una abajo.">
-          <Select id="qa-inc-method" name="payment_method" defaultValue="efectivo">
-            <option value="efectivo">Efectivo</option>
-            <option value="banco">Depósito / transferencia (banco)</option>
-            <option value="tarjeta_debito">Tarjeta débito</option>
-            <option value="tarjeta_credito">Tarjeta crédito</option>
-          </Select>
-        </Field>
-        {accounts.length > 0 && (
-          <Field label="O elige una cuenta existente" htmlFor="qa-inc-account" hint="Opcional. Tiene prioridad sobre ¿Cómo cobras?.">
-            <Select id="qa-inc-account" name="account_id" defaultValue="">
-              <option value="">Usar “¿Cómo cobras?”</option>
-              {accounts.map((a) => (
-                <option key={a.id} value={a.id}>
-                  {a.name}
-                </option>
-              ))}
-            </Select>
-          </Field>
-        )}
-        <Field label="Nota" htmlFor="qa-inc-note">
-          <Input id="qa-inc-note" name="note" placeholder="Opcional" />
-        </Field>
-      </FormModal>
-
-      <FormModal
-        title="Nuevo movimiento"
-        action={submitMovimiento}
-        submitLabel="Registrar"
-        hideTrigger
-        open={activeForm === "movimiento"}
-        onOpenChange={(v) => !v && setActiveForm(null)}
-      >
-        <Field label="Tipo" htmlFor="qa-mv-kind">
-          <Select id="qa-mv-kind" name="kind" defaultValue="retiro">
-            <option value="deposito">Ingreso</option>
-            <option value="retiro">Gasto</option>
-          </Select>
-        </Field>
-        <Field label="Monto" htmlFor="qa-mv-amount" required>
-          <MoneyInput id="qa-mv-amount" name="amount" required />
-        </Field>
-        <Field label="Fecha" htmlFor="qa-mv-date" required>
-          <Input id="qa-mv-date" name="date" type="date" defaultValue={today} required />
-        </Field>
-        <Field label="Cuenta" htmlFor="qa-mv-account" required>
-          <Select id="qa-mv-account" name="account_id" required>
-            {accounts.map((a) => (
-              <option key={a.id} value={a.id}>
-                {a.name}
-              </option>
-            ))}
-          </Select>
-        </Field>
-        <Field label="Nota" htmlFor="qa-mv-note">
-          <Input id="qa-mv-note" name="note" placeholder="Opcional" />
-        </Field>
-      </FormModal>
-
-      <FormModal
-        title="Nueva deuda"
-        action={addDebt}
-        submitLabel="Crear deuda"
-        hideTrigger
-        open={activeForm === "deuda"}
-        onOpenChange={(v) => !v && setActiveForm(null)}
-      >
-        <input type="hidden" name="payment_type" value="unico" />
-        <input type="hidden" name="acquired_date" value={today} />
-        <Field label="Acreedor / nombre" htmlFor="qa-debt-name" required>
-          <Input id="qa-debt-name" name="name" placeholder="Ej.: Préstamo banco" required />
-        </Field>
-        <Field label="Monto total" htmlFor="qa-debt-amount" required>
-          <MoneyInput id="qa-debt-amount" name="total_amount" required />
-        </Field>
-        {/* Un <input type="date"> vacío en un campo w-full se ve como una
-            caja enorme casi sin contenido, todo el aire a la derecha del
-            "dd/mm/aaaa" — se limita el ancho al del propio campo, no al del
-            modal entero. */}
-        <Field label="Fecha de pago" htmlFor="qa-debt-due" hint="Opcional." className="max-w-[180px]">
-          <Input id="qa-debt-due" name="due_date" type="date" />
-        </Field>
-        <Field label="Nota" htmlFor="qa-debt-note">
-          <Input id="qa-debt-note" name="note" placeholder="Opcional" />
-        </Field>
-      </FormModal>
+      <QuickForms
+        accounts={accounts}
+        active={activeForm}
+        onClose={() => setActiveForm(null)}
+        idPrefix="fab"
+      />
     </>
   );
 }

@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { Modal } from "./Modal";
 import { Button } from "./Button";
 import { Icon, type IconName } from "./Icon";
+import { Receipt, type ReceiptData } from "./Receipt";
 import { cn } from "@/lib/cn";
 import type { ActionResult } from "@/lib/actions-shared";
 
@@ -29,6 +30,12 @@ interface FormModalProps {
    *  el modal maneja su propio estado interno como siempre. */
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
+  /** Si se pasa, al guardar con éxito el modal NO se cierra: cambia su
+   *  contenido por un recibo construido con el FormData que se acaba de
+   *  enviar. `queued` indica que la acción se encoló sin conexión en vez de
+   *  llegar al servidor. Se recibe ya resuelto para no duplicar aquí la
+   *  detección de red. */
+  receipt?: (formData: FormData, queued: boolean) => ReceiptData;
 }
 
 export function FormModal({
@@ -46,9 +53,11 @@ export function FormModal({
   hideTrigger,
   open: controlledOpen,
   onOpenChange,
+  receipt,
 }: FormModalProps) {
   const [internalOpen, setInternalOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [done, setDone] = useState<ReceiptData | null>(null);
   const [pending, startTransition] = useTransition();
   const isControlled = controlledOpen !== undefined;
   const open = isControlled ? controlledOpen : internalOpen;
@@ -60,19 +69,33 @@ export function FormModal({
 
   function openModal() {
     setError(null);
+    setDone(null);
     setOpen(true);
+  }
+
+  /** Cierra y limpia el recibo, para que la próxima apertura muestre el
+   *  formulario y no la confirmación anterior. */
+  function close() {
+    setOpen(false);
+    setDone(null);
   }
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
+    // Se lee ANTES de enviar: submitOfflineAware devuelve `ok: true` tanto
+    // si guardó como si encoló, así que después ya no hay forma de
+    // distinguirlo — y un recibo que diga "listo" sobre algo que sigue en
+    // la cola sería mentira.
+    const queued = typeof navigator !== "undefined" && navigator.onLine === false;
     startTransition(async () => {
       const res = await action(formData);
-      if (res?.ok) {
-        setOpen(false);
-      } else {
+      if (!res?.ok) {
         setError(res?.error ?? "Ocurrió un error. Intenta de nuevo.");
+        return;
       }
+      if (receipt) setDone(receipt(formData, queued));
+      else setOpen(false);
     });
   }
 
@@ -89,7 +112,7 @@ export function FormModal({
         <button
           onClick={openModal}
           aria-label={triggerAriaLabel ?? triggerLabel ?? "Abrir"}
-          className="grid place-items-center size-11 rounded-full text-muted hover:bg-black/5 cursor-pointer shrink-0"
+          className="grid place-items-center size-11 rounded-pill text-muted hover:bg-surface-sunken cursor-pointer shrink-0"
         >
           <Icon name={triggerIcon} size={18} />
         </button>
@@ -98,7 +121,7 @@ export function FormModal({
       {!hideTrigger && trigger === "link" && (
         <button
           onClick={openModal}
-          className="inline-flex items-center gap-1 text-sm font-semibold text-primary hover:text-primary-hover cursor-pointer"
+          className="inline-flex items-center gap-1 text-sm font-semibold text-primary-fg hover:text-primary-fg cursor-pointer"
         >
           <Icon name={triggerIcon} size={16} />
           {triggerLabel}
@@ -109,10 +132,10 @@ export function FormModal({
         <button
           onClick={openModal}
           className={cn(
-            "inline-flex items-center justify-center gap-1.5 min-h-11 rounded-full font-semibold text-sm cursor-pointer transition-colors active:scale-[0.97]",
+            "inline-flex items-center justify-center gap-1.5 min-h-11 rounded-pill font-semibold text-sm cursor-pointer transition-colors active:scale-[0.97]",
             triggerTone === "ghost"
-              ? "border border-black/10 text-ink hover:bg-black/5"
-              : "bg-primary-soft text-primary hover:bg-primary/15",
+              ? "border border-line-strong text-ink hover:bg-surface-sunken"
+              : "bg-primary-soft text-primary-fg hover:bg-primary-soft",
             triggerFull ? "w-full" : "flex-1",
           )}
         >
@@ -121,34 +144,36 @@ export function FormModal({
         </button>
       )}
 
-      <Modal open={open} onClose={() => setOpen(false)} title={title}>
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          {children}
+      {/* El recibo reemplaza el contenido del MISMO modal: no hay una
+          segunda capa que abrir ni un cierre-y-reapertura que se vea como
+          un parpadeo. */}
+      <Modal open={open} onClose={close} title={done ? done.title : title}>
+        {done ? (
+          <Receipt data={done} onDone={close} />
+        ) : (
+          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+            {children}
 
-          {error && (
-            <p
-              className="text-sm font-medium text-danger bg-danger-soft rounded-2xl px-3 py-2 flex items-center gap-2"
-              role="alert"
-            >
-              <Icon name="alert" size={18} />
-              {error}
-            </p>
-          )}
+            {error && (
+              <p
+                className="text-sm font-medium text-danger bg-tint-expense rounded-tile px-3 py-2 flex items-center gap-2"
+                role="alert"
+              >
+                <Icon name="alert" size={18} />
+                {error}
+              </p>
+            )}
 
-          <div className="flex gap-2 pt-1">
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={() => setOpen(false)}
-              full
-            >
-              Cancelar
-            </Button>
-            <Button type="submit" loading={pending} full>
-              {submitLabel}
-            </Button>
-          </div>
-        </form>
+            <div className="flex gap-2 pt-1">
+              <Button type="button" variant="secondary" onClick={close} full>
+                Cancelar
+              </Button>
+              <Button type="submit" loading={pending} full>
+                {submitLabel}
+              </Button>
+            </div>
+          </form>
+        )}
       </Modal>
     </>
   );

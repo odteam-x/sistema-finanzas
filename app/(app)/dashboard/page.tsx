@@ -4,10 +4,9 @@ import { getUserProfile } from "@/lib/data";
 import { runSubscriptionCatchUp } from "@/lib/subscriptions";
 import { runSalaryCatchUp } from "@/lib/salary";
 import { formatDateShort, daysBetween, clampPct } from "@/lib/format";
-import { GreetingHero } from "@/components/ui/GreetingHero";
-import { BalanceHero } from "@/components/ui/BalanceHero";
+import { HomeHero } from "@/components/ui/HomeHero";
 import { PendingSalaryNotice } from "@/components/ui/PendingSalaryNotice";
-import { GlassCard } from "@/components/ui/GlassCard";
+import { Card } from "@/components/ui/Card";
 import { CollapsibleCard } from "@/components/ui/CollapsibleCard";
 import { StatTile } from "@/components/ui/StatTile";
 import { ProgressBar } from "@/components/ui/ProgressBar";
@@ -24,9 +23,9 @@ export const metadata = { title: "Inicio · Cachin'" };
 
 const alertTone: Record<string, string> = {
   warning: "text-warning",
-  danger: "text-danger",
+  danger: "text-expense",
   info: "text-info",
-  success: "text-primary",
+  success: "text-income",
 };
 
 function dueSub(days: number | null): string {
@@ -44,11 +43,34 @@ function commitmentSub(days: number): string {
   return `En ${days} días`;
 }
 
+/** Encabezado de sección: separa por espacio, no por línea. */
+function SectionHead({
+  title,
+  href,
+  linkLabel,
+}: {
+  title: string;
+  href?: string;
+  linkLabel?: string;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3 px-1 mb-2.5">
+      <h2 className="text-sm font-bold text-ink">{title}</h2>
+      {href && (
+        <Link href={href} className="text-sm font-semibold text-primary-fg shrink-0">
+          {linkLabel}
+        </Link>
+      )}
+    </div>
+  );
+}
+
 export default async function DashboardPage() {
   await Promise.all([runSubscriptionCatchUp(), runSalaryCatchUp()]);
   const [s, profile] = await Promise.all([getFinanceSummary(), getUserProfile()]);
 
   const budgetPct = clampPct(s.realQuincena, s.estQuincena || 1);
+  const overBudget = s.realQuincena > s.estQuincena && s.estQuincena > 0;
 
   // Recordatorios locales al abrir el Inicio (ver NotificationTrigger.tsx):
   // reusa las alertas ya calculadas (deuda por vencer, presupuesto excedido)
@@ -67,194 +89,195 @@ export default async function DashboardPage() {
   return (
     <>
       <NotificationTrigger candidates={notifCandidates} />
-      <GreetingHero subtitle={`Quincena ${s.quincena.label}`} displayName={profile?.display_name ?? undefined} />
 
-      {/* R12: "Balance actual" (una cuenta, seleccionable) y "Balance total"
-          (todas, ahorros incluidos) — reemplazan a la vieja tarjeta única y a
-          "Disponible esta quincena", que mostraba un número negativo poco
-          accionable (R05). El aviso de confirmar el sueldo sobrevive aparte
-          porque evita contar dinero que todavía no ha llegado. */}
-      <BalanceHero accounts={s.accountBalances} rates={s.rates} />
+      <HomeHero
+        accounts={s.accountBalances}
+        rates={s.rates}
+        displayName={profile?.display_name ?? undefined}
+        periodLabel={s.quincena.label}
+        alertCount={s.alerts.length}
+      />
 
       {s.pendingSalary && <PendingSalaryNotice salary={s.pendingSalary} />}
 
-      {/* Alertas: sube justo debajo del balance — es lo más accionable de
-          toda la pantalla (algo que necesita atención ahora), antes vivía al
-          final del todo, que es donde menos se nota (Bloque 3). */}
+      {/* Alertas: lo más accionable de la pantalla, justo debajo del hero. */}
       {s.alerts.length > 0 && (
-        <GlassCard className="mb-4">
-          <div className="flex items-center justify-between mb-2">
-            <h2 className="font-bold text-ink">Alertas</h2>
-            <Link href="/sugerencias" className="text-sm font-semibold text-primary">
-              Ver consejos
-            </Link>
-          </div>
-          <ul className="flex flex-col gap-2">
-            {s.alerts.slice(0, 3).map((a, i) => (
-              <li key={i} className="flex items-start gap-2.5">
-                <Icon
-                  name={(a.tone === "info" ? "bulb" : a.tone === "success" ? "check" : "alert") as IconName}
-                  size={18}
-                  className={cn("mt-0.5 shrink-0", alertTone[a.tone])}
-                />
-                <p className="text-sm text-ink">
-                  <span className="font-semibold">{a.title}.</span>{" "}
-                  <span className="text-muted">{a.message}</span>
-                </p>
-              </li>
-            ))}
-          </ul>
-        </GlassCard>
+        <section className="mb-6">
+          <SectionHead title="Alertas" href="/sugerencias" linkLabel="Ver consejos" />
+          <Card>
+            <ul className="flex flex-col gap-2.5">
+              {s.alerts.slice(0, 3).map((a, i) => (
+                <li key={i} className="flex items-start gap-2.5">
+                  <Icon
+                    name={(a.tone === "info" ? "bulb" : a.tone === "success" ? "check" : "alert") as IconName}
+                    size={18}
+                    className={cn("mt-0.5 shrink-0", alertTone[a.tone])}
+                  />
+                  <p className="text-sm text-ink">
+                    <span className="font-semibold">{a.title}.</span>{" "}
+                    <span className="text-muted">{a.message}</span>
+                  </p>
+                </li>
+              ))}
+            </ul>
+          </Card>
+        </section>
       )}
 
-      {/* Resumen (2x2) */}
-      <div className="grid grid-cols-2 gap-3 mb-4">
-        <StatTile
-          label="Total ahorrado"
-          value={<MoneyValue value={s.totalSaved + s.generalSavings} decimals={false} />}
-          icon="piggy"
-          tone="primary"
-        />
-        <StatTile
-          label="Total adeudado"
-          value={<MoneyValue value={s.outstandingDebt} decimals={false} />}
-          icon="debt"
-          tone={s.outstandingDebt > 0 ? "danger" : "neutral"}
-        />
-        <StatTile
-          label="Próximo pago"
-          value={formatDateShort(s.nextPay)}
-          sub={s.daysToPay === 0 ? "hoy" : `en ${s.daysToPay} días`}
-          icon="clock"
-          tone="info"
-        />
-        <StatTile
-          label="Próxima deuda"
-          value={s.nextDue ? formatDateShort(s.nextDue) : "—"}
-          sub={s.nextDueName ? `${s.nextDueName} · ${dueSub(s.daysToDue)}` : dueSub(s.daysToDue)}
-          icon="calendar"
-          tone={s.daysToDue !== null && s.daysToDue < 0 ? "danger" : "warning"}
-        />
-      </div>
-
-      {/* Compromisos próximos: colapsado por defecto — el próximo pago y la
-          próxima deuda ya están arriba en el resumen 2x2; esto es el detalle
-          completo (incluye suscripciones), no la primera lectura de la
-          pantalla (Bloque 3). */}
-      {s.upcomingCommitments.length > 0 && (
-        <CollapsibleCard
-          className="mb-4"
-          title="Compromisos próximos"
-          summary={`${s.upcomingCommitments.length} pendientes · el más próximo: ${s.upcomingCommitments[0].name}`}
-          action={
-            <Link href="/calendario" className="text-sm font-semibold text-primary">
-              Calendario
-            </Link>
-          }
-        >
-          <ul className="flex flex-col gap-3">
-            {s.upcomingCommitments.map((c, i) => (
-              <li key={i} className="flex items-center gap-3">
-                <IconBubble
-                  icon={c.kind === "debt" ? "debt" : "repeat"}
-                  tone={c.kind === "debt" ? "warning" : "info"}
-                  size="sm"
-                />
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold text-ink truncate">{c.name}</p>
-                  <p className="text-xs text-muted">{commitmentSub(daysBetween(s.today, c.date))}</p>
-                </div>
-                <p className="text-sm font-semibold text-ink shrink-0">
-                  <Money value={c.amount} decimals={false} />
-                </p>
-              </li>
-            ))}
-          </ul>
-        </CollapsibleCard>
-      )}
-
-      {/* Últimos movimientos */}
-      <GlassCard className="mb-4">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="font-bold text-ink">Últimos movimientos</h2>
-          <Link href="/movimientos" className="text-sm font-semibold text-primary">
-            Ver todos
-          </Link>
+      {/* Resumen 2x2 en `quiet`: son cuatro cifras de contexto, y al tamaño
+          de monto grande competían de frente con el saldo del hero. */}
+      <section className="mb-6">
+        <SectionHead title="Tu situación" />
+        <div className="grid grid-cols-2 gap-2.5">
+          <StatTile
+            emphasis="quiet"
+            label="Total ahorrado"
+            value={<MoneyValue value={s.totalSaved + s.generalSavings} decimals={false} />}
+            icon="piggy"
+            tone="primary"
+          />
+          <StatTile
+            emphasis="quiet"
+            label="Total adeudado"
+            value={<MoneyValue value={s.outstandingDebt} decimals={false} />}
+            icon="debt"
+            tone={s.outstandingDebt > 0 ? "expense" : "neutral"}
+          />
+          <StatTile
+            emphasis="quiet"
+            label="Próximo pago"
+            value={formatDateShort(s.nextPay)}
+            sub={s.daysToPay === 0 ? "hoy" : `en ${s.daysToPay} días`}
+            icon="clock"
+            tone="info"
+          />
+          <StatTile
+            emphasis="quiet"
+            label="Próxima deuda"
+            value={s.nextDue ? formatDateShort(s.nextDue) : "—"}
+            sub={s.nextDueName ? `${s.nextDueName} · ${dueSub(s.daysToDue)}` : dueSub(s.daysToDue)}
+            icon="calendar"
+            tone={s.daysToDue !== null && s.daysToDue < 0 ? "expense" : "warning"}
+          />
         </div>
-        {s.recentMovements.length === 0 ? (
-          <p className="text-sm text-muted">Aún no has registrado movimientos.</p>
-        ) : (
-          <ul className="flex flex-col gap-3">
-            {s.recentMovements.map((m) => {
-              const isDep = m.kind === "deposito";
-              return (
-                <li key={m.id} className="flex items-center gap-3">
+      </section>
+
+      {/* Compromisos próximos: colapsado — el próximo pago y la próxima deuda
+          ya están arriba; esto es el detalle completo (incluye
+          suscripciones), no la primera lectura de la pantalla. */}
+      {s.upcomingCommitments.length > 0 && (
+        <section className="mb-6">
+          <CollapsibleCard
+            title="Compromisos próximos"
+            summary={`${s.upcomingCommitments.length} pendientes · el más próximo: ${s.upcomingCommitments[0].name}`}
+            action={
+              <Link href="/calendario" className="text-sm font-semibold text-primary-fg">
+                Calendario
+              </Link>
+            }
+          >
+            <ul className="flex flex-col gap-3">
+              {s.upcomingCommitments.map((c, i) => (
+                <li key={i} className="flex items-center gap-3">
                   <IconBubble
-                    icon={isDep ? "arrowDownLeft" : "arrowUpRight"}
-                    tone={isDep ? "neutral" : "danger"}
+                    icon={c.kind === "debt" ? "debt" : "repeat"}
+                    tone={c.kind === "debt" ? "warning" : "info"}
                     size="sm"
                   />
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold text-ink truncate">
-                      {m.note ?? (isDep ? "Ingreso" : "Gasto")}
-                    </p>
-                    <p className="text-xs text-muted">{formatDateShort(m.date)}</p>
+                    <p className="text-sm font-semibold text-ink truncate">{c.name}</p>
+                    <p className="text-xs text-muted">{commitmentSub(daysBetween(s.today, c.date))}</p>
                   </div>
-                  <p className="text-sm font-semibold text-ink shrink-0">
-                    {isDep ? "+" : "−"}
-                    <Money value={Number(m.amount)} />
+                  <p className="text-sm font-bold text-ink tabular shrink-0">
+                    <Money value={c.amount} decimals={false} />
                   </p>
                 </li>
-              );
-            })}
-          </ul>
-        )}
-      </GlassCard>
-
-      {/* Gastos de la quincena */}
-      <GlassCard className="mb-4">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="font-bold text-ink">Gastos de la quincena</h2>
-          <Link href="/presupuesto" className="text-sm font-semibold text-primary">
-            Ver
-          </Link>
-        </div>
-        <div className="mb-4">
-          <div className="flex items-end justify-between mb-1.5">
-            <span className="text-sm text-muted">
-              Gastado <span className="font-bold text-ink"><Money value={s.realQuincena} decimals={false} /></span>
-            </span>
-            <span className="text-sm text-muted">
-              de <span className="font-bold text-ink"><Money value={s.estQuincena} decimals={false} /></span>
-            </span>
-          </div>
-          <ProgressBar
-            value={budgetPct}
-            tone={s.realQuincena > s.estQuincena && s.estQuincena > 0 ? "danger" : "primary"}
-          />
-        </div>
-        <BarCompare
-          bars={[
-            { name: "Ingreso quincenal", value: s.ingresoQuincena, tone: "primary" },
-            { name: "Presupuesto gastos", value: s.estQuincena, tone: "accent" },
-            { name: "Cuotas del periodo", value: s.cuotasPeriodo, tone: "warning" },
-          ]}
-        />
-      </GlassCard>
-
-      {/* Ahorros */}
-      {s.goals.length > 0 && (
-        <GlassCard className="mb-4">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="font-bold text-ink">Ahorros</h2>
-            <Link href="/metas" className="text-sm font-semibold text-primary">
-              Ver todos
-            </Link>
-          </div>
-          <GoalsRing saved={s.totalSaved} target={s.totalTarget} />
-        </GlassCard>
+              ))}
+            </ul>
+          </CollapsibleCard>
+        </section>
       )}
 
+      <section className="mb-6">
+        <SectionHead title="Últimos movimientos" href="/movimientos" linkLabel="Ver todos" />
+        <Card>
+          {s.recentMovements.length === 0 ? (
+            <p className="text-sm text-muted">Aún no has registrado movimientos.</p>
+          ) : (
+            <ul className="flex flex-col gap-3.5">
+              {s.recentMovements.map((m) => {
+                const isDep = m.kind === "deposito";
+                return (
+                  <li key={m.id} className="flex items-center gap-3">
+                    <IconBubble
+                      icon={isDep ? "arrowDownLeft" : "arrowUpRight"}
+                      tone={isDep ? "income" : "expense"}
+                      size="sm"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold text-ink truncate">
+                        {m.note ?? (isDep ? "Ingreso" : "Gasto")}
+                      </p>
+                      <p className="text-xs text-muted">{formatDateShort(m.date)}</p>
+                    </div>
+                    {/* El monto es lo que se escanea en una lista de dinero:
+                        a la derecha, en negrita y tabular, con el color que
+                        dice la dirección sin tener que leer el signo. */}
+                    <p
+                      className={cn(
+                        "text-sm font-bold tabular shrink-0",
+                        isDep ? "text-income" : "text-expense",
+                      )}
+                    >
+                      {isDep ? "+" : "−"}
+                      <Money value={Number(m.amount)} />
+                    </p>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </Card>
+      </section>
+
+      <section className="mb-6">
+        <SectionHead title="Gastos de la quincena" href="/presupuesto" linkLabel="Ver" />
+        <Card>
+          <div className="mb-5">
+            <div className="flex items-end justify-between gap-3 mb-2">
+              <span className="text-sm text-muted">
+                Gastado{" "}
+                <span className={cn("font-bold tabular", overBudget ? "text-expense" : "text-ink")}>
+                  <Money value={s.realQuincena} decimals={false} />
+                </span>
+              </span>
+              <span className="text-sm text-muted">
+                de{" "}
+                <span className="font-bold text-ink tabular">
+                  <Money value={s.estQuincena} decimals={false} />
+                </span>
+              </span>
+            </div>
+            <ProgressBar value={budgetPct} tone={overBudget ? "danger" : "primary"} />
+          </div>
+          <BarCompare
+            bars={[
+              { name: "Ingreso quincenal", value: s.ingresoQuincena, tone: "income" },
+              { name: "Presupuesto gastos", value: s.estQuincena, tone: "accent" },
+              { name: "Cuotas del periodo", value: s.cuotasPeriodo, tone: "warning" },
+            ]}
+          />
+        </Card>
+      </section>
+
+      {s.goals.length > 0 && (
+        <section className="mb-6">
+          <SectionHead title="Ahorros" href="/metas" linkLabel="Ver todos" />
+          <Card>
+            <GoalsRing saved={s.totalSaved} target={s.totalTarget} />
+          </Card>
+        </section>
+      )}
     </>
   );
 }

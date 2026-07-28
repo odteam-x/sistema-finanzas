@@ -9,7 +9,7 @@ import { exceptionsMap } from "@/lib/calendar";
 import { resolveBudgetBasis } from "@/lib/budgetDays";
 import { quincenaForDate } from "@/lib/periods";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { GlassCard } from "@/components/ui/GlassCard";
+import { Card } from "@/components/ui/Card";
 import { StatTile } from "@/components/ui/StatTile";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ProgressBar } from "@/components/ui/ProgressBar";
@@ -126,7 +126,7 @@ export default async function PresupuestoCategoriasPage() {
             const over = limit != null && spent > limit;
             return (
               <li key={c.id}>
-                <GlassCard className="py-3">
+                <Card className="py-3">
                   <div className="flex items-center gap-3">
                     <IconBubble icon="budget" tone="neutral" />
                     <div className="min-w-0 flex-1">
@@ -181,7 +181,7 @@ export default async function PresupuestoCategoriasPage() {
                   </div>
 
                   {limit != null && (
-                    <div className="mt-3 pt-3 border-t border-black/5">
+                    <div className="mt-3 pt-3 border-t border-line">
                       <div className="flex items-center justify-between mb-1.5 text-xs">
                         <span className="text-muted">
                           Este mes: <span className="font-bold text-ink"><Money value={spent} decimals={false} /></span>
@@ -196,7 +196,7 @@ export default async function PresupuestoCategoriasPage() {
                       />
                     </div>
                   )}
-                </GlassCard>
+                </Card>
               </li>
             );
           })}

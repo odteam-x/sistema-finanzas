@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { GlassCard } from "./GlassCard";
+import { Card } from "./Card";
 import { Icon } from "./Icon";
 
 interface CollapsibleCardProps {
@@ -34,7 +34,7 @@ export function CollapsibleCard({
   const [open, setOpen] = useState(defaultOpen);
 
   return (
-    <GlassCard className={className}>
+    <Card className={className}>
       <div className="flex items-center gap-2">
         <button
           onClick={() => setOpen((v) => !v)}
@@ -56,6 +56,6 @@ export function CollapsibleCard({
         {action && <div className="shrink-0">{action}</div>}
       </div>
       {open && <div className="mt-3">{children}</div>}
-    </GlassCard>
+    </Card>
   );
 }

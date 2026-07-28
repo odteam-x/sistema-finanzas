@@ -2,7 +2,7 @@ import { getSavingsAccounts, getSubscriptions, getTags } from "@/lib/data";
 import { runSubscriptionCatchUp } from "@/lib/subscriptions";
 import { formatDateShort, todayISO } from "@/lib/format";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { GlassCard } from "@/components/ui/GlassCard";
+import { Card } from "@/components/ui/Card";
 import { StatTile } from "@/components/ui/StatTile";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Badge } from "@/components/ui/Badge";
@@ -66,7 +66,7 @@ export default async function SuscripcionesPage() {
         <ul className="flex flex-col gap-2">
           {subs.map((s) => (
             <li key={s.id}>
-              <GlassCard className={`flex items-center gap-3 py-3 ${s.active ? "" : "opacity-60"}`}>
+              <Card className={`flex items-center gap-3 py-3 ${s.active ? "" : "opacity-60"}`}>
                 <IconBubble icon="repeat" tone={s.active ? "brand" : "neutral"} />
                 <div className="min-w-0 flex-1">
                   <p className="font-bold text-ink truncate">{s.name}</p>
@@ -141,7 +141,7 @@ export default async function SuscripcionesPage() {
                   title="¿Eliminar suscripción?"
                   message="Ya no se generarán gastos automáticos por este cobro."
                 />
-              </GlassCard>
+              </Card>
             </li>
           ))}
         </ul>

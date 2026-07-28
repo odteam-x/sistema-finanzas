@@ -25,11 +25,13 @@ interface Props {
 
 const WEEKDAYS = ["L", "M", "M", "J", "V", "S", "D"];
 
+// Antes `trabajo` era bg-white/60: sobre la tarjeta oscura del modo oscuro
+// pintaba una celda gris clara, no la superficie elevada que pretendía.
 const cellStyle: Record<DayStatus, string> = {
-  trabajo: "bg-white/60 text-ink",
-  domingo: "bg-black/4 text-muted",
-  feriado: "bg-danger-soft text-danger",
-  libre: "bg-warning-soft text-warning",
+  trabajo: "bg-surface-raised text-ink border border-line",
+  domingo: "bg-surface-sunken text-muted",
+  feriado: "bg-tint-expense text-danger",
+  libre: "bg-tint-warning text-warning",
 };
 
 const EVENT_TYPE_ORDER: FinEventType[] = ["pago", "deuda", "suscripcion", "feriado"];
@@ -131,7 +133,7 @@ export function CalendarView({ year, month, exceptions, events, today }: Props) 
                   {dots.length > 0 && (
                     <span className="absolute bottom-1 flex items-center gap-0.5">
                       {dots.map((t) => (
-                        <span key={t} className={cn("size-1 rounded-full", eventDotColor[t])} />
+                        <span key={t} className={cn("size-1 rounded-pill", eventDotColor[t])} />
                       ))}
                     </span>
                   )}
@@ -144,10 +146,10 @@ export function CalendarView({ year, month, exceptions, events, today }: Props) 
 
       {/* Leyenda */}
       <div className="flex flex-wrap gap-x-4 gap-y-1.5 mt-4 text-xs text-muted">
-        <Legend className="bg-white/70 border border-black/10" label="Trabajo" />
-        <Legend className="bg-black/10" label="Domingo" />
-        <Legend className="bg-danger-soft" label="Feriado" />
-        <Legend className="bg-warning-soft" label="Libre" />
+        <Legend className="bg-surface-raised border border-line-strong" label="Trabajo" />
+        <Legend className="bg-surface-sunken" label="Domingo" />
+        <Legend className="bg-tint-expense" label="Feriado" />
+        <Legend className="bg-tint-warning" label="Libre" />
         <Legend className="bg-primary" label="Trabajado extra" />
         <Legend dot className="bg-primary" label="Pago" />
         <Legend dot className="bg-danger" label="Deuda" />
@@ -169,7 +171,7 @@ export function CalendarView({ year, month, exceptions, events, today }: Props) 
           </p>
         )}
         {selectedEvents.length > 0 && (
-          <div className="flex flex-col gap-2 mb-3 pb-3 border-b border-black/5">
+          <div className="flex flex-col gap-2 mb-3 pb-3 border-b border-line">
             {selectedEvents.map((e, i) => (
               <div key={i} className="flex items-center gap-3">
                 <IconBubble icon={eventIcon[e.type]} tone={eventTone[e.type]} size="sm" />
@@ -235,7 +237,7 @@ function Legend({
 }) {
   return (
     <span className="inline-flex items-center gap-1.5">
-      <span className={cn(dot ? "size-2 rounded-full" : "size-3 rounded-md", className)} />
+      <span className={cn(dot ? "size-2 rounded-pill" : "size-3 rounded-md", className)} />
       {label}
     </span>
   );
@@ -261,8 +263,8 @@ function DayOption({
       onClick={onClick}
       disabled={disabled}
       className={cn(
-        "flex items-center gap-3 p-3 rounded-2xl text-left transition-colors cursor-pointer disabled:opacity-50",
-        danger ? "hover:bg-danger-soft" : "hover:bg-black/5",
+        "flex items-center gap-3 p-3 rounded-tile text-left transition-colors cursor-pointer disabled:opacity-50",
+        danger ? "hover:bg-tint-expense" : "hover:bg-surface-sunken",
       )}
     >
       <IconBubble icon={icon} tone={danger ? "danger" : "neutral"} size="sm" />

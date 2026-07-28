@@ -7,7 +7,7 @@ import {
   daysBetween,
 } from "@/lib/format";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { GlassCard } from "@/components/ui/GlassCard";
+import { Card } from "@/components/ui/Card";
 import { StatTile } from "@/components/ui/StatTile";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Badge } from "@/components/ui/Badge";
@@ -128,14 +128,20 @@ export default async function DeudasPage() {
         action={<AddDebtForm compact accounts={accounts} />}
       />
 
-      <div className="grid grid-cols-2 gap-3 mb-4">
+      {/* "Total adeudado" competía con una FECHA del mismo peso tipográfico
+          en el tile de al lado: un monto y un día se leían como igual de
+          importantes. El monto manda a ancho completo; el vencimiento pasa a
+          contexto. */}
+      <div className="mb-5 flex flex-col gap-2.5">
         <StatTile
+          emphasis="hero"
           label="Total adeudado"
           value={<Money value={outstanding} decimals={false} />}
           icon="debt"
-          tone={outstanding > 0 ? "danger" : "primary"}
+          tone={outstanding > 0 ? "expense" : "neutral"}
         />
         <StatTile
+          emphasis="quiet"
           label="Próximo vencimiento"
           value={nextDue ? formatDateShort(nextDue) : "—"}
           sub={
@@ -166,7 +172,7 @@ export default async function DeudasPage() {
             const groupPaid = group.every(isPaid);
             return (
               <li key={name}>
-                <GlassCard>
+                <Card>
                   <div className="flex items-start gap-3">
                     <IconBubble icon="debt" tone={groupPaid ? "brand" : "warning"} />
                     <div className="min-w-0 flex-1">
@@ -184,7 +190,7 @@ export default async function DeudasPage() {
                     </div>
                   </div>
 
-                  <div className="mt-3 flex flex-col divide-y divide-black/5">
+                  <div className="mt-3 flex flex-col divide-y divide-line">
                     {group.map((d) => {
                       const ins = (byDebt.get(d.id) ?? []).sort((a, b) => a.seq - b.seq);
                       const paidCount = ins.filter((i) => i.paid).length;
@@ -244,7 +250,7 @@ export default async function DeudasPage() {
                                 Cuotas pagadas: {paidCount}/{ins.length}
                                 {d.frequency ? ` · ${d.frequency}` : ""}
                               </p>
-                              <div className="flex flex-col divide-y divide-black/5">
+                              <div className="flex flex-col divide-y divide-line">
                                 {ins.map((i) => (
                                   <InstallmentRow
                                     key={i.id}
@@ -269,7 +275,7 @@ export default async function DeudasPage() {
                       );
                     })}
                   </div>
-                </GlassCard>
+                </Card>
               </li>
             );
           })}

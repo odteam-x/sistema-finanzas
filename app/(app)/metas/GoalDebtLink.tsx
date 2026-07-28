@@ -38,7 +38,7 @@ export function LinkDebtButton({
           setDebtId(available[0]?.id ?? "");
           setOpen(true);
         }}
-        className="inline-flex items-center gap-1 text-xs font-semibold text-primary cursor-pointer"
+        className="inline-flex items-center gap-1 text-xs font-semibold text-primary-fg cursor-pointer"
       >
         <Icon name="debt" size={13} />
         Vincular deuda
@@ -102,7 +102,7 @@ export function LinkedDebtsList({
       <ul className="mt-2 flex flex-col gap-1">
         {linked.map(({ debt, paid }) => (
           <li key={debt.id} className="flex items-center justify-between gap-2 text-xs">
-            <Link href="/deudas" className="text-muted truncate min-w-0 hover:text-primary">
+            <Link href="/deudas" className="text-muted truncate min-w-0 hover:text-primary-fg">
               <Icon name="debt" size={11} className="inline mr-1" />
               {debt.name}
             </Link>
@@ -113,7 +113,7 @@ export function LinkedDebtsList({
               <button
                 onClick={() => setUnlinking(debt)}
                 aria-label={`Desvincular ${debt.name}`}
-                className="grid place-items-center size-6 rounded-full text-muted hover:text-danger hover:bg-danger-soft transition-colors cursor-pointer"
+                className="grid place-items-center size-6 rounded-pill text-muted hover:text-danger hover:bg-tint-expense transition-colors cursor-pointer"
               >
                 <Icon name="close" size={12} />
               </button>

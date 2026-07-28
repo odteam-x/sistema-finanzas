@@ -40,7 +40,7 @@ export function DisplayNameForm({ initialName }: { initialName: string }) {
         <Button type="submit" loading={pending} size="sm">
           Guardar
         </Button>
-        {saved && !pending && <span className="text-xs text-primary font-semibold">Guardado.</span>}
+        {saved && !pending && <span className="text-xs text-primary-fg font-semibold">Guardado.</span>}
       </div>
     </form>
   );

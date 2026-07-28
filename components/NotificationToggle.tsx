@@ -75,7 +75,7 @@ export function NotificationToggle() {
       {permission === "granted" && !pushReady && (
         <button
           onClick={async () => setPushReady(await subscribeToPush())}
-          className="text-xs font-semibold text-primary mt-1 cursor-pointer"
+          className="text-xs font-semibold text-primary-fg mt-1 cursor-pointer"
         >
           Reintentar activar avisos con la app cerrada
         </button>

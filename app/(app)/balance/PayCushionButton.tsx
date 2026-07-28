@@ -20,10 +20,10 @@ export function PayCushionButton() {
     <button
       onClick={pay}
       disabled={pending}
-      className="inline-flex items-center justify-center gap-1.5 min-h-9 rounded-full bg-primary text-white font-bold text-xs px-3.5 cursor-pointer transition-colors hover:brightness-95 disabled:opacity-60 active:scale-[0.97] shrink-0"
+      className="inline-flex items-center justify-center gap-1.5 min-h-9 rounded-pill bg-primary text-white font-bold text-xs px-3.5 cursor-pointer transition-colors hover:brightness-95 disabled:opacity-60 active:scale-[0.97] shrink-0"
     >
       {pending ? (
-        <span className="size-3.5 rounded-full border-2 border-current border-t-transparent animate-spin" />
+        <span className="size-3.5 rounded-pill border-2 border-current border-t-transparent animate-spin" />
       ) : (
         <Icon name="arrowUpRight" size={14} />
       )}

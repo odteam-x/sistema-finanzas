@@ -136,7 +136,7 @@ export function SecuritySettings() {
         )
       ) : (
         <>
-          <div className="flex items-center gap-2 text-sm font-semibold text-primary">
+          <div className="flex items-center gap-2 text-sm font-semibold text-primary-fg">
             <Icon name="check" size={16} />
             Bloqueo activado
           </div>
@@ -144,7 +144,7 @@ export function SecuritySettings() {
           {!showPinForm ? (
             <button
               onClick={() => setShowPinForm(true)}
-              className="text-sm font-semibold text-primary text-left cursor-pointer"
+              className="text-sm font-semibold text-primary-fg text-left cursor-pointer"
             >
               Cambiar PIN
             </button>
@@ -206,7 +206,7 @@ export function SecuritySettings() {
               <button
                 onClick={toggleBiometric}
                 disabled={biometricBusy}
-                className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary cursor-pointer disabled:opacity-60"
+                className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary-fg cursor-pointer disabled:opacity-60"
               >
                 <Icon name="fingerprint" size={16} />
                 {settings.webauthnCredentialId
@@ -217,7 +217,7 @@ export function SecuritySettings() {
             </div>
           )}
 
-          <div className="pt-2 border-t border-black/5">
+          <div className="pt-2 border-t border-line">
             {!confirmingDisable ? (
               <button
                 onClick={() => setConfirmingDisable(true)}

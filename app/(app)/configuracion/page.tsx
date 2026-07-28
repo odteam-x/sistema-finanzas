@@ -8,13 +8,14 @@ import {
 } from "@/lib/data";
 import { todayISO, toISODate, clampPct } from "@/lib/format";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { GlassCard } from "@/components/ui/GlassCard";
+import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { Field, Input, Select, MoneyInput } from "@/components/ui/Field";
 import { FormModal } from "@/components/ui/FormModal";
 import { DeleteButton } from "@/components/ui/DeleteButton";
 import { IconBubble } from "@/components/ui/IconBubble";
+import { Icon, type IconName } from "@/components/ui/Icon";
 import { Money } from "@/components/ui/Money";
 import { ThemeButton } from "@/components/theme/ThemeButton";
 import { NotificationToggle } from "@/components/NotificationToggle";
@@ -27,6 +28,16 @@ import { undoDelete } from "../undo-actions";
 import { seedDefaultTagsIfEmpty } from "@/lib/tags";
 
 export const metadata = { title: "Configuración · Cachin'" };
+
+const SECTIONS: { id: string; label: string; icon: IconName }[] = [
+  { id: "perfil", label: "Perfil", icon: "settings" },
+  { id: "etiquetas", label: "Etiquetas", icon: "budget" },
+  { id: "reglas", label: "Reglas", icon: "sparkle" },
+  { id: "tasas", label: "Tasas", icon: "bank" },
+  { id: "seguridad", label: "Seguridad", icon: "lock" },
+  { id: "preferencias", label: "Apariencia", icon: "palette" },
+  { id: "datos", label: "Datos", icon: "download" },
+];
 
 function NewTagForm({
   triggerLabel,
@@ -136,12 +147,33 @@ export default async function ConfiguracionPage() {
     <>
       <PageHeader title="Configuración" subtitle="Perfil, etiquetas, apariencia y datos" />
 
-      <GlassCard className="mb-4">
+      {/* Índice en rejilla de tiles. Era la única pantalla sin cifra ni
+          acción primaria: siete bloques apilados que había que recorrer
+          scrolleando para saber qué contenían. Los tiles dicen de un vistazo
+          qué hay y saltan a cada sección. */}
+      <nav aria-label="Secciones" className="grid grid-cols-4 gap-x-2 gap-y-3 mb-7">
+        {SECTIONS.filter((s) => s.id !== "tasas" || foreignCurrencies.length > 0).map((s) => (
+          <a
+            key={s.id}
+            href={`#${s.id}`}
+            className="flex flex-col items-center gap-1.5 group active:scale-[0.97] transition-transform"
+          >
+            <span className="grid place-items-center size-14 rounded-tile bg-tint-brand text-primary-fg group-hover:bg-primary-soft transition-colors">
+              <Icon name={s.icon} size={24} />
+            </span>
+            <span className="text-xs font-semibold text-muted text-center leading-tight">
+              {s.label}
+            </span>
+          </a>
+        ))}
+      </nav>
+
+      <Card id="perfil" className="mb-6 scroll-mt-24">
         <h2 className="font-bold text-ink mb-3">Perfil</h2>
         <DisplayNameForm initialName={profile?.display_name ?? ""} />
-      </GlassCard>
+      </Card>
 
-      <div className="flex items-center justify-between px-1 mb-2">
+      <div id="etiquetas" className="flex items-center justify-between px-1 mb-2 scroll-mt-24">
         <h2 className="text-sm font-bold text-ink">Etiquetas</h2>
         <NewTagForm triggerLabel="Nueva" trigger="link" triggerIcon="plus" />
       </div>
@@ -163,7 +195,7 @@ export default async function ConfiguracionPage() {
             const over = limit != null && spent > limit;
             return (
               <li key={t.id}>
-                <GlassCard className="py-3">
+                <Card className="py-3">
                   <div className="flex items-center gap-3">
                     <IconBubble icon="budget" tone="neutral" />
                     <div className="min-w-0 flex-1">
@@ -203,7 +235,7 @@ export default async function ConfiguracionPage() {
                   </div>
 
                   {limit != null && (
-                    <div className="mt-3 pt-3 border-t border-black/5">
+                    <div className="mt-3 pt-3 border-t border-line">
                       <div className="flex items-center justify-between mb-1.5 text-xs">
                         <span className="text-muted">
                           Este mes: <span className="font-bold text-ink"><Money value={spent} decimals={false} /></span>
@@ -215,7 +247,7 @@ export default async function ConfiguracionPage() {
                       <ProgressBar value={pct} tone={over ? "danger" : pct >= 80 ? "warning" : "primary"} />
                     </div>
                   )}
-                </GlassCard>
+                </Card>
               </li>
             );
           })}
@@ -224,7 +256,7 @@ export default async function ConfiguracionPage() {
 
       {tags.length > 0 && (
         <>
-          <div className="flex items-center justify-between px-1 mb-2 mt-4">
+          <div id="reglas" className="flex items-center justify-between px-1 mb-2 mt-6 scroll-mt-24">
             <div>
               <h2 className="text-sm font-bold text-ink">Reglas de categorización</h2>
               <p className="text-xs text-muted">Categoriza gastos solos según su nota.</p>
@@ -244,7 +276,7 @@ export default async function ConfiguracionPage() {
             <ul className="flex flex-col gap-2 mb-4">
               {rules.map((r) => (
                 <li key={r.id}>
-                  <GlassCard className="py-3 flex items-center gap-3">
+                  <Card className="py-3 flex items-center gap-3">
                     <IconBubble icon="budget" tone="neutral" />
                     <p className="min-w-0 flex-1 text-sm text-ink truncate">
                       Si la nota contiene <span className="font-semibold">“{r.keyword}”</span> → {tagName(r.tag_id)}
@@ -254,7 +286,7 @@ export default async function ConfiguracionPage() {
                       title="¿Eliminar regla?"
                       message="Los gastos ya registrados no cambian."
                     />
-                  </GlassCard>
+                  </Card>
                 </li>
               ))}
             </ul>
@@ -263,7 +295,7 @@ export default async function ConfiguracionPage() {
       )}
 
       {foreignCurrencies.length > 0 && (
-        <GlassCard className="mt-4 mb-4">
+        <Card id="tasas" className="mt-6 mb-6 scroll-mt-24">
           <h2 className="font-bold text-ink mb-1">Tasas de cambio</h2>
           <p className="text-xs text-muted mb-3">
             RD no tiene un feed automático confiable — actualiza la tasa tú mismo cuando cambie.
@@ -273,26 +305,26 @@ export default async function ConfiguracionPage() {
               <ExchangeRateForm key={c} currency={c} rate={rateByCurrency.get(c)} />
             ))}
           </div>
-        </GlassCard>
+        </Card>
       )}
 
-      <GlassCard className="mt-4 mb-4">
+      <Card id="seguridad" className="mt-6 mb-6 scroll-mt-24">
         <h2 className="font-bold text-ink mb-3">Seguridad</h2>
         <SecuritySettings />
-      </GlassCard>
+      </Card>
 
-      <GlassCard className="mt-4 mb-4">
+      <Card id="preferencias" className="mb-6 scroll-mt-24">
         <h2 className="font-bold text-ink mb-3">Preferencias</h2>
         <ThemeButton variant="settings" />
-        <div className="mt-3 pt-3 border-t border-black/5">
+        <div className="mt-4">
           <NotificationToggle />
         </div>
-      </GlassCard>
+      </Card>
 
-      <GlassCard>
+      <Card id="datos" className="scroll-mt-24">
         <h2 className="font-bold text-ink mb-3">Datos</h2>
         <ExportCsvForm />
-      </GlassCard>
+      </Card>
     </>
   );
 }

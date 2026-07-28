@@ -6,18 +6,13 @@ import { confirmSalary } from "@/app/(app)/ingresos/actions";
 
 /** Botón "Confirmar" para un ingreso auto-generado que aún no se sabe si
  *  llegó de verdad (ver runSalaryCatchUp en lib/salary.ts). Recién al
- *  confirmar se acredita al ledger y empieza a contar en "Disponible". */
-export function ConfirmSalaryButton({
-  salaryId,
-  full,
-  compact,
-}: {
-  salaryId: string;
-  full?: boolean;
-  /** Chip chico (para filas de lista) en vez de la píldora blanca grande
-   *  del hero. */
-  compact?: boolean;
-}) {
+ *  confirmar se acredita al ledger y empieza a contar en "Disponible".
+ *
+ *  Tenía una segunda variante (píldora blanca grande, para el hero
+ *  "Disponible esta quincena") que quedó huérfana cuando ese hero se
+ *  eliminó: los dos sitios que lo usan pasan `compact`. Se quitó junto con
+ *  su `bg-white` fijo, que en modo oscuro era un botón blanco puro. */
+export function ConfirmSalaryButton({ salaryId }: { salaryId: string }) {
   const [pending, startTransition] = useTransition();
 
   function confirm() {
@@ -26,29 +21,18 @@ export function ConfirmSalaryButton({
     });
   }
 
-  const spinner = <span className="size-4 rounded-full border-2 border-current border-t-transparent animate-spin" />;
-
-  if (compact) {
-    return (
-      <button
-        onClick={confirm}
-        disabled={pending}
-        className="inline-flex items-center justify-center gap-1 min-h-8 rounded-full bg-primary-soft text-primary font-semibold text-xs px-3 cursor-pointer transition-colors hover:bg-primary/15 disabled:opacity-60 active:scale-[0.97] shrink-0"
-      >
-        {pending ? spinner : <Icon name="check" size={14} />}
-        {pending ? "…" : "Confirmar"}
-      </button>
-    );
-  }
-
   return (
     <button
       onClick={confirm}
       disabled={pending}
-      className={`inline-flex items-center justify-center gap-1.5 min-h-10 rounded-full bg-white text-primary font-bold text-sm px-4 cursor-pointer transition-colors hover:bg-white/90 disabled:opacity-60 active:scale-[0.97] ${full ? "w-full" : ""}`}
+      className="inline-flex items-center justify-center gap-1 min-h-11 rounded-pill bg-primary-soft text-primary-fg font-semibold text-xs px-3.5 cursor-pointer transition-colors hover:bg-primary hover:text-on-brand disabled:opacity-60 active:scale-[0.97] shrink-0"
     >
-      {pending ? spinner : <Icon name="check" size={17} />}
-      {pending ? "Confirmando…" : "Sí, ya me llegó"}
+      {pending ? (
+        <span className="size-4 rounded-pill border-2 border-current border-t-transparent animate-spin" />
+      ) : (
+        <Icon name="check" size={14} />
+      )}
+      {pending ? "…" : "Confirmar"}
     </button>
   );
 }

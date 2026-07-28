@@ -2,7 +2,7 @@
 
 import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { GlassCard } from "@/components/ui/GlassCard";
+import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
 import { Field, Input, Select } from "@/components/ui/Field";
@@ -268,13 +268,13 @@ export function ImportWizard({ accounts, profiles }: { accounts: SavingsAccount[
         {([1, 2, 3, 4] as Step[]).map((s) => (
           <div
             key={s}
-            className={`h-1.5 flex-1 rounded-full ${s <= step ? "bg-primary" : "bg-black/10"}`}
+            className={`h-1.5 flex-1 rounded-pill ${s <= step ? "bg-primary" : "bg-surface-sunken"}`}
           />
         ))}
       </div>
 
       {step === 1 && (
-        <GlassCard className="flex flex-col gap-4">
+        <Card className="flex flex-col gap-4">
           <p className="text-sm text-muted">
             Sube el estado de cuenta que descargaste de tu banco en formato CSV — funciona con la mayoría de bancos
             dominicanos, sin importar el orden de columnas.
@@ -291,7 +291,7 @@ export function ImportWizard({ accounts, profiles }: { accounts: SavingsAccount[
           <div>
             <label
               htmlFor="import-file"
-              className="flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-black/15 py-8 text-center cursor-pointer hover:border-primary/40 hover:bg-primary-soft/40 transition-colors"
+              className="flex flex-col items-center justify-center gap-2 rounded-tile border-2 border-dashed border-line-strong py-8 text-center cursor-pointer hover:border-primary-fg hover:bg-primary-soft transition-colors"
             >
               <Icon name="wallet" size={28} className="text-muted" />
               <span className="text-sm font-semibold text-ink">Toca para elegir tu archivo .csv</span>
@@ -307,16 +307,16 @@ export function ImportWizard({ accounts, profiles }: { accounts: SavingsAccount[
             />
           </div>
           {fileError && (
-            <p className="text-sm font-medium text-danger bg-danger-soft rounded-2xl px-3 py-2 flex items-center gap-2">
+            <p className="text-sm font-medium text-danger bg-tint-expense rounded-tile px-3 py-2 flex items-center gap-2">
               <Icon name="alert" size={18} />
               {fileError}
             </p>
           )}
-        </GlassCard>
+        </Card>
       )}
 
       {step === 2 && parsed && (
-        <GlassCard className="flex flex-col gap-4">
+        <Card className="flex flex-col gap-4">
           <div>
             <h2 className="font-bold text-ink mb-1">¿Qué es cada columna?</h2>
             <p className="text-sm text-muted">
@@ -327,10 +327,10 @@ export function ImportWizard({ accounts, profiles }: { accounts: SavingsAccount[
           </div>
 
           {/* Vista cruda de las primeras filas, para confirmar que el CSV se leyó bien */}
-          <div className="overflow-x-auto rounded-2xl border border-black/5">
+          <div className="overflow-x-auto rounded-tile border border-line">
             <table className="w-full text-xs">
               <thead>
-                <tr className="bg-black/[0.03]">
+                <tr className="bg-surface-sunken">
                   {parsed.headers.map((h) => (
                     <th key={h} className="px-2 py-1.5 text-left font-semibold text-ink whitespace-nowrap">
                       {h}
@@ -340,7 +340,7 @@ export function ImportWizard({ accounts, profiles }: { accounts: SavingsAccount[
               </thead>
               <tbody>
                 {previewSample.map((r, i) => (
-                  <tr key={i} className="border-t border-black/5">
+                  <tr key={i} className="border-t border-line">
                     {r.map((cell, j) => (
                       <td key={j} className="px-2 py-1.5 text-muted whitespace-nowrap">
                         {cell}
@@ -425,7 +425,7 @@ export function ImportWizard({ accounts, profiles }: { accounts: SavingsAccount[
             </Select>
           </Field>
 
-          <div className="flex items-end gap-2 rounded-2xl bg-black/[0.03] p-3">
+          <div className="flex items-end gap-2 rounded-tile bg-surface-sunken p-3">
             <Field label="Guardar este mapeo como" htmlFor="profile-name" hint="Para no repetir esto la próxima vez que subas un extracto de este banco.">
               <Input
                 id="profile-name"
@@ -440,13 +440,16 @@ export function ImportWizard({ accounts, profiles }: { accounts: SavingsAccount[
           </div>
 
           {error && (
-            <p className="text-sm font-medium text-danger bg-danger-soft rounded-2xl px-3 py-2 flex items-center gap-2">
+            <p className="text-sm font-medium text-danger bg-tint-expense rounded-tile px-3 py-2 flex items-center gap-2">
               <Icon name="alert" size={18} />
               {error}
             </p>
           )}
 
-          <div className="flex gap-2 pt-1">
+          {/* Sticky: el paso 2 tiene ~7 campos y una tabla, así que el botón
+              de avanzar quedaba fuera de la pantalla justo cuando hay que
+              usarlo. Ahora la acción primaria no se pierde de vista. */}
+          <div className="sticky bottom-0 -mx-4 sm:-mx-5 -mb-4 sm:-mb-5 mt-2 flex gap-2 bg-surface px-4 sm:px-5 py-3 border-t border-line">
             <Button type="button" variant="secondary" onClick={reset} full>
               Cancelar
             </Button>
@@ -454,12 +457,12 @@ export function ImportWizard({ accounts, profiles }: { accounts: SavingsAccount[
               Ver vista previa
             </Button>
           </div>
-        </GlassCard>
+        </Card>
       )}
 
       {step === 3 && (
         <>
-          <GlassCard className="flex flex-col gap-1">
+          <Card className="flex flex-col gap-1">
             <p className="text-sm text-ink">
               <span className="font-bold">{included}</span> de {previewRows.length} filas seleccionadas para importar
               a <span className="font-semibold">{accountName}</span>.
@@ -476,14 +479,14 @@ export function ImportWizard({ accounts, profiles }: { accounts: SavingsAccount[
                 con un formato inesperado) — revisa el mapeo si son muchas.
               </p>
             )}
-          </GlassCard>
+          </Card>
 
           <div className="flex flex-col gap-2">
             {previewRows.map((r, i) => (
               <label
                 key={i}
-                className={`flex items-center gap-3 rounded-2xl border p-3 cursor-pointer ${
-                  r.error ? "border-black/5 opacity-50" : r.isDuplicate ? "border-warning/30 bg-warning-soft/40" : "border-black/5 bg-white"
+                className={`flex items-center gap-3 rounded-tile border p-3 cursor-pointer ${
+                  r.error ? "border-line opacity-50" : r.isDuplicate ? "border-warning bg-tint-warning" : "border-line bg-white"
                 }`}
               >
                 <input
@@ -514,13 +517,15 @@ export function ImportWizard({ accounts, profiles }: { accounts: SavingsAccount[
           </div>
 
           {error && (
-            <p className="text-sm font-medium text-danger bg-danger-soft rounded-2xl px-3 py-2 flex items-center gap-2">
+            <p className="text-sm font-medium text-danger bg-tint-expense rounded-tile px-3 py-2 flex items-center gap-2">
               <Icon name="alert" size={18} />
               {error}
             </p>
           )}
 
-          <div className="flex gap-2 pb-2">
+          {/* Paso 3: la lista de filas a importar puede ser larguísima. La
+              acción de confirmar se queda pegada abajo. */}
+          <div className="sticky bottom-0 -mx-4 sm:-mx-6 flex gap-2 bg-bg px-4 sm:px-6 py-3 border-t border-line safe-bottom">
             <Button type="button" variant="secondary" onClick={() => setStep(2)} full>
               Atrás
             </Button>
@@ -532,8 +537,8 @@ export function ImportWizard({ accounts, profiles }: { accounts: SavingsAccount[
       )}
 
       {step === 4 && (
-        <GlassCard className="flex flex-col items-center gap-3 text-center py-8">
-          <span className="grid place-items-center size-14 rounded-full bg-primary-soft text-primary">
+        <Card className="flex flex-col items-center gap-3 text-center py-8">
+          <span className="grid place-items-center size-14 rounded-pill bg-primary-soft text-primary-fg">
             <Icon name="check" size={28} />
           </span>
           <div>
@@ -548,12 +553,12 @@ export function ImportWizard({ accounts, profiles }: { accounts: SavingsAccount[
             </Button>
             <a
               href="/movimientos"
-              className="inline-flex items-center justify-center flex-1 rounded-full font-semibold min-h-11 px-4 text-[1.05rem] bg-gradient-brand text-white shadow-sm hover:brightness-[0.97] active:brightness-95"
+              className="inline-flex items-center justify-center flex-1 rounded-pill font-semibold min-h-11 px-4 text-[1.05rem] bg-gradient-brand text-white shadow-sm hover:brightness-[0.97] active:brightness-95"
             >
               Ver movimientos
             </a>
           </div>
-        </GlassCard>
+        </Card>
       )}
     </div>
   );

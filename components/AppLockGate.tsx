@@ -94,7 +94,7 @@ export function AppLockGate({ children }: { children: React.ReactNode }) {
   return (
     <div className="fixed inset-0 z-[300] grid place-items-center bg-[var(--color-bg)] p-6">
       <div className="w-full max-w-xs flex flex-col items-center gap-4 text-center">
-        <div className="grid place-items-center size-16 rounded-full bg-gradient-brand text-white">
+        <div className="grid place-items-center size-16 rounded-pill bg-gradient-brand text-white">
           <Icon name="lock" size={28} />
         </div>
         <div>
@@ -114,18 +114,18 @@ export function AppLockGate({ children }: { children: React.ReactNode }) {
               setError(null);
               setPinInput(e.target.value.replace(/\D/g, "").slice(0, 6));
             }}
-            className="w-full text-center text-2xl tracking-[0.5em] rounded-2xl border border-[var(--input-border)] bg-[var(--input-bg)] py-3 text-ink"
+            className="w-full text-center text-2xl tracking-[0.5em] rounded-tile border border-[var(--input-border)] bg-[var(--input-bg)] py-3 text-ink"
             placeholder="••••"
           />
           {error && (
-            <p className="text-sm font-medium text-danger bg-danger-soft rounded-2xl px-3 py-2" role="alert">
+            <p className="text-sm font-medium text-danger bg-tint-expense rounded-tile px-3 py-2" role="alert">
               {error}
             </p>
           )}
           <button
             type="submit"
             disabled={pin.length < 4}
-            className="min-h-11 rounded-full bg-primary text-white font-semibold cursor-pointer disabled:opacity-50"
+            className="min-h-11 rounded-pill bg-primary text-white font-semibold cursor-pointer disabled:opacity-50"
           >
             Desbloquear
           </button>
@@ -135,7 +135,7 @@ export function AppLockGate({ children }: { children: React.ReactNode }) {
           <button
             onClick={tryBiometric}
             disabled={checkingBiometric}
-            className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary cursor-pointer disabled:opacity-60"
+            className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary-fg cursor-pointer disabled:opacity-60"
           >
             <Icon name="fingerprint" size={16} />
             {checkingBiometric ? "Verificando…" : "Usar Face ID / Touch ID / Windows Hello"}

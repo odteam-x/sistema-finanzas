@@ -61,7 +61,7 @@ export function DayPicker({
   // problema reportado en iPhone — un blanco chico obliga a apuntar, y cada
   // toque que se sale vuelve a abrir el selector.
   return (
-    <div className="glass inline-flex items-center gap-1.5 rounded-2xl px-3 min-h-11 text-sm font-semibold text-ink">
+    <div className="card inline-flex items-center gap-1.5 rounded-tile px-3 min-h-11 text-sm font-semibold text-ink">
       <Icon name="calendar" size={15} className="text-muted shrink-0" aria-hidden="true" />
       <span className="relative inline-flex items-center">
         <input

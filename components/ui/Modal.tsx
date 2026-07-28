@@ -41,7 +41,7 @@ export function Modal({ open, onClose, title, children, footer, compact }: Modal
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.2 }}
-                  className="absolute inset-0 bg-black/50 backdrop-blur-sm cursor-default"
+                  className="absolute inset-0 bg-black/55 cursor-default"
                 />
               </Dialog.Overlay>
 
@@ -60,7 +60,7 @@ export function Modal({ open, onClose, title, children, footer, compact }: Modal
                   exit={{ opacity: 0, y: 16, scale: 0.97 }}
                   transition={{ type: "spring", stiffness: 340, damping: 30 }}
                   className={cn(
-                    "modal-surface relative w-full max-h-[85dvh] overflow-y-auto rounded-[26px] p-5 sm:p-6",
+                    "surface-modal relative w-full max-h-[85dvh] overflow-y-auto rounded-hero p-5 sm:p-6",
                     compact ? "max-w-xs sm:max-w-sm" : "sm:max-w-md",
                   )}
                 >
@@ -69,7 +69,7 @@ export function Modal({ open, onClose, title, children, footer, compact }: Modal
                     onPointerDown={(e) => dragControls.start(e)}
                     className="sm:hidden -mt-1 mb-2 flex justify-center py-2 touch-none cursor-grab active:cursor-grabbing"
                   >
-                    <div className="h-1.5 w-11 rounded-full bg-black/20" />
+                    <div className="h-1.5 w-11 rounded-pill bg-line-strong" />
                   </div>
 
                   <div className="flex items-center justify-between gap-3 mb-4">
@@ -79,7 +79,7 @@ export function Modal({ open, onClose, title, children, footer, compact }: Modal
                     <Dialog.Close asChild>
                       <button
                         aria-label="Cerrar"
-                        className="grid place-items-center size-11 rounded-full hover:bg-black/5 text-muted cursor-pointer transition-colors active:scale-90"
+                        className="grid place-items-center size-11 rounded-pill hover:bg-surface-sunken text-muted cursor-pointer transition-colors active:scale-90"
                       >
                         <Icon name="close" size={20} />
                       </button>

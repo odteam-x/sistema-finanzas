@@ -10,7 +10,7 @@ export function ExportPdfButton() {
     <button
       type="button"
       onClick={() => window.print()}
-      className="inline-flex items-center justify-center gap-2 rounded-full font-semibold min-h-11 px-4 text-sm glass text-ink hover:brightness-[0.97] active:brightness-95 cursor-pointer"
+      className="inline-flex items-center justify-center gap-2 rounded-pill font-semibold min-h-11 px-4 text-sm card text-ink hover:brightness-[0.97] active:brightness-95 cursor-pointer"
     >
       <Icon name="download" size={16} />
       Exportar PDF
