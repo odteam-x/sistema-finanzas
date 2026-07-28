@@ -6,6 +6,12 @@ import { useState, useSyncExternalStore } from "react";
 import { MoneyValue } from "./MoneyValue";
 import { Money } from "./Money";
 import { Icon, type IconName } from "./Icon";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "./DropdownMenu";
 import { QuickForms, type QuickForm } from "@/components/quick/QuickForms";
 import { readPrimaryAccount, writePrimaryAccount } from "@/lib/preferences";
 import { readProfile } from "@/lib/profile";
@@ -138,70 +144,89 @@ export function HomeHero({
           </Link>
         </div>
 
-        {/* 2. La cifra dominante de la pantalla. Nada más aquí llega a este
-            tamaño — todo lo de abajo es apoyo. */}
-        <div className="mt-4">
-          <p className="text-sm font-medium text-on-brand-muted">Balance total</p>
-          <MoneyValue
-            value={total}
-            decimals={false}
-            className="block money-lg font-extrabold text-on-brand tabular mt-0.5"
-          />
-          <p className="mt-1 text-xs text-on-brand-muted">
-            Quincena {periodLabel}
-            {savingsPart !== 0 && (
-              <>
-                {" · incluye "}
-                <Money value={savingsPart} decimals={false} />
-                {" en ahorros"}
-              </>
-            )}
-          </p>
-        </div>
-
-        {/* 3. Cuenta a mano — apoyo, no protagonista. */}
-        {hasAccounts ? (
-          /* El saldo de la cuenta elegida vive DENTRO de su chip. Antes iba en
-             una línea aparte debajo ("En Efectivo: RD$X"), que repetía el
-             nombre que el chip activo ya mostraba y sumaba una tercera fila
-             secundaria al hero. */
-          <div className="mt-3.5 flex gap-1.5 overflow-x-auto -mx-1 px-1 pb-1">
-            {accounts.map((a) => {
-              const isActive = a.id === selected?.id;
-              const saldo =
-                a.currency !== "DOP" ? (
-                  formatMoneyIn(a.balance, a.currency, false)
-                ) : (
-                  <Money value={a.balance} decimals={false} />
-                );
-              return (
-                <button
-                  key={a.id}
-                  onClick={() => pick(a.id)}
-                  aria-pressed={isActive}
-                  aria-label={`Ver saldo de ${a.name}`}
-                  className={cn(
-                    "shrink-0 inline-flex items-center gap-1.5 rounded-pill px-4 min-h-11 text-xs font-semibold transition-colors cursor-pointer",
-                    isActive
-                      ? "bg-on-brand text-primary"
-                      : "bg-on-brand-well text-on-brand-muted hover:text-on-brand",
-                  )}
-                >
-                  {a.name}
-                  {isActive && <span className="font-extrabold tabular">{saldo}</span>}
-                </button>
-              );
-            })}
+        {/* 2. Saldo y cuenta, en UNA fila. Antes el saldo ocupaba solo la
+            mitad izquierda —con la derecha vacía— y los chips de cuenta
+            colgaban en una fila propia debajo, así que el bloque crecía a lo
+            alto mientras desperdiciaba lo ancho. Ahora el selector de cuenta
+            vive en ese hueco y el hero pierde una fila entera. */}
+        <div className="mt-4 flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-on-brand-muted">Balance total</p>
+            <MoneyValue
+              value={total}
+              decimals={false}
+              className="block money-lg font-extrabold text-on-brand tabular mt-0.5"
+            />
+            <p className="mt-1 text-xs text-on-brand-muted">
+              Quincena {periodLabel}
+              {savingsPart !== 0 && (
+                <>
+                  {" · "}
+                  <Money value={savingsPart} decimals={false} /> en ahorros
+                </>
+              )}
+            </p>
           </div>
-        ) : (
-          <Link
-            href="/balance"
-            className="mt-5 inline-flex items-center gap-1.5 rounded-pill bg-on-brand-well px-4 min-h-11 text-sm font-semibold text-on-brand"
-          >
-            <Icon name="plus" size={16} />
-            Crea tu primera cuenta
-          </Link>
-        )}
+
+          {/* 3. Cuenta a mano — apoyo, no protagonista. Un menú en vez de una
+              fila de chips con scroll: ocupa lo mismo con una cuenta que con
+              diez, y el saldo de la elegida se lee sin abrirlo. */}
+          {hasAccounts ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                aria-label={`Cuenta mostrada: ${selected?.name}. Cambiar`}
+                className="shrink-0 max-w-[46%] inline-flex items-center gap-1.5 rounded-pill bg-on-brand-well px-3.5 min-h-11 text-xs font-semibold text-on-brand cursor-pointer active:scale-95 transition-transform"
+              >
+                <span className="min-w-0 flex flex-col items-start leading-tight">
+                  <span className="text-on-brand-muted truncate max-w-full">
+                    {selected?.name}
+                  </span>
+                  <span className="font-extrabold tabular">
+                    {selected && selected.currency !== "DOP" ? (
+                      formatMoneyIn(selected.balance, selected.currency, false)
+                    ) : (
+                      <Money value={selected?.balance ?? 0} decimals={false} />
+                    )}
+                  </span>
+                </span>
+                {accounts.length > 1 && (
+                  <Icon name="chevronDown" size={14} className="shrink-0" />
+                )}
+              </DropdownMenuTrigger>
+              {accounts.length > 1 && (
+                <DropdownMenuContent align="end">
+                  {accounts.map((a) => (
+                    <DropdownMenuItem
+                      key={a.id}
+                      onSelect={() => pick(a.id)}
+                      className={cn(
+                        "justify-between gap-4",
+                        a.id === selected?.id && "font-bold text-primary-fg",
+                      )}
+                    >
+                      <span className="truncate">{a.name}</span>
+                      <span className="tabular shrink-0">
+                        {a.currency !== "DOP" ? (
+                          formatMoneyIn(a.balance, a.currency, false)
+                        ) : (
+                          <Money value={a.balance} decimals={false} />
+                        )}
+                      </span>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              )}
+            </DropdownMenu>
+          ) : (
+            <Link
+              href="/balance"
+              className="shrink-0 inline-flex items-center gap-1.5 rounded-pill bg-on-brand-well px-4 min-h-11 text-xs font-semibold text-on-brand"
+            >
+              <Icon name="plus" size={16} />
+              Crear cuenta
+            </Link>
+          )}
+        </div>
 
         {/* 4. Acciones. Suben al primer viewport: antes registrar un gasto
             —lo más frecuente de la app— solo se podía desde el FAB. */}
