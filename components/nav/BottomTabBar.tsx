@@ -14,9 +14,8 @@ export function BottomTabBar({
   fab,
 }: {
   email: string | null;
-  /** El FAB llega como slot ya renderizado desde el servidor: necesita las
-   *  cuentas y la barra no, así que se transmite aparte (ver el Suspense del
-   *  layout) para no retrasar la navegación. */
+  /** El FAB llega como slot ya renderizado desde el servidor: necesita la
+   *  lista de cuentas para sus formularios y la barra no. */
   fab: React.ReactNode;
 }) {
   const pathname = usePathname();
@@ -133,6 +132,7 @@ export function BottomTabBar({
                 <li key={r.href}>
                   <Link
                     href={r.href}
+                    prefetch
                     aria-current={active ? "page" : undefined}
                     className={cn(
                       "flex flex-col items-center justify-center gap-0.5 pt-2 pb-1.5 min-h-[52px] text-[0.75rem] font-semibold transition-colors active:scale-95",
@@ -152,6 +152,7 @@ export function BottomTabBar({
                 <li key={r.href}>
                   <Link
                     href={r.href}
+                    prefetch
                     aria-current={active ? "page" : undefined}
                     className={cn(
                       "flex flex-col items-center justify-center gap-0.5 pt-2 pb-1.5 min-h-[52px] text-[0.75rem] font-semibold transition-colors active:scale-95",

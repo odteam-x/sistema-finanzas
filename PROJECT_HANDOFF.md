@@ -136,6 +136,32 @@ que sea una decisión explícita y discutida — ya se evaluó y se descartó.
   diario (`app/api/cron/daily-alerts`, deudas de pago único + suscripciones
   que vencen en 3 días).
 
+### Verificación de sesión: `getClaims()`, no `getUser()`
+
+`lib/auth.ts` y `lib/supabase/middleware.ts` verifican con
+`supabase.auth.getClaims()`. **No cambiar a `getUser()` "por seguridad"** —
+las dos verifican, la diferencia es dónde:
+
+- `getUser()` pregunta al servidor de Auth en cada llamada. Medido contra este
+  proyecto: 90–600 ms por viaje, y se pagaba **dos veces por navegación**
+  (middleware + layout) antes de la primera consulta de datos.
+- `getClaims()` comprueba la **firma** del JWT con la clave pública del
+  proyecto. Este proyecto firma con **ES256** (asimétrica — se ve en
+  `/auth/v1/.well-known/jwks.json`), así que la comprobación es criptográfica
+  y local: **1 ms**. El JWKS se descarga una vez por proceso y vive en
+  `GLOBAL_JWKS`, una caché de módulo de `auth-js` compartida entre instancias
+  del cliente.
+
+Verificado que rechaza: firma falsificada (suplantar otro `sub`), token
+caducado y basura — los tres dan `AuthInvalidJwtError`.
+
+Si el proyecto volviera a una clave **simétrica** (HS256), `getClaims()` cae
+solo a `getUser()` por red: se pierde la velocidad, nunca la verificación.
+
+`requireUser()` ya no devuelve el `User` completo de Supabase sino
+`AuthUser = { id, email }`. Es todo lo que la app usa (65 lecturas de
+`user.id`, una de `user.email`) y ambos vienen dentro del propio JWT.
+
 ## 5. Migraciones de Supabase
 
 Son **archivos SQL planos numerados** en `supabase/migration-vN.sql`,

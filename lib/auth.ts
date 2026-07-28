@@ -4,27 +4,49 @@ import { cache } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "./supabase/server";
 import { isSupabaseConfigured } from "./supabase/config";
-import type { User } from "@supabase/supabase-js";
+
+/** Identidad ya verificada. Solo lo que la app usa de verdad: en todo el
+ *  código hay 65 lecturas de `user.id` y una de `user.email`, y las dos vienen
+ *  dentro del propio JWT — no hacía falta el objeto User completo del
+ *  servidor de Auth. */
+export interface AuthUser {
+  id: string;
+  email: string | null;
+}
 
 /** Devuelve el usuario autenticado o null (sin redirigir).
  *
- * `supabase.auth.getUser()` no lee una cookie nada más: valida el JWT contra
- * el servidor de Supabase, un viaje de red real. Sin memoizar, una sola
- * carga de Inicio lo llamaba 3 veces (layout + runSalaryCatchUp +
- * runSubscriptionCatchUp) — tres round-trips en serie por la misma
- * pregunta. `cache()` de React deduplica llamadas idénticas dentro de una
- * misma petición: la primera pega a la red, el resto reusa esa promesa. */
-export const getUser = cache(async (): Promise<User | null> => {
+ * Verifica con `getClaims()`, no con `getUser()`. La diferencia es dónde
+ * ocurre la verificación, no si ocurre:
+ *
+ * - `getUser()` pregunta al servidor de Auth en CADA llamada. Medido contra
+ *   este proyecto: entre 90ms y 600ms por viaje. Se pagaba dos veces por
+ *   navegación (una en el middleware y otra aquí), antes de la primera
+ *   consulta de datos.
+ * - `getClaims()` comprueba la FIRMA del JWT con la clave pública del
+ *   proyecto. Este proyecto firma con ES256 (clave asimétrica, verificado en
+ *   su endpoint JWKS), así que la comprobación es criptográfica y local: un
+ *   token manipulado o caducado no pasa. El JWKS se descarga una vez por
+ *   proceso y queda en una caché de módulo compartida entre instancias del
+ *   cliente (GLOBAL_JWKS en auth-js), no una vez por petición.
+ *
+ * Si el proyecto volviera a una clave simétrica, `getClaims()` cae solo a
+ * `getUser()` por red: se pierde la velocidad, nunca la verificación.
+ *
+ * `cache()` de React deduplica dentro de una misma petición: el layout, los
+ * catch-ups y las páginas comparten el resultado. */
+export const getUser = cache(async (): Promise<AuthUser | null> => {
   if (!isSupabaseConfigured) return null;
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  return user;
+  const { data, error } = await supabase.auth.getClaims();
+  const sub = data?.claims?.sub;
+  if (error || !sub) return null;
+  const email = data.claims.email;
+  return { id: sub, email: typeof email === "string" ? email : null };
 });
 
 /** Exige sesión; redirige a /login si no hay usuario. */
-export async function requireUser(): Promise<User> {
+export async function requireUser(): Promise<AuthUser> {
   const user = await getUser();
   if (!user) redirect("/login");
   return user;

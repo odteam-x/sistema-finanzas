@@ -30,10 +30,17 @@ export async function updateSession(request: NextRequest) {
     },
   });
 
-  // IMPORTANTE: no ejecutar código entre createServerClient y getUser().
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // IMPORTANTE: no ejecutar código entre createServerClient y la verificación.
+  //
+  // getClaims() en vez de getUser(): verifica la FIRMA del JWT con la clave
+  // pública del proyecto (ES256) en local, en lugar de preguntarle al servidor
+  // de Auth en cada petición. Este middleware corre en TODA navegación, así
+  // que ese viaje de 90-600ms se pagaba siempre antes de empezar a cargar
+  // nada. Sigue refrescando la sesión y reescribiendo las cookies: getClaims()
+  // pasa por getSession() por dentro, que es quien renueva el token vencido.
+  // Ver la nota larga en lib/auth.ts.
+  const { data } = await supabase.auth.getClaims();
+  const user = data?.claims?.sub ? { id: data.claims.sub } : null;
 
   const path = request.nextUrl.pathname;
   const isPublic = PUBLIC_PATHS.some((p) => path.startsWith(p));
