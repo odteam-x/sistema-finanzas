@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/cn";
-import { NavIcon } from "./NavIcon";
+import { Icon } from "@/components/ui/Icon";
 import { NAV_ROUTES } from "./routes";
 import { LogoutButton } from "./LogoutButton";
 
@@ -43,7 +43,7 @@ export function Sidebar({ email }: { email: string | null }) {
                   : "text-muted hover:bg-surface-sunken hover:text-ink",
               )}
             >
-              <NavIcon name={r.icon} size={20} active={active} />
+              <Icon name={r.icon} size={20} weight={active ? "fill" : "light"} />
               {r.label}
             </Link>
           );

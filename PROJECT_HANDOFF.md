@@ -287,27 +287,47 @@ recargar.
   tokens de `globals.css` o rutas API nuevas), correr `rm -rf .next` antes
   de reiniciar el dev server — hay caché que se queda obsoleta.
 
-## 7c. Feedback de navegación (`NavIcon`) y por qué offline se siente más
-## rápido que online — esto NO es un bug
+## 7c. Sin `loading.tsx` ni spinner de navegación — decisión explícita del usuario
 
-`components/nav/NavIcon.tsx` envuelve el ícono de cada enlace de
-`BottomTabBar`/`Sidebar` con `useLinkStatus()` (Next 15+/React 19): mientras
-ESA navegación en particular está pendiente, el ícono baja de opacidad y gira
-un anillo. Es por-enlace, no global — no hace falta contexto ni efecto.
+**No hay ningún `loading.tsx` bajo `app/(app)/`, y ningún componente de
+navegación muestra un estado "pendiente".** Se eliminaron a propósito
+(existieron un tiempo — hasta 16 archivos `loading.tsx` + un
+`components/nav/NavIcon.tsx` con `useLinkStatus()` que atenuaba el ícono
+tocado — y se quitaron todos en una sola pasada) porque el usuario pidió
+explícitamente que la navegación "abra el apartado y ya", sin círculo de
+carga de por medio.
 
-Por qué hacía falta: entre que la URL cambia (inmediato, es solo
-`history.pushState`) y que la pantalla nueva está lista, no había ninguna
-señal de que el toque hubiera registrado. Se sentía como "hay que tocar dos
-veces", pero el primer toque sí funcionaba — el usuario solo no lo veía.
+Sin un `loading.tsx` en el segmento, el comportamiento de Next.js es: la
+pantalla ACTUAL se queda completa y sigue interactiva durante toda la
+navegación pendiente; cuando la pantalla destino está lista, la URL y el
+contenido cambian juntos, en el mismo instante — nunca un estado a medias.
+**Verificado con una ruta de prueba con retardo artificial de 3s**, en
+build de producción real:
+- La pantalla de origen permaneció completa y su botón siguió respondiendo
+  a los toques durante los 3 segundos de espera.
+- No apareció ningún esqueleto, spinner, ni pantalla en blanco en ningún
+  punto intermedio.
+- A los ~3.6s, URL y contenido del destino aparecieron atómicamente juntos.
 
-**La razón real de fondo, medida:** offline, la navegación de Next intenta
-traer el payload de la ruta, falla al instante (no hay red) y cae a la copia
-completa cacheada por el Service Worker — se sirve local, sin ninguna
-consulta a Supabase. Online, la página SÍ tiene que ejecutar sus consultas
-reales (13-18 por pantalla, ~400-450ms en paralelo medido contra este
-proyecto) más el round-trip del propio Vercel. Offline es rápido porque **no
-hace el trabajo real**; no es una referencia de cuánto debería tardar con
-datos frescos.
+**El trade-off, para quien retome esto:** si una pantalla real tarda varios
+segundos (Supabase lento, arranque en frío de Vercel), el usuario no verá
+NINGUNA señal de que su toque registró hasta que el destino aparece de
+golpe. Es la consecuencia directa de lo que se pidió — no añadir ningún
+indicador — y no un descuido. Si en el futuro se quiere reintroducir algún
+feedback, la opción ya probada y descartada fue `useLinkStatus()`
+por-enlace (ver historial de commits); no volver a una `<Suspense>` global
+ni a un spinner de página completa sin discutirlo antes, porque es
+exactamente lo que se pidió quitar.
+
+## 7d. Por qué offline se siente más rápido que online — esto NO es un bug
+
+Offline, la navegación de Next intenta traer el payload de la ruta, falla
+al instante (no hay red) y cae a la copia completa cacheada por el Service
+Worker — se sirve local, sin ninguna consulta a Supabase. Online, la
+página SÍ tiene que ejecutar sus consultas reales (13-18 por pantalla,
+~400-450ms en paralelo medido contra este proyecto) más el round-trip del
+propio Vercel. Offline es rápido porque **no hace el trabajo real**; no es
+una referencia de cuánto debería tardar con datos frescos.
 
 **Lo que NO se hizo, a propósito:** Next permite `experimental.staleTimes`
 en `next.config.ts` para que el navegador reuse un payload reciente sin
@@ -317,7 +337,7 @@ significa poder ver un balance desactualizado justo después de registrar un
 movimiento. No se activó sin decisión explícita del usuario — es un
 trade-off de framework, no un bug a corregir.
 
-## 7d. `lib/supabase/authTimeout.ts` — por qué existe, no quitarlo
+## 7e. `lib/supabase/authTimeout.ts` — por qué existe, no quitarlo
 
 Se reportó una pantalla tardando hasta ~20s en cargar. Causa encontrada
 leyendo el SDK (`node_modules/@supabase/auth-js`): `getUser()`/`getClaims()`

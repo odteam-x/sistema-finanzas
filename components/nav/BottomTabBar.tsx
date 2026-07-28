@@ -6,7 +6,6 @@ import { useEffect, useState } from "react";
 import { AnimatePresence, motion, useDragControls, useReducedMotion } from "framer-motion";
 import { cn } from "@/lib/cn";
 import { Icon } from "@/components/ui/Icon";
-import { NavIcon } from "./NavIcon";
 import { PRIMARY_ROUTES, SECONDARY_ROUTES } from "./routes";
 import { LogoutButton } from "./LogoutButton";
 
@@ -116,7 +115,7 @@ export function BottomTabBar({
                             : "bg-tint-brand text-primary-fg group-hover:bg-primary-soft",
                         )}
                       >
-                        <NavIcon name={r.icon} size={24} active={active} />
+                        <Icon name={r.icon} size={24} weight={active ? "fill" : "light"} />
                       </span>
                       <span
                         className={cn(
@@ -158,7 +157,7 @@ export function BottomTabBar({
                       active ? "text-primary-fg" : "text-muted",
                     )}
                   >
-                    <NavIcon name={r.icon} size={23} active={active} />
+                    <Icon name={r.icon} size={23} weight={active ? "fill" : "light"} />
                     {r.shortLabel}
                   </Link>
                 </li>
@@ -177,7 +176,7 @@ export function BottomTabBar({
                       active ? "text-primary-fg" : "text-muted",
                     )}
                   >
-                    <NavIcon name={r.icon} size={23} active={active} />
+                    <Icon name={r.icon} size={23} weight={active ? "fill" : "light"} />
                     {r.shortLabel}
                   </Link>
                 </li>
