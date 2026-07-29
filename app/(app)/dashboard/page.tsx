@@ -72,6 +72,13 @@ export default async function DashboardPage() {
   const budgetPct = clampPct(s.realQuincena, s.estQuincena || 1);
   const overBudget = s.realQuincena > s.estQuincena && s.estQuincena > 0;
 
+  // Proporción real entre lo ahorrado y lo adeudado, sobre su propia suma —
+  // no un porcentaje inventado. Con ambos en 0 no hay nada que proporcionar,
+  // así que la barra se omite (undefined) en vez de mostrar un 0% falso.
+  const patrimonioBase = s.totalSaved + s.generalSavings + s.outstandingDebt;
+  const ahorradoPct = patrimonioBase > 0 ? ((s.totalSaved + s.generalSavings) / patrimonioBase) * 100 : undefined;
+  const adeudadoPct = patrimonioBase > 0 ? (s.outstandingDebt / patrimonioBase) * 100 : undefined;
+
   // Recordatorios locales al abrir el Inicio (ver NotificationTrigger.tsx):
   // reusa las alertas ya calculadas (deuda por vencer, presupuesto excedido)
   // y agrega el caso de día de cobro, que no tiene alerta propia.
@@ -104,19 +111,29 @@ export default async function DashboardPage() {
       {s.alerts.length > 0 && (
         <section className="mb-6">
           <SectionHead title="Alertas" href="/sugerencias" linkLabel="Ver consejos" />
-          <Card>
-            <ul className="flex flex-col gap-2.5">
+          <Card flush>
+            {/* Cada fila enlaza a /sugerencias (mismo destino que "Ver
+                consejos"): antes la flecha no existía y nada de la fila
+                era tocable salvo el enlace de la cabecera — no había forma
+                de saber que había más detalle esperando ahí. */}
+            <ul className="divide-y divide-line">
               {s.alerts.slice(0, 3).map((a, i) => (
-                <li key={i} className="flex items-start gap-2.5">
-                  <Icon
-                    name={(a.tone === "info" ? "bulb" : a.tone === "success" ? "check" : "alert") as IconName}
-                    size={18}
-                    className={cn("mt-0.5 shrink-0", alertTone[a.tone])}
-                  />
-                  <p className="text-sm text-ink">
-                    <span className="font-semibold">{a.title}.</span>{" "}
-                    <span className="text-muted">{a.message}</span>
-                  </p>
+                <li key={i}>
+                  <Link
+                    href="/sugerencias"
+                    className="flex items-start gap-2.5 px-4 py-3 first:pt-4 last:pb-4 hover:bg-surface-sunken active:bg-surface-sunken transition-colors"
+                  >
+                    <Icon
+                      name={(a.tone === "info" ? "bulb" : a.tone === "success" ? "check" : "alert") as IconName}
+                      size={18}
+                      className={cn("mt-0.5 shrink-0", alertTone[a.tone])}
+                    />
+                    <p className="min-w-0 flex-1 text-sm text-ink">
+                      <span className="font-semibold">{a.title}.</span>{" "}
+                      <span className="text-muted">{a.message}</span>
+                    </p>
+                    <Icon name="chevronRight" size={16} className="mt-0.5 shrink-0 text-subtle" />
+                  </Link>
                 </li>
               ))}
             </ul>
@@ -135,6 +152,7 @@ export default async function DashboardPage() {
             value={<MoneyValue value={s.totalSaved + s.generalSavings} decimals={false} />}
             icon="piggy"
             tone="primary"
+            progress={ahorradoPct}
           />
           <StatTile
             emphasis="quiet"
@@ -142,6 +160,7 @@ export default async function DashboardPage() {
             value={<MoneyValue value={s.outstandingDebt} decimals={false} />}
             icon="debt"
             tone={s.outstandingDebt > 0 ? "expense" : "neutral"}
+            progress={adeudadoPct}
           />
           <StatTile
             emphasis="quiet"

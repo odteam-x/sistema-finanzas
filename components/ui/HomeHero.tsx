@@ -175,13 +175,13 @@ export function HomeHero({
             <DropdownMenu>
               <DropdownMenuTrigger
                 aria-label={`Cuenta mostrada: ${selected?.name}. Cambiar`}
-                className="shrink-0 max-w-[46%] inline-flex items-center gap-1.5 rounded-pill bg-on-brand-well px-3.5 min-h-11 text-xs font-semibold text-on-brand cursor-pointer active:scale-95 transition-transform"
+                className="shrink-0 max-w-[46%] inline-flex items-center gap-1.5 rounded-pill border border-[var(--color-on-brand-well)] px-3.5 min-h-11 text-xs font-semibold text-on-brand-muted cursor-pointer active:scale-95 transition-transform"
               >
                 <span className="min-w-0 flex flex-col items-start leading-tight">
-                  <span className="text-on-brand-muted truncate max-w-full">
+                  <span className="truncate max-w-full">
                     {selected?.name}
                   </span>
-                  <span className="font-extrabold tabular">
+                  <span className="font-bold tabular text-on-brand">
                     {selected && selected.currency !== "DOP" ? (
                       formatMoneyIn(selected.balance, selected.currency, false)
                     ) : (

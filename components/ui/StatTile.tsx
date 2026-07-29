@@ -17,7 +17,25 @@ interface StatTileProps {
   tone?: Tone;
   emphasis?: Emphasis;
   className?: string;
+  /** 0-100. Cuando se pasa, dibuja una barra fina bajo la cifra — para
+   *  cuando el número tiene un techo real que darle contexto (ej. cuánto es
+   *  del total combinado). Opcional a propósito: no todos los tiles tienen
+   *  un techo honesto que mostrar. */
+  progress?: number;
 }
+
+// Mismo color que ya usa el texto/ícono del tile, pero como relleno sólido
+// de barra. bg-line-strong para "neutral": ahí no hay una cifra de dinero
+// que colorear, así que la barra tampoco debe insinuar una.
+const toneBar: Record<Tone, string> = {
+  primary: "bg-primary",
+  neutral: "bg-line-strong",
+  danger: "bg-expense",
+  warning: "bg-warning",
+  info: "bg-info",
+  income: "bg-income",
+  expense: "bg-expense",
+};
 
 const toneToBubble = {
   primary: "brand",
@@ -79,6 +97,7 @@ export function StatTile({
   tone = "primary",
   emphasis = "normal",
   className,
+  progress,
 }: StatTileProps) {
   return (
     <div
@@ -110,6 +129,14 @@ export function StatTile({
         {value}
       </p>
       {sub && <p className="mt-0.5 text-xs text-on-tint">{sub}</p>}
+      {progress !== undefined && (
+        <div className="mt-2 h-1 w-full rounded-pill bg-surface-sunken overflow-hidden">
+          <div
+            className={cn("h-full rounded-pill", toneBar[tone])}
+            style={{ width: `${Math.min(100, Math.max(0, progress))}%` }}
+          />
+        </div>
+      )}
     </div>
   );
 }
