@@ -370,6 +370,58 @@ Si se vuelve a ver una carga de ~20s, **no subir el valor de
 fallando de forma reintentable tan seguido (¿Supabase caído?, ¿el
 proyecto rotó las claves?), no esconder el síntoma esperando más.
 
+## 7f. `StatusBarColor` congelaba TODA navegación — causa raíz real, con stack trace
+
+Durante varios turnos se reportó "toco un apartado y se congela todo, hay
+que tocar dos veces". Se probaron y descartaron varias hipótesis (`getUser`
+vs `getClaims`, la hoja "Más", `loading.tsx`, `AppLockGate`) antes de dar
+con la real. **Ninguna de esas era el problema** — quedaron como mejoras
+válidas por su cuenta, pero no arreglaban esto.
+
+**Causa real, confirmada con un stack trace, no adivinada:**
+`components/StatusBarColor.tsx` desconectaba del DOM (`removeChild`) las
+etiquetas `<meta name="theme-color">` que Next.js emite y sigue
+rastreando internamente (desde `viewport.themeColor`, `app/layout.tsx`).
+En la SIGUIENTE navegación, cuando React intentaba reconciliar el `<head>`
+como parte del commit de la página nueva, encontraba un nodo cuyo
+`parentNode` ya era `null` — y lanzaba, sin capturar:
+
+```
+Uncaught TypeError: Cannot read properties of null (reading 'removeChild')
+```
+
+Esto abortaba el commit visual a medias. El `pushState` de la URL ya había
+ocurrido ANTES del commit fallido, así que la barra de direcciones cambiaba
+pero el contenido se quedaba congelado — coincide exactamente con el
+síntoma reportado. Al tocar de nuevo, Next detectaba la transición previa
+rota y caía a una recarga completa de página, que sí funcionaba por partir
+de cero (de ahí "con doble toque sí anda").
+
+**Cómo se encontró (reproducible sin sesión real):** el bloqueo de PIN es
+puro localStorage, así que se montó `AppLockGate` + el layout real en una
+ruta pública de prueba y NO reprodujo el bug — descartándolo en un
+entorno controlado. Se volvió a montar la cáscara COMPLETA del layout real
+(`Sidebar`, `BottomTabBar`, `QuickAddFab`, `AssistantWidget`,
+`ToastProvider`, `PersonalizeProvider`, `OfflineBanner`,
+`PendingSyncBanner`, `StatusBarColor`) en la misma ruta pública, con
+datos falsos (sin tocar Supabase), y SÍ lo reprodujo. Se aisló el
+componente exacto por bisección (quitando la mitad de los componentes,
+comprobando, repitiendo) hasta llegar a `StatusBarColor` solo. Con
+listeners de `error`/`unhandledrejection` instalados antes del clic salió
+el stack trace de arriba.
+
+**El arreglo:** nunca desconectar esas etiquetas del DOM. En vez de
+`removeChild`, se les pone `media="not all"` (el navegador las ignora para
+siempre) y se dejan en su lugar — Next conserva su referencia válida.
+Verificado: 5+ navegaciones seguidas contra la cáscara real completa, cero
+errores, cada clic funcionando al primer intento.
+
+**Si se toca este componente de nuevo:** cualquier manipulación directa
+del DOM de nodos que Next.js pueda estar gestionando (metadata del
+`<head>`, o cualquier cosa emitida por el árbol de Server Components) debe
+neutralizarse in-place, nunca desconectarse con `removeChild`/
+`replaceChild` por fuera de React.
+
 ## 8. El roadmap de 12 bloques (COMPLETADO)
 
 Documento de planificación original en

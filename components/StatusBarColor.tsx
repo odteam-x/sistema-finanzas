@@ -32,13 +32,32 @@ export function StatusBarColor() {
       // Next emite dos <meta theme-color> con `media` (uno por esquema). Si
       // solo se escribiera encima del primero, en modo oscuro no aplicaría:
       // cuando hay varias, el navegador usa la PRIMERA cuyo media coincida.
-      // Por eso este componente se queda con una sola meta, sin media, y
-      // retira las demás.
+      // Por eso este componente NEUTRALIZA las de Next en vez de escribir
+      // encima de una sola, y agrega la propia sin `media` (gana siempre).
+      //
+      // Antes esas dos etiquetas se DESCONECTABAN del DOM con removeChild().
+      // Next.js sigue esos nodos en su propio árbol de reconciliación del
+      // <head> (los emite desde metadata/viewport en app/layout.tsx); al
+      // desconectarlos por fuera de React, en la SIGUIENTE navegación React
+      // intentaba reconciliar un nodo cuyo padre ya era null y lanzaba
+      // `TypeError: Cannot read properties of null (reading 'removeChild')`
+      // sin capturar — abortando el commit de la página nueva a medias. Por
+      // eso la URL cambiaba (el pushState ya había ocurrido) pero el
+      // contenido se quedaba congelado hasta un segundo intento, que Next
+      // resolvía con una recarga completa (que sí funcionaba, al partir de
+      // cero). Reproducido con un stack trace real antes de este cambio.
+      //
+      // La solución: nunca desconectar esos nodos. Se les pone
+      // `media="not all"` (el navegador los ignora para siempre) y se
+      // dejan en su lugar — Next.js conserva su referencia válida.
+      document
+        .querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]:not([data-dynamic])')
+        .forEach((m) => {
+          m.media = "not all";
+        });
+
       let meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"][data-dynamic]');
       if (!meta) {
-        document
-          .querySelectorAll('meta[name="theme-color"]')
-          .forEach((m) => m.parentNode?.removeChild(m));
         meta = document.createElement("meta");
         meta.name = "theme-color";
         meta.dataset.dynamic = "true";
