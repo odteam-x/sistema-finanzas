@@ -23,7 +23,15 @@ export const metadata: Metadata = {
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
-    statusBarStyle: "default",
+    // "default" pinta la franja de la barra de estado BLANCA fija en iOS,
+    // sin importar el tema de la app — es justo la discrepancia reportada
+    // (arriba blanco/negro fijo, el resto de la pantalla en su tema real).
+    // "black-translucent" la vuelve transparente: se ve a través de ella el
+    // contenido real de la página, que StatusBarColor.tsx ya tiñe según ruta
+    // y tema. Los headers de la app ya reservan
+    // `env(safe-area-inset-top)` (ver PageHeader.tsx, HomeHero.tsx), así que
+    // el contenido no queda tapado por el reloj/batería del sistema.
+    statusBarStyle: "black-translucent",
     title: "Cachin'",
   },
   icons: {
