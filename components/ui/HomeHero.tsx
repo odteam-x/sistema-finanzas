@@ -99,51 +99,51 @@ export function HomeHero({
 
   return (
     <>
-      {/* Alturas recortadas respecto a la primera versión: ocupaba casi media
-          pantalla y empujaba las alertas y el resumen fuera del primer
-          viewport. El saludo, en cambio, SUBE de tamaño: era lo más pequeño
-          del bloque siendo la identidad de quien usa la app. */}
-      <header
-        className="-mx-4 sm:-mx-6 mb-5 bg-gradient-brand rounded-b-hero px-4 sm:px-6 pb-5 shadow-hero"
+      {/* Identidad: sobre el fondo de página, no dentro de la tarjeta de
+          saldo — antes ambas vivían fundidas en un solo bloque de marca a
+          sangre, sin separación entre "quién eres" y "cuánto tienes". */}
+      <div
+        className="-mx-4 sm:-mx-6 px-4 sm:px-6 pb-3 flex items-center justify-between gap-3"
         style={{ paddingTop: "max(0.75rem, env(safe-area-inset-top))" }}
       >
-        {/* 1. Identidad */}
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3 min-w-0">
-            <Image
-              src="/icons/logo-mark-white.png"
-              alt=""
-              width={48}
-              height={48}
-              className="size-12 shrink-0 rounded-pill bg-on-brand-well p-2"
-              priority
-            />
-            <div className="min-w-0">
-              <p className="text-sm text-on-brand-muted truncate leading-tight">{greeting}</p>
-              <h1 className="text-xl font-extrabold text-on-brand truncate leading-tight">
-                {name || "Bienvenido"}
-              </h1>
-            </div>
+        <div className="flex items-center gap-3 min-w-0">
+          <Image
+            src="/icons/logo-mark-white.png"
+            alt=""
+            width={48}
+            height={48}
+            className="size-12 shrink-0 rounded-pill bg-primary p-2"
+            priority
+          />
+          <div className="min-w-0">
+            <p className="text-sm text-muted truncate leading-tight">{greeting}</p>
+            <h1 className="text-xl font-extrabold text-ink truncate leading-tight">
+              {name || "Bienvenido"}
+            </h1>
           </div>
-          <Link
-            href="/sugerencias"
-            aria-label={
-              alertCount > 0
-                ? `Avisos: ${alertCount} ${alertCount === 1 ? "pendiente" : "pendientes"}`
-                : "Avisos"
-            }
-            className="relative grid place-items-center size-11 shrink-0 rounded-pill bg-on-brand-well text-on-brand active:scale-95 transition-transform"
-          >
-            <Icon name="bell" size={20} />
-            {alertCount > 0 && (
-              <span
-                aria-hidden="true"
-                className="absolute top-1.5 right-1.5 size-2.5 rounded-pill bg-warning ring-2 ring-[var(--brand-grad-from)]"
-              />
-            )}
-          </Link>
         </div>
+        <Link
+          href="/sugerencias"
+          aria-label={
+            alertCount > 0
+              ? `Avisos: ${alertCount} ${alertCount === 1 ? "pendiente" : "pendientes"}`
+              : "Avisos"
+          }
+          className="relative grid place-items-center size-11 shrink-0 rounded-pill bg-surface border border-line text-ink shadow-card active:scale-95 transition-transform"
+        >
+          <Icon name="bell" size={20} />
+          {alertCount > 0 && (
+            <span
+              aria-hidden="true"
+              className="absolute top-1.5 right-1.5 size-2.5 rounded-pill bg-warning ring-2 ring-[var(--color-surface)]"
+            />
+          )}
+        </Link>
+      </div>
 
+      {/* Tarjeta de saldo: redondeada en las 4 esquinas y con margen a los
+          lados — una tarjeta real, no un bloque a sangre pegado al borde. */}
+      <div className="mb-5 bg-gradient-brand rounded-hero p-4 sm:p-5 shadow-hero">
         {/* 2. Saldo y cuenta, en UNA fila. Antes el saldo ocupaba solo la
             mitad izquierda —con la derecha vacía— y los chips de cuenta
             colgaban en una fila propia debajo, así que el bloque crecía a lo
@@ -252,7 +252,7 @@ export function HomeHero({
           )}
           <QuickAction icon="clock" label="Historial" href="/movimientos" />
         </div>
-      </header>
+      </div>
 
       <QuickForms
         accounts={accounts}

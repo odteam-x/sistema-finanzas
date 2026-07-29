@@ -12,10 +12,11 @@ import { usePathname } from "next/navigation";
  *  fondo del resto de pantallas: se veía como una banda pegada encima de la
  *  app en vez de parte de ella.
  *
- *  Solo Inicio lleva el gradiente de marca a sangre hasta el borde superior;
- *  todo lo demás empieza con el fondo de página. Y ambos cambian con el modo
- *  claro/oscuro, así que el color se lee de las variables CSS ya resueltas en
- *  vez de duplicar los valores acá. */
+ *  Ninguna pantalla lleva ya el gradiente de marca a sangre hasta el borde
+ *  superior (la tarjeta de saldo de Inicio quedó separada del encabezado),
+ *  así que el fondo de página sirve en todas. Y cambia con el modo
+ *  claro/oscuro, así que el color se lee de la variable CSS ya resuelta en
+ *  vez de duplicar el valor acá. */
 export function StatusBarColor() {
   const pathname = usePathname();
 
@@ -24,9 +25,7 @@ export function StatusBarColor() {
 
     function apply() {
       const styles = getComputedStyle(root);
-      // En Inicio el hero arranca en el extremo oscuro del gradiente.
-      const token = pathname === "/dashboard" ? "--brand-grad-from" : "--color-bg";
-      const color = styles.getPropertyValue(token).trim();
+      const color = styles.getPropertyValue("--color-bg").trim();
       if (!color) return;
 
       // Next emite dos <meta theme-color> con `media` (uno por esquema). Si
