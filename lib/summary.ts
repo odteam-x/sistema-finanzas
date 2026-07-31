@@ -23,6 +23,7 @@ import {
 } from "./data";
 import { exceptionsMap } from "./calendar";
 import { resolveBudgetBasis } from "./budgetDays";
+import { perDayFromHistory, spendingWindow } from "./spendingHistory";
 import { balanceOfAccount, deltaForAccount } from "./balances";
 import { normalizeKeyword } from "./categorize";
 import { ratesMap, toDOP } from "./currency";
@@ -133,6 +134,7 @@ export async function getFinanceSummary(): Promise<FinanceSummary> {
     subscriptions,
     exchangeRates,
     goalContributions,
+    historyExpenses,
   ] = await Promise.all([
     getSalarySettings(),
     getSalaries(),
@@ -161,6 +163,10 @@ export async function getFinanceSummary(): Promise<FinanceSummary> {
     getSubscriptions(),
     getExchangeRates(),
     getGoalContributionMovements(),
+    // Ventana propia para el promedio diario: `trailingExpenses` arranca el
+    // día 1 de hace dos meses, así que el día 1 del mes en curso se quedaría
+    // corta y el promedio saldría bajo.
+    getExpenses(spendingWindow(today).from, spendingWindow(today).to),
   ]);
   const rates = ratesMap(exchangeRates);
 
@@ -221,7 +227,10 @@ export async function getFinanceSummary(): Promise<FinanceSummary> {
   const basis = resolveBudgetBasis(q, periodOverrides, exMap);
   const workedQuincena = basis.days;
   const activeCats = categories.filter((c) => c.active);
-  const perDay = activeCats.reduce((s, c) => s + Number(c.amount_per_workday), 0);
+  // Lo que de verdad gastas al día (lib/spendingHistory.ts), no lo que
+  // configuraste que querías gastar. El desglose por categoría de abajo sí
+  // sigue usando `amount_per_workday`: ahí las categorías sí son la fuente.
+  const perDay = perDayFromHistory(historyExpenses, today);
   const estQuincena = perDay * workedQuincena;
   const realQuincena = expenses.reduce((s, e) => s + Number(e.amount), 0);
 

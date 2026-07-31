@@ -3,9 +3,10 @@
 // que ese resumen trae. Se usa desde el disparador de push inmediato en
 // addExpense (Bloque 12): ahí solo hace falta saber si ESTE gasto hizo
 // cruzar el 80%/100% del presupuesto, no el resumen completo del Inicio.
-import { getBudgetCategories, getExceptions, getExpenses, getPeriodOverrides } from "./data";
+import { getExceptions, getExpenses, getPeriodOverrides } from "./data";
 import { exceptionsMap } from "./calendar";
 import { resolveBudgetBasis } from "./budgetDays";
+import { perDayFromHistory, spendingWindow } from "./spendingHistory";
 import { quincenaForDate } from "./periods";
 import { toISODate } from "./format";
 
@@ -16,16 +17,20 @@ export async function getQuincenaBudgetStatus(
   const monthStart = toISODate(new Date(q.year, q.month, 1, 12));
   const monthEnd = toISODate(new Date(q.year, q.month + 1, 0, 12));
 
-  const [categories, exceptions, periodOverrides, expenses] = await Promise.all([
-    getBudgetCategories(),
+  const window = spendingWindow(dateISO);
+  const [exceptions, periodOverrides, expenses, historyExpenses] = await Promise.all([
     getExceptions(monthStart, monthEnd),
     getPeriodOverrides(),
     getExpenses(q.start, q.end),
+    getExpenses(window.from, window.to),
   ]);
 
   const exMap = exceptionsMap(exceptions);
   const basis = resolveBudgetBasis(q, periodOverrides, exMap);
-  const perDay = categories.filter((c) => c.active).reduce((s, c) => s + Number(c.amount_per_workday), 0);
+  // Mismo criterio que el resto de la app: lo que sueles gastar al día, no un
+  // presupuesto configurado a mano. El aviso pasa a ser "vas por encima de tu
+  // ritmo normal", que es lo que de verdad se puede accionar.
+  const perDay = perDayFromHistory(historyExpenses, dateISO);
   const estQuincena = perDay * basis.days;
   const realQuincena = expenses.reduce((s, e) => s + Number(e.amount), 0);
 

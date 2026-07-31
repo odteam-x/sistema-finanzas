@@ -79,6 +79,10 @@ export default async function PresupuestoCategoriasPage() {
   const workedQuincena = basis.days;
 
   const activeCats = categories.filter((c) => c.active);
+  // Acá SÍ manda la suma manual: esta es la pantalla donde configuras el plan
+  // por categoría, así que lo que muestra es tu plan. El "promedio por día"
+  // de la pantalla principal es otra cosa — lo que gastas de verdad
+  // (lib/spendingHistory.ts).
   const perDay = activeCats.reduce((s, c) => s + Number(c.amount_per_workday), 0);
   const estQuincena = perDay * workedQuincena;
 
@@ -100,10 +104,16 @@ export default async function PresupuestoCategoriasPage() {
       />
 
       <div className="grid grid-cols-2 gap-2 sm:gap-3 mb-4">
-        <StatTile label="Gasto fijo por día" value={<Money value={perDay} />} icon="calc" />
         <StatTile
-          label="Estimado esta quincena"
+          label="Plan por día"
+          value={<Money value={perDay} />}
+          sub="Lo que asignaste"
+          icon="calc"
+        />
+        <StatTile
+          label="Plan de la quincena"
           value={<Money value={estQuincena} decimals={false} />}
+          sub="Tu plan × días laborables"
           tone="primary"
           icon="budget"
         />

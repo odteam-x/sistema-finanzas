@@ -1,6 +1,5 @@
 import Link from "next/link";
 import {
-  getBudgetCategories,
   getCategorizationRules,
   getExceptions,
   getExpenses,
@@ -21,6 +20,7 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { StatTile } from "@/components/ui/StatTile";
 import { InfoTooltip } from "@/components/ui/InfoTooltip";
+import { SPENDING_WINDOW_DAYS, perDayFromHistory, spendingWindow } from "@/lib/spendingHistory";
 import { CollapsibleCard } from "@/components/ui/CollapsibleCard";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Badge } from "@/components/ui/Badge";
@@ -111,9 +111,9 @@ export default async function PresupuestoPage({
   const monthStart = toISODate(new Date(q.year, q.month, 1, 12));
   const monthEnd = toISODate(new Date(q.year, q.month + 1, 0, 12));
 
-  const [categories, exceptions, expenses, accounts, tags, overrides, subscriptions, rules] =
+  const window = spendingWindow(today);
+  const [exceptions, expenses, accounts, tags, overrides, subscriptions, rules, historyExpenses] =
     await Promise.all([
-      getBudgetCategories(),
       getExceptions(monthStart, monthEnd),
       getExpenses(q.start, q.end),
       getSavingsAccounts(),
@@ -121,6 +121,7 @@ export default async function PresupuestoPage({
       getPeriodOverrides(),
       getSubscriptions(),
       getCategorizationRules(),
+      getExpenses(window.from, window.to),
     ]);
   const activeSubs = subscriptions.filter((s) => s.active);
 
@@ -131,8 +132,11 @@ export default async function PresupuestoPage({
   const workedQuincena = basis.days;
   const workedMonth = countWorkdays(monthStart, monthEnd, exMap);
 
-  const activeCats = categories.filter((c) => c.active);
-  const perDay = activeCats.reduce((s, c) => s + Number(c.amount_per_workday), 0);
+  // Ya no sale de sumar el presupuesto manual de cada categoría: es lo que de
+  // verdad gastas al día según los últimos 90 días (lib/spendingHistory.ts).
+  // Las categorías siguen vivas para el desglose y para el plan que se
+  // configura en /presupuesto/categorias.
+  const perDay = perDayFromHistory(historyExpenses, today);
   const estQuincena = perDay * workedQuincena;
   const estMonth = perDay * workedMonth;
   const realQuincena = expenses.reduce((s, e) => s + Number(e.amount), 0);
@@ -192,15 +196,19 @@ export default async function PresupuestoPage({
             <InfoTooltip label="Presupuesto de la quincena">
               {estQuincena > 0 ? (
                 <>
-                  Se compara contra el presupuesto de esta quincena: lo que asignaste por día
-                  trabajado en cada categoría activa, multiplicado por los {workedQuincena}{" "}
-                  {workedQuincena === 1 ? "día" : "días"} del período.
+                  Se compara contra lo que sueles gastar: tu promedio por día de los últimos{" "}
+                  {SPENDING_WINDOW_DAYS} días × {workedQuincena}{" "}
+                  {workedQuincena === 1 ? "día" : "días"}
+                  {basis.mode === "personalizado"
+                    ? " que elegiste a mano"
+                    : " laborables del período"}
+                  . Si te pasas, es que estás gastando más de lo habitual.
                 </>
               ) : (
                 <>
-                  Todavía no hay presupuesto contra el cual comparar: sale de lo que asignes por día
-                  trabajado en cada categoría, y ahora mismo no tienes ninguna categoría activa con
-                  monto. Mientras tanto solo se muestra lo gastado.
+                  Todavía no hay con qué comparar: el promedio sale de tus gastos de los últimos{" "}
+                  {SPENDING_WINDOW_DAYS} días y aún no hay suficientes. Mientras tanto solo se
+                  muestra lo gastado.
                 </>
               )}
             </InfoTooltip>
@@ -209,19 +217,16 @@ export default async function PresupuestoPage({
         <div className="grid grid-cols-2 gap-2.5 mt-2.5">
           <StatTile
             emphasis="quiet"
-            label="Gasto fijo por día"
+            label="Promedio por día"
             value={<Money value={perDay} />}
+            sub="Según tu historial"
             icon="calendar"
             tone="neutral"
             info={
-              <InfoTooltip label="Gasto fijo por día">
-                Es la suma de lo que asignaste por día trabajado en cada categoría activa. El
-                presupuesto de la quincena es ese monto × {workedQuincena}{" "}
-                {workedQuincena === 1 ? "día" : "días"}
-                {basis.mode === "personalizado"
-                  ? " que elegiste a mano"
-                  : " laborables del calendario"}
-                .
+              <InfoTooltip label="Promedio por día">
+                Es lo que gastaste al día en los últimos {SPENDING_WINDOW_DAYS} días, repartido
+                entre los días laborables de ese período. No es una meta que configuraste: es tu
+                ritmo real de gasto, y se mueve solo conforme gastas.
               </InfoTooltip>
             }
           />
@@ -229,8 +234,16 @@ export default async function PresupuestoPage({
             emphasis="quiet"
             label="Estimado del mes"
             value={<Money value={estMonth} decimals={false} />}
+            sub="Si sigues igual"
             icon="chart"
             tone="neutral"
+            info={
+              <InfoTooltip label="Estimado del mes">
+                Tu promedio por día × {workedMonth} {workedMonth === 1 ? "día" : "días"} laborables
+                del mes. Es una proyección de a dónde llegas si sigues gastando como hasta ahora,
+                no un límite.
+              </InfoTooltip>
+            }
           />
         </div>
       </section>
