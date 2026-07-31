@@ -13,7 +13,7 @@ export default function AppError({
   return (
     <div className="min-h-dvh grid place-items-center p-5">
       <Card raised className="max-w-md w-full text-center">
-        <span className="grid place-items-center size-12 rounded-tile bg-tint-expense text-danger mx-auto mb-3">
+        <span className="grid place-items-center size-12 rounded-tile bg-tint-danger text-danger mx-auto mb-3">
           <Icon name="alert" size={26} />
         </span>
         <h1 className="text-xl font-extrabold text-ink">Algo salió mal</h1>
