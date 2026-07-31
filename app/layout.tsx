@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Outfit } from "next/font/google";
 import "./globals.css";
 import { PWARegister } from "@/components/PWARegister";
+import { SplashScreen } from "@/components/SplashScreen";
 import { THEME_INIT_SCRIPT } from "@/lib/theme";
 
 // Outfit: geométrica y con más carácter que Plus Jakarta Sans — la spec de
@@ -75,6 +76,10 @@ export default function RootLayout({
           bucle de animación — un recálculo de estilo por frame. Un adorno no
           puede costar fluidez justo en el momento en que tocas algo. */}
       <body className="min-h-dvh" suppressHydrationWarning>
+        {/* Va en el layout RAÍZ, no en el de (app): así cubre también el
+            login, y Next no lo remonta al navegar entre secciones — la
+            animación no se repite en cada tap. */}
+        <SplashScreen />
         {children}
         <PWARegister />
       </body>
