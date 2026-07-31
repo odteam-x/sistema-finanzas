@@ -158,6 +158,10 @@ export default async function DashboardPage() {
             emphasis="quiet"
             label="Total ahorrado"
             value={<MoneyValue value={s.totalSaved + s.generalSavings} decimals={false} />}
+            // Suma metas + ahorro general (sin meta asignada) — el anillo de
+            // "Ahorros" más abajo solo muestra lo de metas, así que esta
+            // cifra puede ser mayor a propósito, no es un error de cuadre.
+            sub={s.generalSavings > 0 ? "Incluye ahorro sin meta asignada" : undefined}
             icon="piggy"
             tone="primary"
             progress={ahorradoPct}
@@ -301,7 +305,15 @@ export default async function DashboardPage() {
         <section className="mb-6">
           <SectionHead title="Ahorros" href="/metas" linkLabel="Ver todos" />
           <Card>
+            {/* Solo lo aportado a metas — distinto del "Total ahorrado" de
+                arriba, que además suma el ahorro general sin meta. */}
             <GoalsRing saved={s.totalSaved} target={s.totalTarget} />
+            {s.generalSavings > 0 && (
+              <p className="mt-3 text-xs text-muted text-center">
+                Este anillo es solo lo asignado a metas — tienes además{" "}
+                <Money value={s.generalSavings} decimals={false} /> en ahorro sin meta.
+              </p>
+            )}
           </Card>
         </section>
       )}
