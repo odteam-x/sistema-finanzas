@@ -9,6 +9,7 @@ import {
   getExceptions,
   getExchangeRates,
   getExpenses,
+  getGoalContributionMovements,
   getGoals,
   getInstallments,
   getPeriodOverrides,
@@ -131,6 +132,7 @@ export async function getFinanceSummary(): Promise<FinanceSummary> {
     trailingExpenses,
     subscriptions,
     exchangeRates,
+    goalContributions,
   ] = await Promise.all([
     getSalarySettings(),
     getSalaries(),
@@ -158,6 +160,7 @@ export async function getFinanceSummary(): Promise<FinanceSummary> {
     getExpenses(anomalyStart, monthEnd),
     getSubscriptions(),
     getExchangeRates(),
+    getGoalContributionMovements(),
   ]);
   const rates = ratesMap(exchangeRates);
 
@@ -384,7 +387,7 @@ export async function getFinanceSummary(): Promise<FinanceSummary> {
   // que usa la pantalla de Ahorros, para que ambas coincidan siempre.
   const goalsWithDerived: Goal[] = goals.map((g) => ({
     ...g,
-    current_amount: goalProgress(g, savingsAccounts, balanceOf, debts, installments).total,
+    current_amount: goalProgress(g, savingsAccounts, balanceOf, debts, installments, goalContributions).total,
   }));
   const totalSaved = goalsWithDerived.reduce((s, g) => s + Number(g.current_amount), 0);
   const totalTarget = goalsWithDerived.reduce((s, g) => s + Number(g.target_amount), 0);

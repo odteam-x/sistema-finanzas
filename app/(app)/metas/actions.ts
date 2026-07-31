@@ -3,13 +3,17 @@
 import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
+import { getOrCreateDefaultAccountId } from "@/lib/accounts";
 import { parseAmount, type ActionResult } from "@/lib/actions-shared";
+import { todayISO } from "@/lib/format";
 import { softDeleteRows, type UndoableResult } from "@/lib/softDelete";
 
 function revalidateAll() {
   revalidatePath("/metas");
   revalidatePath("/dashboard");
   revalidatePath("/deudas");
+  revalidatePath("/balance");
+  revalidatePath("/movimientos");
 }
 
 /** R14: vincular una deuda existente a esta meta. El vínculo se crea SIEMPRE
@@ -83,9 +87,10 @@ export async function updateGoal(formData: FormData): Promise<ActionResult> {
 }
 
 export async function addProgress(formData: FormData): Promise<ActionResult> {
-  await requireUser();
+  const user = await requireUser();
   const id = String(formData.get("id") ?? "");
   const amount = parseAmount(formData.get("amount"));
+  const chosenAccount = String(formData.get("account_id") ?? "") || null;
   if (!id) return { ok: false };
   if (!Number.isFinite(amount) || amount === 0) {
     return { ok: false, error: "Ingresa un monto." };
@@ -102,18 +107,33 @@ export async function addProgress(formData: FormData): Promise<ActionResult> {
       error: "Esta meta está vinculada a una cuenta — aporta desde Balance.",
     };
   }
-  const { data: goal } = await supabase
-    .from("goals")
-    .select("current_amount")
-    .eq("id", id)
-    .maybeSingle();
+  const { data: goal } = await supabase.from("goals").select("name").eq("id", id).maybeSingle();
   if (!goal) return { ok: false, error: "Meta no encontrada." };
-  const next = Math.max(0, Number(goal.current_amount) + amount);
-  const { error } = await supabase
-    .from("goals")
-    .update({ current_amount: next })
-    .eq("id", id);
-  if (error) return { ok: false, error: "No se pudo actualizar el ahorro." };
+
+  // R01: aportar a una meta SIN cuenta vinculada mueve dinero real — antes
+  // esto solo sumaba goals.current_amount a mano, sin tocar ninguna cuenta,
+  // así que el balance de cuentas y el total ahorrado se sumaban como si
+  // fueran independientes cuando era el mismo dinero. current_amount ya no
+  // se escribe acá — goalProgress() (lib/goals.ts) lo usa como baseline
+  // congelado y suma este ledger encima.
+  const account_id = chosenAccount ?? (await getOrCreateDefaultAccountId(supabase, user.id));
+  if (!account_id) {
+    return { ok: false, error: "No se pudo determinar la cuenta. Crea una cuenta primero." };
+  }
+
+  const isWithdrawal = amount < 0;
+  const { error } = await supabase.from("savings_movements").insert({
+    account_id,
+    user_id: user.id,
+    kind: isWithdrawal ? "deposito" : "retiro",
+    amount: Math.abs(amount),
+    date: todayISO(),
+    note: isWithdrawal ? `Retiro de aporte: ${goal.name}` : `Aporte a meta: ${goal.name}`,
+    source: "goal_contribution",
+    source_ref_id: id,
+  });
+  if (error) return { ok: false, error: "No se pudo registrar el aporte." };
+
   revalidateAll();
   return { ok: true };
 }

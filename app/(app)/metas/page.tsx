@@ -1,6 +1,7 @@
 import {
   getAccountBalances,
   getDebts,
+  getGoalContributionMovements,
   getGoals,
   getInstallments,
   getSavingsAccounts,
@@ -15,7 +16,7 @@ import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { Badge } from "@/components/ui/Badge";
-import { Field, Input, MoneyInput } from "@/components/ui/Field";
+import { Field, Input, MoneyInput, Select } from "@/components/ui/Field";
 import { FormModal } from "@/components/ui/FormModal";
 import { DeleteButton } from "@/components/ui/DeleteButton";
 import { MoneyValue } from "@/components/ui/MoneyValue";
@@ -76,7 +77,7 @@ function NewGoalForm({
 }
 
 export default async function MetasPage() {
-  const [goals, accounts, viewBalances, debts, installments] = await Promise.all([
+  const [goals, accounts, viewBalances, debts, installments, goalContributions] = await Promise.all([
     getGoals(),
     getSavingsAccounts(),
     // Balance por cuenta desde Postgres (v_account_balances) — esta pantalla
@@ -86,6 +87,7 @@ export default async function MetasPage() {
     getAccountBalances(),
     getDebts(),
     getInstallments(),
+    getGoalContributionMovements(),
   ]);
   const today = todayISO();
 
@@ -100,7 +102,7 @@ export default async function MetasPage() {
   // R14: el progreso incluye aportes/ahorro Y lo abonado de deudas
   // vinculadas — cálculo compartido en lib/goals.ts.
   const progressOf = (goal: (typeof goals)[number]) =>
-    goalProgress(goal, accounts, accountBalance, debts, installments);
+    goalProgress(goal, accounts, accountBalance, debts, installments, goalContributions);
 
   // Deudas activas todavía sin meta — las que se pueden vincular.
   const unlinkedDebts = debts.filter((d) => !d.goal_id && d.status !== "pagada");
@@ -378,6 +380,20 @@ export default async function MetasPage() {
                         hint="Usa un monto negativo para corregir (retirar)."
                       >
                         <MoneyInput id={`add-${g.id}`} name="amount" required />
+                      </Field>
+                      <Field
+                        label="¿De qué cuenta sale?"
+                        htmlFor={`addacc-${g.id}`}
+                        required
+                        hint="El dinero sale de esa cuenta de verdad (o vuelve, si retiras)."
+                      >
+                        <Select id={`addacc-${g.id}`} name="account_id" required defaultValue={accounts[0]?.id ?? ""}>
+                          {accounts.map((a) => (
+                            <option key={a.id} value={a.id}>
+                              {a.name}
+                            </option>
+                          ))}
+                        </Select>
                       </Field>
                     </FormModal>
                   )}

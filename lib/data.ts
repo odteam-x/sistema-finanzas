@@ -281,6 +281,21 @@ export async function getAccountBalances(): Promise<Record<string, number> | nul
   return out;
 }
 
+/** Aportes reales a metas SIN cuenta vinculada — origen 'goal_contribution'
+ *  del ledger (ver addProgress en metas/actions.ts). lib/goals.ts los agrupa
+ *  por meta. Trae solo lo necesario para sumar, no el movimiento completo. */
+export async function getGoalContributionMovements(): Promise<
+  Pick<SavingsMovement, "source_ref_id" | "kind" | "amount">[]
+> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("savings_movements")
+    .select("source_ref_id, kind, amount")
+    .eq("source", "goal_contribution")
+    .is("deleted_at", null);
+  return data ?? [];
+}
+
 export async function getSubscriptions(): Promise<Subscription[]> {
   const supabase = await createClient();
   const { data } = await supabase
