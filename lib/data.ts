@@ -5,6 +5,7 @@ import type {
   BudgetCategory,
   BudgetPeriodOverride,
   CategorizationRule,
+  Creditor,
   Debt,
   DebtIncrement,
   DebtInstallment,
@@ -83,6 +84,18 @@ export async function getGoals(): Promise<Goal[]> {
     .select("*")
     .is("deleted_at", null)
     .order("created_at", { ascending: false });
+  return data ?? [];
+}
+
+/** Los acreedores del usuario (v27). Antes eran texto libre dentro de cada
+ *  deuda; ahora son filas propias que se reusan entre deudas. */
+export async function getCreditors(): Promise<Creditor[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("creditors")
+    .select("*")
+    .is("deleted_at", null)
+    .order("name", { ascending: true });
   return data ?? [];
 }
 

@@ -1,7 +1,14 @@
 import Link from "next/link";
-import { getDebtIncrements, getDebts, getInstallments, getSavingsAccounts } from "@/lib/data";
+import {
+  getCreditors,
+  getDebtIncrements,
+  getDebts,
+  getInstallments,
+  getSavingsAccounts,
+} from "@/lib/data";
 import { groupDebts, isSettled, totalOfDebt } from "@/lib/debts";
 import { todayISO } from "@/lib/format";
+import { cn } from "@/lib/cn";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { StatTile } from "@/components/ui/StatTile";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -11,13 +18,19 @@ import { DebtGroupCard } from "../DebtGroupCard";
 
 export const metadata = { title: "Historial de deudas · Cachin'" };
 
-export default async function HistorialDeudasPage() {
+export default async function HistorialDeudasPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ acreedor?: string }>;
+}) {
+  const sp = await searchParams;
   const today = todayISO();
-  const [debts, installments, accounts, increments] = await Promise.all([
+  const [debts, installments, accounts, increments, creditors] = await Promise.all([
     getDebts(),
     getInstallments(),
     getSavingsAccounts(),
     getDebtIncrements(),
+    getCreditors(),
   ]);
 
   // Mismo criterio de "liquidada" que la vista principal (lib/debts.ts): se
@@ -25,7 +38,10 @@ export default async function HistorialDeudasPage() {
   // hecho una deuda que la base marcó pagada.
   const settled = debts.filter((d) => isSettled(d, installments, increments));
   const totalPaid = settled.reduce((s, d) => s + totalOfDebt(d, increments), 0);
-  const groups = groupDebts(settled);
+  const groups = groupDebts(settled, creditors);
+  // El filtro afecta SOLO la lista; el "Total saldado" de arriba sigue siendo
+  // el de todo el historial, para que no parezca que encogió.
+  const visible = sp.acreedor ? groups.filter((g) => g.key === sp.acreedor) : groups;
 
   return (
     <>
@@ -60,8 +76,36 @@ export default async function HistorialDeudasPage() {
               tone="primary"
             />
           </div>
+
+          {groups.length > 1 && (
+            <div className="flex items-center gap-2 mb-4 overflow-x-auto px-1">
+              {[{ key: "", name: "Todos" }, ...groups].map((g) => {
+                const on = (sp.acreedor ?? "") === g.key;
+                return (
+                  <Link
+                    key={g.key || "all"}
+                    href={
+                      g.key
+                        ? `/deudas/historial?acreedor=${encodeURIComponent(g.key)}`
+                        : "/deudas/historial"
+                    }
+                    aria-current={on ? "page" : undefined}
+                    className={cn(
+                      "shrink-0 inline-flex items-center rounded-pill px-3.5 min-h-11 text-sm font-semibold transition-colors",
+                      on
+                        ? "bg-primary-soft text-primary-fg"
+                        : "border border-line-strong text-ink hover:bg-surface-sunken",
+                    )}
+                  >
+                    {g.name}
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+
           <ul className="flex flex-col gap-3">
-            {groups.map((g) => (
+            {visible.map((g) => (
               <li key={g.key}>
                 <DebtGroupCard
                   name={g.name}
@@ -69,6 +113,7 @@ export default async function HistorialDeudasPage() {
                   installments={installments}
                   increments={increments}
                   accounts={accounts}
+                  creditors={creditors}
                   today={today}
                 />
               </li>

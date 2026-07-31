@@ -7,15 +7,18 @@ import { Icon } from "@/components/ui/Icon";
 import { Field, Input, Select, MoneyInput } from "@/components/ui/Field";
 import { todayISO } from "@/lib/format";
 import { addDebt } from "./actions";
-import type { SavingsAccount } from "@/lib/types";
+import { NEW_CREDITOR } from "./creditors-shared";
+import type { Creditor, SavingsAccount } from "@/lib/types";
 
 export function AddDebtForm({
   triggerLabel = "Deuda",
   compact,
   accounts = [],
+  creditors = [],
 }: {
   triggerLabel?: string;
   accounts?: SavingsAccount[];
+  creditors?: Creditor[];
   /** Disparador en píldora (más angosto que el botón sólido) — para usarlo
    *  en PageHeader sin competir visualmente con el título. */
   compact?: boolean;
@@ -23,6 +26,7 @@ export function AddDebtForm({
   const [open, setOpen] = useState(false);
   const [type, setType] = useState<"unico" | "cuotas">("unico");
   const [kind, setKind] = useState<"prestamo" | "credito">("prestamo");
+  const [creditorId, setCreditorId] = useState(creditors[0]?.id ?? NEW_CREDITOR);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const today = todayISO();
@@ -31,6 +35,7 @@ export function AddDebtForm({
     setError(null);
     setType("unico");
     setKind("prestamo");
+    setCreditorId(creditors[0]?.id ?? NEW_CREDITOR);
     setOpen(true);
   }
 
@@ -83,8 +88,56 @@ export function AddDebtForm({
             </Select>
           </Field>
 
-          <Field label="Acreedor / nombre" htmlFor="name" required>
-            <Input id="name" name="name" placeholder="Ej.: Préstamo banco" required />
+          {/* El acreedor es una entidad propia desde v27: elegirlo de la lista
+              evita que "Banco BHD" y "banco bhd" queden como dos personas
+              distintas, que es lo que pasaba cuando era texto libre. */}
+          {creditors.length > 0 && (
+            <Field label="Acreedor" htmlFor="debt-creditor" required hint="A quién le debes.">
+              <Select
+                id="debt-creditor"
+                name="creditor_id"
+                value={creditorId}
+                onChange={(e) => setCreditorId(e.target.value)}
+              >
+                {creditors.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+                <option value={NEW_CREDITOR}>+ Nuevo acreedor…</option>
+              </Select>
+            </Field>
+          )}
+
+          {creditorId === NEW_CREDITOR && (
+            <>
+              {/* Sin acreedores todavía no hay nada que elegir: el Select se
+                  salta y este hidden manda directo al camino de "crear uno". */}
+              {creditors.length === 0 && (
+                <input type="hidden" name="creditor_id" value={NEW_CREDITOR} />
+              )}
+              <Field
+                label={creditors.length > 0 ? "Nombre del nuevo acreedor" : "Acreedor"}
+                htmlFor="debt-creditor-name"
+                required
+                hint="Se guarda para reusarlo en tus próximas deudas."
+              >
+                <Input
+                  id="debt-creditor-name"
+                  name="creditor_name"
+                  placeholder="Ej.: Banco BHD, Juan…"
+                  required
+                />
+              </Field>
+            </>
+          )}
+
+          <Field
+            label="Descripción"
+            htmlFor="name"
+            hint="Opcional. Útil si le debes varias cosas al mismo acreedor."
+          >
+            <Input id="name" name="name" placeholder="Ej.: Préstamo del carro" />
           </Field>
 
           <div className="grid grid-cols-2 gap-3">

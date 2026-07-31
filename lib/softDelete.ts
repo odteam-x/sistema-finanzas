@@ -10,6 +10,7 @@ export type SoftDeletableTable =
   | "savings_accounts"
   | "savings_movements"
   | "debts"
+  | "creditors"
   | "debt_increments"
   | "receivables"
   | "goals"

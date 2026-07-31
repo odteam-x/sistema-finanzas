@@ -15,12 +15,13 @@ import { Badge } from "@/components/ui/Badge";
 import { DeleteButton } from "@/components/ui/DeleteButton";
 import { IconBubble } from "@/components/ui/IconBubble";
 import { Money } from "@/components/ui/Money";
-import { Field, Input, MoneyInput } from "@/components/ui/Field";
+import { Field, Input, MoneyInput, Select } from "@/components/ui/Field";
 import { FormModal } from "@/components/ui/FormModal";
 import { InstallmentRow, DebtPaidToggle } from "./DebtControls";
 import { AddIncrementButton, IncrementHistory, ReopenDebtButton } from "./DebtActions";
 import { deleteDebt, updateDebt } from "./actions";
 import type {
+  Creditor,
   Debt,
   DebtIncrement,
   DebtInstallment,
@@ -55,7 +56,7 @@ function isOverdue(
   return !!next && next.due_date < today;
 }
 
-function EditDebtForm({ debt }: { debt: Debt }) {
+function EditDebtForm({ debt, creditors }: { debt: Debt; creditors: Creditor[] }) {
   return (
     <FormModal
       title="Editar deuda"
@@ -66,8 +67,31 @@ function EditDebtForm({ debt }: { debt: Debt }) {
       triggerAriaLabel={`Editar ${debt.name}`}
     >
       <input type="hidden" name="id" value={debt.id} />
-      <Field label="Acreedor / nombre" htmlFor={`edn-${debt.id}`} required>
-        <Input id={`edn-${debt.id}`} name="name" defaultValue={debt.name} required />
+      {/* Desde acá se mueve la deuda entre acreedores que ya existen; para
+          crear uno nuevo está el formulario de nueva deuda. FormModal recibe
+          children serializables desde un componente de servidor y no admite
+          campos que aparezcan según lo elegido. */}
+      {creditors.length > 0 && (
+        <Field label="Acreedor" htmlFor={`edc-${debt.id}`} required>
+          <Select
+            id={`edc-${debt.id}`}
+            name="creditor_id"
+            defaultValue={debt.creditor_id ?? creditors[0].id}
+          >
+            {creditors.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </Select>
+        </Field>
+      )}
+      <Field
+        label="Descripción"
+        htmlFor={`edn-${debt.id}`}
+        hint="Opcional. Útil si le debes varias cosas al mismo acreedor."
+      >
+        <Input id={`edn-${debt.id}`} name="name" defaultValue={debt.name} />
       </Field>
       {debt.payment_type === "unico" ? (
         <>
@@ -104,6 +128,7 @@ export function DebtGroupCard({
   installments,
   increments,
   accounts,
+  creditors = [],
   today,
 }: {
   name: string;
@@ -111,6 +136,7 @@ export function DebtGroupCard({
   installments: DebtInstallment[];
   increments: DebtIncrement[];
   accounts: SavingsAccount[];
+  creditors?: Creditor[];
   today: string;
 }) {
   const insOf = (debtId: string) =>
@@ -184,7 +210,7 @@ export function DebtGroupCard({
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
                   {!settled && <AddIncrementButton debtId={d.id} today={today} />}
-                  {!settled && <EditDebtForm debt={d} />}
+                  {!settled && <EditDebtForm debt={d} creditors={creditors} />}
                   <DeleteButton
                     action={deleteDebt.bind(null, d.id)}
                     title="¿Eliminar deuda?"

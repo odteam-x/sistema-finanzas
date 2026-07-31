@@ -4,7 +4,7 @@
 // por su cuenta (deudas/page.tsx y lib/summary.ts con lógicas parecidas pero
 // escritas aparte). Al agregar los incrementos (R02) eso se habría
 // desincronizado — una pantalla mostrando el monto original y otra el nuevo.
-import type { Debt, DebtIncrement, DebtInstallment } from "./types";
+import type { Creditor, Debt, DebtIncrement, DebtInstallment } from "./types";
 
 /** Monto total real: lo que se debía al inicio más cada aumento posterior.
  *  Los incrementos NO mueven dinero — deber más no es gastar (R01). */
@@ -46,17 +46,27 @@ export function isSettled(
   return outstandingOfDebt(debt, installments, increments) <= 0;
 }
 
-/** Agrupa las deudas por acreedor: el mismo nombre puede tener varias (dos
+/** Agrupa las deudas por acreedor: el mismo acreedor puede tener varias (dos
  *  préstamos distintos con la misma persona o entidad). Vive acá y no en la
  *  página porque ahora hay DOS pantallas que agrupan igual — pendientes e
  *  historial — y si se desincronizaran, la misma deuda aparecería bajo
- *  encabezados distintos según dónde la mires. */
-export function groupDebts(debts: Debt[]): { key: string; name: string; debts: Debt[] }[] {
+ *  encabezados distintos según dónde la mires.
+ *
+ *  La clave es `creditor_id`; si falta (fila anterior a v27), se cae al nombre
+ *  crudo, que era el acreedor hasta entonces — así una base a medio migrar
+ *  sigue mostrando algo coherente en vez de un solo grupo gigante. */
+export function groupDebts(
+  debts: Debt[],
+  creditors: Creditor[] = [],
+): { key: string; name: string; debts: Debt[] }[] {
+  const nameOf = new Map(creditors.map((c) => [c.id, c.name]));
   const groups = new Map<string, { key: string; name: string; debts: Debt[] }>();
   for (const d of debts) {
-    const g = groups.get(d.name) ?? { key: d.name, name: d.name, debts: [] };
+    const key = d.creditor_id ?? `name:${d.name}`;
+    const name = (d.creditor_id ? nameOf.get(d.creditor_id) : null) ?? d.name ?? "Sin acreedor";
+    const g = groups.get(key) ?? { key, name, debts: [] };
     g.debts.push(d);
-    groups.set(d.name, g);
+    groups.set(key, g);
   }
   return Array.from(groups.values());
 }

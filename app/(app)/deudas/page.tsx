@@ -1,5 +1,11 @@
 import Link from "next/link";
-import { getDebtIncrements, getDebts, getInstallments, getSavingsAccounts } from "@/lib/data";
+import {
+  getCreditors,
+  getDebtIncrements,
+  getDebts,
+  getInstallments,
+  getSavingsAccounts,
+} from "@/lib/data";
 import { groupDebts, isSettled, outstandingOfDebt } from "@/lib/debts";
 import { formatDateShort, todayISO, daysBetween } from "@/lib/format";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -14,11 +20,12 @@ export const metadata = { title: "Deudas · Cachin'" };
 
 export default async function DeudasPage() {
   const today = todayISO();
-  const [debts, installments, accounts, increments] = await Promise.all([
+  const [debts, installments, accounts, increments, creditors] = await Promise.all([
     getDebts(),
     getInstallments(),
     getSavingsAccounts(),
     getDebtIncrements(),
+    getCreditors(),
   ]);
 
   const byDebt = new Map<string, typeof installments>();
@@ -53,14 +60,14 @@ export default async function DeudasPage() {
   upcoming.sort();
   const nextDue = upcoming[0] ?? null;
 
-  const groups = groupDebts(active);
+  const groups = groupDebts(active, creditors);
 
   return (
     <>
       <PageHeader
         title="Deudas"
         subtitle="Acreedores, cuotas y vencimientos"
-        action={<AddDebtForm compact accounts={accounts} />}
+        action={<AddDebtForm compact accounts={accounts} creditors={creditors} />}
       />
 
       {/* "Total adeudado" competía con una FECHA del mismo peso tipográfico
@@ -114,7 +121,7 @@ export default async function DeudasPage() {
               ? "No te queda nada pendiente. Lo que ya saldaste está en el historial."
               : "Registra una deuda para llevar control de sus pagos y vencimientos."
           }
-          action={<AddDebtForm triggerLabel="Registrar deuda" accounts={accounts} />}
+          action={<AddDebtForm triggerLabel="Registrar deuda" accounts={accounts} creditors={creditors} />}
         />
       ) : (
         <ul className="flex flex-col gap-3">
@@ -126,6 +133,7 @@ export default async function DeudasPage() {
                 installments={installments}
                 increments={increments}
                 accounts={accounts}
+                creditors={creditors}
                 today={today}
               />
             </li>

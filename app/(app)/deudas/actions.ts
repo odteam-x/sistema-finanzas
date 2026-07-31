@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getOrCreateDefaultAccountId } from "@/lib/accounts";
 import { parseAmount, type ActionResult } from "@/lib/actions-shared";
 import { parseISODate, toISODate, todayISO } from "@/lib/format";
+import { NEW_CREDITOR } from "./creditors-shared";
 import type { DebtFrequency, DebtKind } from "@/lib/types";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -180,20 +181,70 @@ function stepDate(iso: string, freq: DebtFrequency, times: number): string {
 // actualizar tras cada pago — si un pago entraba por otra vía, el estado
 // quedaba mintiendo.
 
+/** Resuelve el acreedor elegido, creándolo si el usuario escribió uno nuevo.
+ *  Antes de crear busca uno equivalente comparando sin espacios ni
+ *  mayúsculas: sin eso "Banco BHD" y "banco bhd" volverían a ser dos
+ *  acreedores, que es justo lo que v27 vino a arreglar (y además chocaría
+ *  contra el índice único de la base). La comparación va en JS y no con
+ *  ilike() porque un nombre con % o _ se interpretaría como comodín. */
+async function resolveCreditor(
+  supabase: SupabaseClient,
+  userId: string,
+  formData: FormData,
+): Promise<{ id: string; name: string } | { error: string }> {
+  const chosen = String(formData.get("creditor_id") ?? "").trim();
+  const typed = String(formData.get("creditor_name") ?? "").trim();
+
+  const { data: all } = await supabase
+    .from("creditors")
+    .select("id, name")
+    .is("deleted_at", null);
+  const list = all ?? [];
+
+  if (chosen && chosen !== NEW_CREDITOR) {
+    const hit = list.find((c) => c.id === chosen);
+    if (hit) return { id: hit.id, name: hit.name };
+    return { error: "No se encontró ese acreedor." };
+  }
+
+  if (!typed) return { error: "Escribe o elige a quién le debes." };
+  const norm = (s: string) => s.trim().toLowerCase();
+  const existing = list.find((c) => norm(c.name) === norm(typed));
+  if (existing) return { id: existing.id, name: existing.name };
+
+  const { data: created, error } = await supabase
+    .from("creditors")
+    .insert({ user_id: userId, name: typed })
+    .select("id, name")
+    .single();
+  if (error || !created) return { error: "No se pudo guardar el acreedor." };
+  return { id: created.id, name: created.name };
+}
+
 export async function addDebt(formData: FormData): Promise<ActionResult> {
   const user = await requireUser();
-  const name = String(formData.get("name") ?? "").trim();
+  const description = String(formData.get("name") ?? "").trim();
   const total = parseAmount(formData.get("total_amount"));
   const acquired_date = String(formData.get("acquired_date") ?? "") || todayISO();
   const payment_type = String(formData.get("payment_type") ?? "unico");
   const note = String(formData.get("note") ?? "").trim() || null;
 
-  if (!name) return { ok: false, error: "Escribe el acreedor o nombre de la deuda." };
   if (!Number.isFinite(total) || total <= 0) {
     return { ok: false, error: "Ingresa un monto total válido." };
   }
 
   const supabase = await createClient();
+
+  const creditor = await resolveCreditor(supabase, user.id, formData);
+  if ("error" in creditor) return { ok: false, error: creditor.error };
+
+  // `debts.name` es NOT NULL y sigue alimentando notas del ledger, calendario
+  // y alertas: si el usuario no describe esta deuda concreta, se guarda el
+  // nombre del acreedor — el mismo valor que se guardaba antes de v27.
+  const name = description || creditor.name;
+  // Para las notas del ledger sí conviene el acreedor por delante: "Préstamo
+  // recibido: Préstamo del carro" no dice de quién.
+  const label = description ? `${creditor.name} — ${description}` : creditor.name;
 
   // ¿El dinero de esta deuda pasó por tus manos?
   //   'prestamo' → te lo dieron: entra a una cuenta (depósito).
@@ -217,7 +268,7 @@ export async function addDebt(formData: FormData): Promise<ActionResult> {
       kind: "deposito",
       amount,
       date: acquired_date,
-      note: `Préstamo recibido: ${name}`,
+      note: `Préstamo recibido: ${label}`,
       source: "debt_disbursement",
       source_ref_id: debtId,
     });
@@ -240,6 +291,7 @@ export async function addDebt(formData: FormData): Promise<ActionResult> {
       .insert({
         user_id: user.id,
         name,
+        creditor_id: creditor.id,
         total_amount: total,
         acquired_date,
         payment_type: "cuotas",
@@ -274,6 +326,7 @@ export async function addDebt(formData: FormData): Promise<ActionResult> {
       .insert({
         user_id: user.id,
         name,
+        creditor_id: creditor.id,
         total_amount: total,
         acquired_date,
         payment_type: "unico",
@@ -315,14 +368,13 @@ async function assertNotSettled(
  *  pago único, su fecha de vencimiento (aplázala). Bloqueada si ya está
  *  liquidada (R03). */
 export async function updateDebt(formData: FormData): Promise<ActionResult> {
-  await requireUser();
+  const user = await requireUser();
   const id = String(formData.get("id") ?? "");
-  const name = String(formData.get("name") ?? "").trim();
+  const description = String(formData.get("name") ?? "").trim();
   const total = parseAmount(formData.get("total_amount"));
   const due_date = String(formData.get("due_date") ?? "") || null;
   const note = String(formData.get("note") ?? "").trim() || null;
   if (!id) return { ok: false };
-  if (!name) return { ok: false, error: "Escribe el acreedor o nombre de la deuda." };
   if (!Number.isFinite(total) || total <= 0) {
     return { ok: false, error: "Ingresa un monto total válido." };
   }
@@ -330,10 +382,19 @@ export async function updateDebt(formData: FormData): Promise<ActionResult> {
   const blocked = await assertNotSettled(supabase, id);
   if (blocked) return { ok: false, error: blocked };
 
-  const { error } = await supabase
-    .from("debts")
-    .update({ name, total_amount: total, due_date, note })
-    .eq("id", id);
+  const patch: Record<string, unknown> = { total_amount: total, due_date, note };
+  // Si la descripción queda vacía se conserva el `name` anterior: es NOT NULL
+  // y sigue siendo la etiqueta de esta deuda en el calendario y las notas.
+  if (description) patch.name = description;
+
+  if (formData.get("creditor_id") !== null || formData.get("creditor_name") !== null) {
+    const creditor = await resolveCreditor(supabase, user.id, formData);
+    if ("error" in creditor) return { ok: false, error: creditor.error };
+    patch.creditor_id = creditor.id;
+    if (!description) patch.name = patch.name ?? creditor.name;
+  }
+
+  const { error } = await supabase.from("debts").update(patch).eq("id", id);
   if (error) return { ok: false, error: "No se pudo actualizar la deuda." };
   revalidateAll();
   return { ok: true };

@@ -68,6 +68,17 @@ export interface Goal {
   created_at: string;
 }
 
+/** A quién le debes. Antes era `debts.name` (texto libre repetido en cada
+ *  deuda), así que dos deudas del mismo banco escritas distinto se veían como
+ *  dos acreedores y renombrar uno no arrastraba a los otros. */
+export interface Creditor {
+  id: string;
+  user_id: string;
+  name: string;
+  note: string | null;
+  created_at: string;
+}
+
 export type DebtPaymentType = "unico" | "cuotas";
 export type DebtFrequency = "semanal" | "quincenal" | "mensual";
 export type DebtStatus = "pendiente" | "parcial" | "pagada";
@@ -78,7 +89,14 @@ export type DebtKind = "prestamo" | "credito";
 export interface Debt {
   id: string;
   user_id: string;
+  /** Descripción de ESTA deuda concreta ("Préstamo del carro"). Hasta v27 era
+   *  el acreedor; se conserva NOT NULL porque las notas del ledger, el
+   *  calendario y las alertas lo leen. Si el usuario no describe nada, guarda
+   *  el nombre del acreedor — exactamente lo que había antes. */
   name: string;
+  /** Acreedor (v27). Null solo en filas que el backfill no pudo resolver
+   *  (nombre vacío) o creadas antes de aplicar la migración. */
+  creditor_id: string | null;
   total_amount: number;
   acquired_date: string; // YYYY-MM-DD
   due_date: string | null; // pago único

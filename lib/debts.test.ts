@@ -1,12 +1,24 @@
 import { describe, expect, it } from "vitest";
 import { groupDebts, isSettled, outstandingOfDebt, paidOfDebt, totalOfDebt } from "./debts";
-import type { Debt, DebtIncrement, DebtInstallment } from "./types";
+import type { Creditor, Debt, DebtIncrement, DebtInstallment } from "./types";
+
+function creditor(overrides: Partial<Creditor>): Creditor {
+  return {
+    id: "c1",
+    user_id: "u",
+    name: "Acreedor",
+    note: null,
+    created_at: "2026-01-01T00:00:00.000Z",
+    ...overrides,
+  };
+}
 
 function debt(overrides: Partial<Debt>): Debt {
   return {
     id: "d1",
     user_id: "u",
     name: "Deuda",
+    creditor_id: null,
     total_amount: 1000,
     acquired_date: "2026-01-01",
     due_date: null,
@@ -130,11 +142,44 @@ describe("groupDebts", () => {
       debt({ id: "d2", name: "Mami" }),
       debt({ id: "d3", name: "Banco" }),
     ]);
-    expect(groups.map((g) => g.key)).toEqual(["Banco", "Mami"]);
+    expect(groups.map((g) => g.name)).toEqual(["Banco", "Mami"]);
     expect(groups[0].debts.map((d) => d.id)).toEqual(["d1", "d3"]);
   });
 
   it("sin deudas devuelve una lista vacía", () => {
     expect(groupDebts([])).toEqual([]);
+  });
+
+  it("agrupa por creditor_id aunque la descripción sea distinta", () => {
+    const creditors = [creditor({ id: "c1", name: "Banco BHD" })];
+    const groups = groupDebts(
+      [
+        debt({ id: "d1", name: "Préstamo del carro", creditor_id: "c1" }),
+        debt({ id: "d2", name: "Tarjeta", creditor_id: "c1" }),
+      ],
+      creditors,
+    );
+    expect(groups).toHaveLength(1);
+    expect(groups[0].name).toBe("Banco BHD");
+    expect(groups[0].debts).toHaveLength(2);
+  });
+
+  it("una fila anterior a v27 (sin creditor_id) cae al nombre crudo", () => {
+    const groups = groupDebts([debt({ id: "d1", name: "Mami", creditor_id: null })], []);
+    expect(groups).toHaveLength(1);
+    expect(groups[0].name).toBe("Mami");
+    expect(groups[0].key).toBe("name:Mami");
+  });
+
+  it("no mezcla una deuda migrada con una sin migrar del mismo nombre", () => {
+    const creditors = [creditor({ id: "c1", name: "Mami" })];
+    const groups = groupDebts(
+      [
+        debt({ id: "d1", name: "Mami", creditor_id: "c1" }),
+        debt({ id: "d2", name: "Mami", creditor_id: null }),
+      ],
+      creditors,
+    );
+    expect(groups).toHaveLength(2);
   });
 });
