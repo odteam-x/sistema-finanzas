@@ -66,8 +66,16 @@ function SectionHead({
 }
 
 export default async function DashboardPage() {
-  await Promise.all([runSubscriptionCatchUp(), runSalaryCatchUp()]);
-  const [s, profile] = await Promise.all([getFinanceSummary(), getUserProfile()]);
+  // getUserProfile() no depende de nada que el catch-up escriba (perfil de
+  // usuario, no ledger) — corre en paralelo con él en vez de esperar a que
+  // termine. getFinanceSummary() sí depende (lee gastos/sueldos/movimientos
+  // recién insertados), así que ese va después, solo.
+  const [, , profile] = await Promise.all([
+    runSubscriptionCatchUp(),
+    runSalaryCatchUp(),
+    getUserProfile(),
+  ]);
+  const s = await getFinanceSummary();
 
   const budgetPct = clampPct(s.realQuincena, s.estQuincena || 1);
   const overBudget = s.realQuincena > s.estQuincena && s.estQuincena > 0;

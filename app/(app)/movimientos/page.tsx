@@ -95,7 +95,15 @@ export default async function MovimientosPage({
 }: {
   searchParams: Promise<{ tipo?: string; range?: string; q?: string; dia?: string }>;
 }) {
-  await Promise.all([runSubscriptionCatchUp(), runSalaryCatchUp()]);
+  // getSavingsAccounts() no depende de nada que el catch-up escriba (solo
+  // lee las cuentas, no su saldo/movimientos) — corre en paralelo con él en
+  // vez de esperar a que termine. Los demás datos de abajo SÍ dependen
+  // (leen gastos/movimientos recién insertados por el catch-up).
+  const [, , accounts] = await Promise.all([
+    runSubscriptionCatchUp(),
+    runSalaryCatchUp(),
+    getSavingsAccounts(),
+  ]);
 
   const sp = await searchParams;
   const kindFilter = sp.tipo === "ingresos" ? "deposito" : sp.tipo === "gastos" ? "retiro" : null;
@@ -107,9 +115,8 @@ export default async function MovimientosPage({
   const { from, to } = bounds;
   const search = (sp.q ?? "").trim().toLowerCase();
   const today = todayISO();
-  const [movements, accounts, stats, availableDays] = await Promise.all([
+  const [movements, stats, availableDays] = await Promise.all([
     getSavingsMovements(from, to),
-    getSavingsAccounts(),
     // Los totales los suma Postgres con los mismos filtros, no un .reduce()
     // sobre todo el historial traído a memoria.
     getMovementStats({ from, to, kind: kindFilter, search: sp.q ?? "" }),
