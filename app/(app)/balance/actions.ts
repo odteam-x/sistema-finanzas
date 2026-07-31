@@ -184,6 +184,27 @@ export async function deleteAccount(id: string): Promise<ActionResult> {
     };
   }
 
+  // Transferencias donde ESTA cuenta era el ORIGEN: a diferencia de
+  // to_account_id (FK RESTRICT, se reasigna abajo), account_id tiene ON
+  // DELETE CASCADE — dejarlas pasar borraría la fila de transferencia
+  // COMPLETA junto con la cuenta, perdiendo el registro de que la cuenta
+  // destino (que sigue existiendo) recibió ese dinero. No hay forma segura
+  // de reasignar a mano "de dónde salió" ese dinero una vez la cuenta
+  // desaparece, así que se bloquea el borrado en vez de adivinar.
+  const { count: outgoingTransfers } = await supabase
+    .from("savings_movements")
+    .select("id", { count: "exact", head: true })
+    .eq("account_id", id)
+    .eq("kind", "transferencia")
+    .is("deleted_at", null);
+  if (outgoingTransfers && outgoingTransfers > 0) {
+    return {
+      ok: false,
+      error:
+        "Esta cuenta tiene transferencias enviadas a otras cuentas. Elimina esas transferencias primero (en Movimientos) para poder borrar esta cuenta.",
+    };
+  }
+
   await Promise.all([
     supabase.from("expenses").update({ account_id: fallbackId }).eq("account_id", id),
     supabase.from("salaries").update({ account_id: fallbackId }).eq("account_id", id),
@@ -193,7 +214,8 @@ export async function deleteAccount(id: string): Promise<ActionResult> {
   ]);
 
   // Los savings_movements de la propia cuenta sí caen por CASCADE — es
-  // correcto: son el saldo de esa cuenta, no historial reutilizable.
+  // correcto: son el saldo de esa cuenta, no historial reutilizable (y ya
+  // no puede haber transferencias salientes colgando, bloqueadas arriba).
   const { error } = await supabase.from("savings_accounts").delete().eq("id", id);
   if (error) return { ok: false, error: "No se pudo eliminar la cuenta." };
   revalidateAll();
