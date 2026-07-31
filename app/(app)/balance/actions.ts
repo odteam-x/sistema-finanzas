@@ -37,6 +37,14 @@ function revalidateAll() {
   revalidatePath("/movimientos");
 }
 
+/** De dónde sale el saldo inicial de una cuenta nueva.
+ *  'transfer'  → ese dinero ya estaba en otra cuenta tuya: es una MOVIDA.
+ *  'new_money' → efectivo suelto, regalo o corrección: entra al sistema.
+ *  Antes no se preguntaba y siempre entraba como depósito puro: quien tenía
+ *  RD$4,170 en efectivo y abría una cuenta de ahorro con RD$1,000 de saldo
+ *  inicial veía su total subir a RD$5,170 — mil pesos que nunca existieron. */
+type InitialSource = "transfer" | "new_money";
+
 export async function addAccount(formData: FormData): Promise<ActionResult> {
   const user = await requireUser();
   const name = String(formData.get("name") ?? "").trim();
@@ -44,9 +52,50 @@ export async function addAccount(formData: FormData): Promise<ActionResult> {
   const currency = parseCurrency(formData.get("currency"));
   const initial = parseAmount(formData.get("initial_amount"));
   const goal_id = String(formData.get("goal_id") ?? "") || null;
+  const rawSource = String(formData.get("initial_source") ?? "");
+  const fromAccountId = String(formData.get("initial_from_account_id") ?? "") || null;
   if (!name) return { ok: false, error: "Escribe un nombre para la cuenta." };
 
+  const hasInitial = Number.isFinite(initial) && initial > 0;
+  const initialSource: InitialSource | null =
+    rawSource === "transfer" || rawSource === "new_money" ? rawSource : null;
+
   const supabase = await createClient();
+
+  // Todo lo que puede fallar se valida ANTES de insertar la cuenta: si el
+  // movimiento se rechazara después, quedaría una cuenta vacía que el usuario
+  // no pidió y que igual habría que deshacer.
+  if (hasInitial) {
+    if (!initialSource) {
+      return {
+        ok: false,
+        error:
+          "Elige de dónde viene el saldo inicial: si ya lo tenías en otra cuenta tuya, o si es dinero que no estaba registrado.",
+      };
+    }
+    if (initialSource === "transfer") {
+      if (!fromAccountId) {
+        return { ok: false, error: "Elige la cuenta de donde sale ese dinero." };
+      }
+      // Mismo motivo que en addTransfer(): una transferencia es UNA fila con
+      // UN monto para las dos cuentas — si fueran de monedas distintas ese
+      // monto significaría cosas diferentes en cada lado.
+      const { data: from } = await supabase
+        .from("savings_accounts")
+        .select("id, currency")
+        .eq("id", fromAccountId)
+        .is("deleted_at", null)
+        .maybeSingle();
+      if (!from) return { ok: false, error: "No se encontró la cuenta de origen." };
+      if (from.currency !== currency) {
+        return {
+          ok: false,
+          error: "Ambas cuentas deben ser de la misma moneda para transferir entre ellas.",
+        };
+      }
+    }
+  }
+
   const { data: account, error } = await supabase
     .from("savings_accounts")
     .insert({ user_id: user.id, name, type, goal_id, currency })
@@ -54,15 +103,43 @@ export async function addAccount(formData: FormData): Promise<ActionResult> {
     .single();
   if (error || !account) return { ok: false, error: "No se pudo crear la cuenta." };
 
-  if (Number.isFinite(initial) && initial > 0) {
-    await supabase.from("savings_movements").insert({
-      account_id: account.id,
-      user_id: user.id,
-      kind: "deposito",
-      amount: initial,
-      date: todayISO(),
-      note: "Saldo inicial",
-    });
+  if (hasInitial) {
+    const { error: movErr } = await supabase.from("savings_movements").insert(
+      initialSource === "transfer"
+        ? {
+            // Idéntico a addTransfer(): sale de la cuenta origen y entra a la
+            // nueva, así el "Total en cuentas" no cambia — solo se redistribuye.
+            account_id: fromAccountId,
+            to_account_id: account.id,
+            user_id: user.id,
+            kind: "transferencia",
+            amount: initial,
+            date: todayISO(),
+            note: `Saldo inicial de ${name}`,
+            source: "manual",
+          }
+        : {
+            account_id: account.id,
+            user_id: user.id,
+            kind: "deposito",
+            amount: initial,
+            date: todayISO(),
+            note: "Saldo inicial (dinero que no estaba registrado)",
+            source: "manual",
+          },
+    );
+    // Espejo-o-nada: el error del insert antes NI SE MIRABA. Si el movimiento
+    // no entra, la cuenta recién creada se deshace — una cuenta creada "con
+    // saldo" que en realidad quedó en cero es peor que no crearla, porque el
+    // usuario la ve y da por hecho que el dinero está ahí. Borrado duro, no
+    // suave: la fila nació hace un instante y no tiene nada que conservar.
+    if (movErr) {
+      await supabase.from("savings_accounts").delete().eq("id", account.id);
+      return {
+        ok: false,
+        error: "No se pudo registrar el saldo inicial, así que la cuenta no se creó.",
+      };
+    }
   }
 
   revalidateAll();

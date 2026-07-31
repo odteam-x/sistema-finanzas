@@ -17,16 +17,17 @@ import { Badge } from "@/components/ui/Badge";
 import { Field, Input, Select, MoneyInput } from "@/components/ui/Field";
 import { FormModal } from "@/components/ui/FormModal";
 import { DeleteButton } from "@/components/ui/DeleteButton";
-import { Icon, type IconName } from "@/components/ui/Icon";
+import { Icon } from "@/components/ui/Icon";
 import { MoneyValue } from "@/components/ui/MoneyValue";
 import { Money } from "@/components/ui/Money";
 import { IconBubble } from "@/components/ui/IconBubble";
 import { PeekCarousel } from "@/components/ui/PeekCarousel";
 import { CushionField } from "./CushionField";
 import { PayCushionButton } from "./PayCushionButton";
-import type { AccountType, Goal } from "@/lib/types";
+import { NewAccountForm } from "./NewAccountForm";
+import { ACCOUNT_TYPES, typeInfo } from "./accountTypes";
+import type { AccountType } from "@/lib/types";
 import {
-  addAccount,
   addMovement,
   addTransfer,
   deleteAccount,
@@ -37,17 +38,6 @@ import type { SavingsAccount } from "@/lib/types";
 
 export const metadata = { title: "Balance · Cachin'" };
 
-const ACCOUNT_TYPES: { value: AccountType; label: string; icon: IconName }[] = [
-  { value: "ahorro", label: "Ahorro / Alcancía", icon: "piggy" },
-  { value: "banco", label: "Banco", icon: "bank" },
-  { value: "efectivo", label: "Efectivo", icon: "wallet" },
-  { value: "tarjeta_debito", label: "Tarjeta débito", icon: "debt" },
-  { value: "tarjeta_credito", label: "Tarjeta crédito", icon: "debt" },
-];
-
-const typeInfo = (type: AccountType) =>
-  ACCOUNT_TYPES.find((t) => t.value === type) ?? ACCOUNT_TYPES[0];
-
 function TypeField({ defaultValue }: { defaultValue?: AccountType }) {
   return (
     <Field label="Tipo de cuenta" htmlFor="type">
@@ -57,24 +47,6 @@ function TypeField({ defaultValue }: { defaultValue?: AccountType }) {
             {t.label}
           </option>
         ))}
-      </Select>
-    </Field>
-  );
-}
-
-/** Solo al CREAR la cuenta — cambiarla después reinterpretaría todo el
- *  historial de movimientos como si fuera de otra moneda. */
-function CurrencyField() {
-  return (
-    <Field
-      label="Moneda"
-      htmlFor="currency"
-      hint="RD no tiene tasa de cambio automática — la configuras tú en Configuración."
-    >
-      <Select id="currency" name="currency" defaultValue="DOP">
-        <option value="DOP">Peso dominicano (RD$)</option>
-        <option value="USD">Dólar (US$)</option>
-        <option value="EUR">Euro (€)</option>
       </Select>
     </Field>
   );
@@ -124,41 +96,6 @@ function TransferForm({ accounts, today }: { accounts: SavingsAccount[]; today: 
       <Field label="Nota" htmlFor="tr-note">
         <Input id="tr-note" name="note" placeholder="Opcional" />
       </Field>
-    </FormModal>
-  );
-}
-
-function NewAccountForm({
-  goals,
-  accounts,
-  triggerLabel,
-  trigger,
-}: {
-  goals: Goal[];
-  accounts: { goal_id: string | null }[];
-  triggerLabel: string;
-  trigger?: "button" | "link" | "icon" | "pill";
-}) {
-  return (
-    <FormModal
-      title="Nueva cuenta"
-      action={addAccount}
-      submitLabel="Crear cuenta"
-      triggerLabel={triggerLabel}
-      trigger={trigger}
-    >
-      <Field label="Nombre" htmlFor="name" required>
-        <Input id="name" name="name" placeholder="Ej.: Banco BHD, Efectivo…" required />
-      </Field>
-      <TypeField />
-      <CurrencyField />
-      <Field label="Saldo inicial" htmlFor="initial_amount" hint="Opcional. En la moneda de esta cuenta.">
-        <MoneyInput id="initial_amount" name="initial_amount" />
-      </Field>
-      <GoalField
-        goals={goals.filter((g) => !accounts.some((acc) => acc.goal_id === g.id))}
-        idPrefix="new"
-      />
     </FormModal>
   );
 }
@@ -230,7 +167,14 @@ export default async function BalancePage() {
       <PageHeader
         title="Balance"
         subtitle="Ahorro, banco, efectivo y tarjetas"
-        action={<NewAccountForm goals={goals} accounts={accounts} triggerLabel="Cuenta" trigger="pill" />}
+        action={
+          <NewAccountForm
+            goals={goals.filter((g) => !accounts.some((acc) => acc.goal_id === g.id))}
+            accounts={accounts}
+            triggerLabel="Cuenta"
+            trigger="pill"
+          />
+        }
       />
 
       {/* Total */}
@@ -262,7 +206,13 @@ export default async function BalancePage() {
           illustration="wallet"
           title="Sin cuentas todavía"
           message="Crea tu primera cuenta y registra depósitos y retiros."
-          action={<NewAccountForm goals={goals} accounts={accounts} triggerLabel="Crear cuenta" />}
+          action={
+            <NewAccountForm
+              goals={goals.filter((g) => !accounts.some((acc) => acc.goal_id === g.id))}
+              accounts={accounts}
+              triggerLabel="Crear cuenta"
+            />
+          }
         />
       ) : (
         <PeekCarousel>

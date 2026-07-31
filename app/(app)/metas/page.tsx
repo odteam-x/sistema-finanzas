@@ -22,26 +22,13 @@ import { DeleteButton } from "@/components/ui/DeleteButton";
 import { MoneyValue } from "@/components/ui/MoneyValue";
 import { Money } from "@/components/ui/Money";
 import { IconBubble } from "@/components/ui/IconBubble";
-import { addAccount, addMovement, deleteAccount, updateAccount } from "../balance/actions";
+import { addMovement, deleteAccount, updateAccount } from "../balance/actions";
+import { NewAccountForm } from "../balance/NewAccountForm";
 import { addGoal, addProgress, deleteGoal, updateGoal } from "./actions";
 import { LinkDebtButton, LinkedDebtsList } from "./GoalDebtLink";
 import { undoDelete } from "../undo-actions";
 
 export const metadata = { title: "Ahorros · Cachin'" };
-
-function NewSavingsAccountForm({ triggerLabel }: { triggerLabel: string }) {
-  return (
-    <FormModal title="Nueva cuenta de ahorro" action={addAccount} submitLabel="Crear cuenta" triggerLabel={triggerLabel}>
-      <input type="hidden" name="type" value="ahorro" />
-      <Field label="Nombre" htmlFor="sa-name" required hint="Ej.: Ahorro efectivo, Ahorro banco…">
-        <Input id="sa-name" name="name" placeholder="Ahorro" required />
-      </Field>
-      <Field label="Saldo inicial" htmlFor="sa-initial" hint="Opcional.">
-        <MoneyInput id="sa-initial" name="initial_amount" />
-      </Field>
-    </FormModal>
-  );
-}
 
 function NewGoalForm({
   triggerLabel,
@@ -143,7 +130,9 @@ export default async function MetasPage() {
       {/* Ahorro general: guardar dinero sin atarlo a una meta específica. */}
       <div className="flex items-center justify-between px-1 mb-2">
         <h2 className="text-sm font-bold text-ink">Ahorro general</h2>
-        {generalSavings.length > 0 && <NewSavingsAccountForm triggerLabel="Nueva cuenta" />}
+        {generalSavings.length > 0 && (
+          <NewAccountForm accounts={accounts} variant="ahorro" trigger="pill" triggerLabel="Nueva cuenta" />
+        )}
       </div>
       {generalSavings.length === 0 ? (
         <Card className="mb-4 flex items-center gap-3">
@@ -152,7 +141,7 @@ export default async function MetasPage() {
             <p className="text-sm font-semibold text-ink">Aún no tienes ahorro general</p>
             <p className="text-xs text-muted mt-0.5">Guarda dinero sin atarlo a ninguna meta.</p>
           </div>
-          <NewSavingsAccountForm triggerLabel="Crear" />
+          <NewAccountForm accounts={accounts} variant="ahorro" triggerLabel="Crear" />
         </Card>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
