@@ -187,7 +187,24 @@ export default async function PresupuestoPage({
           calculadora que no lee ni escribe nada del presupuesto. */}
       <section className="mb-5">
         <Card>
-          <BudgetRing spent={realQuincena} budget={estQuincena} />
+          <div className="flex items-start justify-between gap-2">
+            <BudgetRing spent={realQuincena} budget={estQuincena} />
+            <InfoTooltip label="Presupuesto de la quincena">
+              {estQuincena > 0 ? (
+                <>
+                  Se compara contra el presupuesto de esta quincena: lo que asignaste por día
+                  trabajado en cada categoría activa, multiplicado por los {workedQuincena}{" "}
+                  {workedQuincena === 1 ? "día" : "días"} del período.
+                </>
+              ) : (
+                <>
+                  Todavía no hay presupuesto contra el cual comparar: sale de lo que asignes por día
+                  trabajado en cada categoría, y ahora mismo no tienes ninguna categoría activa con
+                  monto. Mientras tanto solo se muestra lo gastado.
+                </>
+              )}
+            </InfoTooltip>
+          </div>
         </Card>
         <div className="grid grid-cols-2 gap-2.5 mt-2.5">
           <StatTile
