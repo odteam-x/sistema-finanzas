@@ -5,7 +5,8 @@ import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { getOrCreateDefaultAccountId, getOrCreateAccountByType } from "@/lib/accounts";
 import { parseAmount, type ActionResult } from "@/lib/actions-shared";
-import type { AccountType } from "@/lib/types";
+import { fixedPayDays } from "@/lib/periods";
+import type { AccountType, PayFrequency } from "@/lib/types";
 
 const PAYMENT_METHODS: AccountType[] = ["efectivo", "banco", "tarjeta_debito", "tarjeta_credito"];
 
@@ -23,9 +24,17 @@ export async function saveSalarySettings(
 ): Promise<ActionResult> {
   const user = await requireUser();
   const frequencyRaw = String(formData.get("frequency") ?? "quincenal");
-  const frequency = ["semanal", "quincenal", "mensual"].includes(frequencyRaw)
-    ? (frequencyRaw as "semanal" | "quincenal" | "mensual")
+  const frequency = (["semanal", "quincenal", "mensual", "dias_fijos"] as const).includes(
+    frequencyRaw as PayFrequency,
+  )
+    ? (frequencyRaw as PayFrequency)
     : "quincenal";
+  // Solo significan algo con 'dias_fijos'; en las demás frecuencias la fecha
+  // avanza desde next_pay_date y estos dos se guardan pero se ignoran.
+  const [pay_day_1, pay_day_2] = fixedPayDays(
+    Number(formData.get("pay_day_1") ?? 15),
+    Number(formData.get("pay_day_2") ?? 30),
+  );
   const next_pay_date = String(formData.get("next_pay_date") ?? "") || null;
   const rawMethod = String(formData.get("payment_method") ?? "");
   const payment_method = PAYMENT_METHODS.includes(rawMethod as AccountType)
@@ -41,6 +50,8 @@ export async function saveSalarySettings(
   const { error } = await supabase.from("salary_settings").upsert({
     user_id: user.id,
     frequency,
+    pay_day_1,
+    pay_day_2,
     next_pay_date,
     payment_method,
     default_amount: Number.isFinite(amount) ? amount : 0,

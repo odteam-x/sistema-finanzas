@@ -7,7 +7,7 @@ import {
   todayISO,
   daysBetween,
 } from "@/lib/format";
-import { nextPayDateFrom } from "@/lib/periods";
+import { nextPayDateFrom, fixedPayDays } from "@/lib/periods";
 import { groupByDate } from "@/lib/group";
 import { RANGE_LABEL, parseRangePreset, rangeBounds, type RangePreset } from "@/lib/range";
 import { SearchBar } from "@/components/ui/SearchBar";
@@ -171,7 +171,12 @@ export default async function IngresosPage({
     .filter((s) => s.confirmed && s.pay_date.slice(0, 7) === thisMonth)
     .reduce((sum, s) => sum + Number(s.amount), 0);
 
-  const nextPay = nextPayDateFrom(settings.next_pay_date, settings.frequency, today);
+  const nextPay = nextPayDateFrom(
+    settings.next_pay_date,
+    settings.frequency,
+    today,
+    fixedPayDays(settings.pay_day_1, settings.pay_day_2),
+  );
   const daysToPay = nextPay ? daysBetween(today, nextPay) : null;
 
   return (
@@ -261,9 +266,41 @@ export default async function IngresosPage({
               <Select id="frequency" name="frequency" defaultValue={settings.frequency}>
                 <option value="semanal">Semanal</option>
                 <option value="quincenal">Quincenal (cada 15 días)</option>
+                <option value="dias_fijos">Días fijos del mes (ej. 5 y 20)</option>
                 <option value="mensual">Mensual</option>
               </Select>
             </Field>
+            {/* Solo cuentan con "Días fijos del mes". Se muestran siempre
+                porque este formulario no puede revelar campos según lo que
+                elijas — el hint aclara cuándo aplican. */}
+            <div className="grid grid-cols-2 gap-3">
+              <Field
+                label="Primer día"
+                htmlFor="pay_day_1"
+                hint="Solo con “Días fijos del mes”."
+              >
+                <Input
+                  id="pay_day_1"
+                  name="pay_day_1"
+                  type="number"
+                  inputMode="numeric"
+                  min={1}
+                  max={31}
+                  defaultValue={settings.pay_day_1 ?? 15}
+                />
+              </Field>
+              <Field label="Segundo día" htmlFor="pay_day_2" hint="Si el mes es más corto, cae al último día.">
+                <Input
+                  id="pay_day_2"
+                  name="pay_day_2"
+                  type="number"
+                  inputMode="numeric"
+                  min={1}
+                  max={31}
+                  defaultValue={settings.pay_day_2 ?? 30}
+                />
+              </Field>
+            </div>
             <Field
               label="Próxima fecha de cobro"
               htmlFor="next_pay_date"

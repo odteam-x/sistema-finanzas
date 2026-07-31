@@ -28,7 +28,7 @@ import { normalizeKeyword } from "./categorize";
 import { ratesMap, toDOP } from "./currency";
 import { outstandingOfDebt } from "./debts";
 import { goalProgress } from "./goals";
-import { quincenaForDate, nextPayDateFrom, type Period } from "./periods";
+import { quincenaForDate, nextPayDateFrom, fixedPayDays, type Period } from "./periods";
 import { addDaysISO, daysBetween, formatDOP, toISODate, todayISO } from "./format";
 import type { AccountType, Currency, Goal, Salary, SavingsMovement } from "./types";
 
@@ -356,7 +356,13 @@ export async function getFinanceSummary(): Promise<FinanceSummary> {
     .slice(0, 5);
 
   // Pago de sueldo
-  const nextPay = nextPayDateFrom(settings.next_pay_date, settings.frequency, today) ?? today;
+  const nextPay =
+    nextPayDateFrom(
+      settings.next_pay_date,
+      settings.frequency,
+      today,
+      fixedPayDays(settings.pay_day_1, settings.pay_day_2),
+    ) ?? today;
 
   const saldoEstimado = ingresoQuincena - estQuincena - cuotasPeriodo;
 

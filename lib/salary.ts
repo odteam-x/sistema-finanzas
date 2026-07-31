@@ -4,7 +4,7 @@
 import { requireUser } from "./auth";
 import { createClient } from "./supabase/server";
 import { getOrCreateDefaultAccountId, getOrCreateAccountByType } from "./accounts";
-import { stepPayDate } from "./periods";
+import { fixedPayDays, stepPayDate } from "./periods";
 import { todayISO } from "./format";
 import type { AccountType, PayFrequency } from "./types";
 
@@ -21,15 +21,16 @@ export async function runSalaryCatchUp(): Promise<void> {
 
   const { data: settings } = await supabase
     .from("salary_settings")
-    .select("next_pay_date, frequency, payment_method, default_amount")
+    .select("next_pay_date, frequency, payment_method, default_amount, pay_day_1, pay_day_2")
     .maybeSingle();
   if (!settings?.next_pay_date || settings.default_amount <= 0) return;
 
   const freq = settings.frequency as PayFrequency;
+  const days = fixedPayDays(settings.pay_day_1, settings.pay_day_2);
   let cursor = settings.next_pay_date as string;
 
   while (cursor <= today) {
-    const nextCursor = stepPayDate(cursor, freq);
+    const nextCursor = stepPayDate(cursor, freq, days);
 
     const { data: updated } = await supabase
       .from("salary_settings")

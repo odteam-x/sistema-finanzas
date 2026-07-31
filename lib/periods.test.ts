@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  fixedPayDays,
   monthPeriods,
   nextPayDateFrom,
   nextQuincena,
@@ -82,6 +83,42 @@ describe("stepPayDate", () => {
 
   it("mensual avanza un mes calendario", () => {
     expect(stepPayDate("2026-01-31", "mensual")).toBe("2026-03-03"); // overflow de Date, comportamiento documentado del helper
+  });
+});
+
+describe("stepPayDate — dias_fijos", () => {
+  const d5y20: [number, number] = [5, 20];
+
+  it("del 5 avanza al 20 del mismo mes", () => {
+    expect(stepPayDate("2026-07-05", "dias_fijos", d5y20)).toBe("2026-07-20");
+  });
+
+  it("del 20 avanza al 5 del mes siguiente, NO al 4", () => {
+    // Julio tiene 31 días: sumar 15 daría 2026-08-04 y de ahí en adelante la
+    // fecha se iría corriendo sola. Ese es justo el bug que este modo evita.
+    expect(stepPayDate("2026-07-20", "dias_fijos", d5y20)).toBe("2026-08-05");
+    expect(stepPayDate("2026-07-20", "quincenal")).toBe("2026-08-04");
+  });
+
+  it("no se corre ni un día tras doce meses seguidos", () => {
+    let cursor = "2026-01-05";
+    for (let i = 0; i < 24; i++) cursor = stepPayDate(cursor, "dias_fijos", d5y20);
+    // 24 saltos desde el 5 de enero = 12 meses completos.
+    expect(cursor).toBe("2027-01-05");
+  });
+
+  it("un día que no existe en el mes cae al último día real", () => {
+    // Febrero de 2026 tiene 28 días.
+    expect(stepPayDate("2026-02-15", "dias_fijos", [15, 31])).toBe("2026-02-28");
+  });
+
+  it("ordena los días aunque se configuren al revés", () => {
+    expect(fixedPayDays(20, 5)).toEqual([5, 20]);
+    expect(fixedPayDays(5, 20)).toEqual([5, 20]);
+  });
+
+  it("acota los días fuera de rango a 1-31", () => {
+    expect(fixedPayDays(0, 99)).toEqual([1, 31]);
   });
 });
 

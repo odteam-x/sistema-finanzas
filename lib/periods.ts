@@ -88,11 +88,42 @@ export function periodAfterN(todayISO: string, n: number): Period {
   return p;
 }
 
+/** Los dos días del mes de la frecuencia 'dias_fijos', ya ordenados y
+ *  acotados a 1-31. Se reusan `pay_day_1`/`pay_day_2` de salary_settings, que
+ *  existían desde el schema original y se habían deprecado en migration-v6
+ *  con la razón "no todo el mundo cobra los días 15 y 30 fijos" — cierto,
+ *  pero quien SÍ cobra en días fijos necesita justo esto. */
+export function fixedPayDays(day1: number, day2: number): [number, number] {
+  const clamp = (n: number) => Math.min(31, Math.max(1, Math.round(Number(n) || 1)));
+  const a = clamp(day1);
+  const b = clamp(day2);
+  return a <= b ? [a, b] : [b, a];
+}
+
+/** El día `day` dentro de ese mes, sin inventar fechas que no existen: si el
+ *  usuario configuró el 31 y el mes tiene 30, cae en el último día real. */
+function dayInMonth(year: number, month: number, day: number): Date {
+  const lastDay = new Date(year, month + 1, 0).getDate();
+  return new Date(year, month, Math.min(day, lastDay), 12);
+}
+
 /** Avanza una fecha ISO un período de la frecuencia de cobro dada.
  *  "Quincenal" es cada 15 días desde el ancla que el usuario eligió — no
- *  "los días 15 y 30", que no siempre coincide con cómo cobra cada quien. */
-export function stepPayDate(iso: string, freq: PayFrequency): string {
+ *  "los días 15 y 30", que no siempre coincide con cómo cobra cada quien.
+ *  Para quien sí cobra en días fijos del mes está 'dias_fijos', que avanza
+ *  por calendario real: sumar 15 días a un día 20 cae en el 4 del mes
+ *  siguiente en los meses de 31, y la fecha se va corriendo sola. */
+export function stepPayDate(iso: string, freq: PayFrequency, days?: [number, number]): string {
   const d = parseISODate(iso);
+  if (freq === "dias_fijos") {
+    const [d1, d2] = days ?? [15, 30];
+    const day = d.getDate();
+    const y = d.getFullYear();
+    const m = d.getMonth();
+    if (day < d1) return toISODate(dayInMonth(y, m, d1));
+    if (day < d2) return toISODate(dayInMonth(y, m, d2));
+    return toISODate(dayInMonth(y, m + 1, d1));
+  }
   if (freq === "semanal") d.setDate(d.getDate() + 7);
   else if (freq === "quincenal") d.setDate(d.getDate() + 15);
   else d.setMonth(d.getMonth() + 1);
@@ -100,8 +131,17 @@ export function stepPayDate(iso: string, freq: PayFrequency): string {
 }
 
 /** Inversa de stepPayDate: retrocede una fecha ISO un período. */
-function stepPayDateBack(iso: string, freq: PayFrequency): string {
+function stepPayDateBack(iso: string, freq: PayFrequency, days?: [number, number]): string {
   const d = parseISODate(iso);
+  if (freq === "dias_fijos") {
+    const [d1, d2] = days ?? [15, 30];
+    const day = d.getDate();
+    const y = d.getFullYear();
+    const m = d.getMonth();
+    if (day > d2) return toISODate(dayInMonth(y, m, d2));
+    if (day > d1) return toISODate(dayInMonth(y, m, d1));
+    return toISODate(dayInMonth(y, m - 1, d2));
+  }
   if (freq === "semanal") d.setDate(d.getDate() - 7);
   else if (freq === "quincenal") d.setDate(d.getDate() - 15);
   else d.setMonth(d.getMonth() - 1);
@@ -114,12 +154,13 @@ export function nextPayDateFrom(
   anchorISO: string | null,
   freq: PayFrequency,
   todayISO: string,
+  days?: [number, number],
 ): string | null {
   if (!anchorISO) return null;
   let d = anchorISO;
   let guard = 0;
   while (d < todayISO && guard < 2000) {
-    d = stepPayDate(d, freq);
+    d = stepPayDate(d, freq, days);
     guard++;
   }
   return d;
@@ -132,6 +173,7 @@ export function paydaysInMonthFrom(
   month: number,
   anchorISO: string | null,
   freq: PayFrequency,
+  days?: [number, number],
 ): string[] {
   if (!anchorISO) return [];
   const monthStart = toISODate(new Date(year, month, 1, 12));
@@ -140,18 +182,18 @@ export function paydaysInMonthFrom(
   let cursor = anchorISO;
   let guard = 0;
   while (cursor > monthEnd && guard < 2000) {
-    cursor = stepPayDateBack(cursor, freq);
+    cursor = stepPayDateBack(cursor, freq, days);
     guard++;
   }
   while (cursor < monthStart && guard < 2000) {
-    cursor = stepPayDate(cursor, freq);
+    cursor = stepPayDate(cursor, freq, days);
     guard++;
   }
 
   const dates: string[] = [];
   while (cursor <= monthEnd && guard < 2000) {
     dates.push(cursor);
-    cursor = stepPayDate(cursor, freq);
+    cursor = stepPayDate(cursor, freq, days);
     guard++;
   }
   return dates;

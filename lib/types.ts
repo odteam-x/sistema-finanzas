@@ -18,12 +18,18 @@ export interface Salary {
   confirmed: boolean;
 }
 
-export type PayFrequency = "semanal" | "quincenal" | "mensual";
+/** 'quincenal' = cada 15 días desde el ancla. 'dias_fijos' = dos días del mes
+ *  concretos (ej. 5 y 20), que es distinto: sumar 15 días a un día 20 cae en
+ *  el 4 del mes siguiente cada vez que el mes tiene 31, y la fecha se corre. */
+export type PayFrequency = "semanal" | "quincenal" | "mensual" | "dias_fijos";
 
 export interface SalarySettings {
   user_id: string;
-  /** @deprecated reemplazados por frequency/next_pay_date — se dejan solo
-   *  para no romper filas existentes, la app ya no los usa. */
+  /** Los dos días del mes de la frecuencia 'dias_fijos' (ej. 5 y 20). Se
+   *  deprecaron en migration-v6 porque no todo el mundo cobra los 15 y 30
+   *  fijos — pero quien SÍ cobra en días fijos necesita justo esto, así que
+   *  vuelven a usarse en ese modo. Se ignoran en las demás frecuencias, que
+   *  avanzan desde `next_pay_date`. */
   pay_day_1: number;
   pay_day_2: number;
   frequency: PayFrequency;
