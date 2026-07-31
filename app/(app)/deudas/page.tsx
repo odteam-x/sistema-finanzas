@@ -29,6 +29,21 @@ const statusTone: Record<DebtStatus, "warning" | "info" | "success"> = {
   parcial: "info",
   pagada: "success",
 };
+
+/** ¿Esta deuda está vencida? Pago único: su propia fecha ya pasó y no está
+ *  pagada. En cuotas: la próxima cuota sin pagar ya venció — mismo criterio
+ *  que ya usa InstallmentRow (DebtControls.tsx) por cuota individual, acá a
+ *  nivel de deuda/grupo para el badge que hoy se ve igual a "Pendiente". */
+function isOverdue(
+  d: Debt,
+  installmentsOf: { due_date: string; paid: boolean }[],
+  today: string,
+): boolean {
+  if (d.status === "pagada") return false;
+  if (d.payment_type === "unico") return !!d.due_date && d.due_date < today;
+  const next = installmentsOf.find((i) => !i.paid);
+  return !!next && next.due_date < today;
+}
 const statusLabel: Record<DebtStatus, string> = {
   pendiente: "Pendiente",
   parcial: "Pago parcial",
@@ -197,13 +212,14 @@ export default async function DeudasPage() {
                       const incs = incrementsOf(d.id);
                       const total = totalOfDebt(d, increments);
                       const settled = isPaid(d);
+                      const overdue = isOverdue(d, ins, today);
                       return (
                         <div key={d.id} className="pt-3 first:pt-0 pb-1">
                           <div className="flex items-start justify-between gap-3">
                             <div className="min-w-0 flex-1">
                               <div className="flex items-center gap-2 min-w-0 flex-wrap">
-                                <Badge tone={statusTone[d.status]} className="shrink-0">
-                                  {statusLabel[d.status]}
+                                <Badge tone={overdue ? "danger" : statusTone[d.status]} className="shrink-0">
+                                  {overdue ? "Vencida" : statusLabel[d.status]}
                                 </Badge>
                                 <p className="text-sm font-semibold text-ink truncate">
                                   <Money value={total} />
