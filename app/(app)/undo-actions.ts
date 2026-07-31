@@ -22,6 +22,7 @@ export async function undoDelete(token: UndoToken): Promise<ActionResult> {
   revalidatePath("/balance");
   revalidatePath("/metas");
   revalidatePath("/deudas");
+  revalidatePath("/deudas/historial");
   revalidatePath("/cobros");
   revalidatePath("/suscripciones");
   revalidatePath("/calendario");

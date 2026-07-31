@@ -11,6 +11,9 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 function revalidateAll() {
   revalidatePath("/deudas");
+  // Imprescindible, no de más: pagar la última cuota MUEVE la deuda de
+  // /deudas a /deudas/historial, y reabrirla la trae de vuelta.
+  revalidatePath("/deudas/historial");
   revalidatePath("/dashboard");
   revalidatePath("/balance");
   revalidatePath("/movimientos");

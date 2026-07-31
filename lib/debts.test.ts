@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isSettled, outstandingOfDebt, paidOfDebt, totalOfDebt } from "./debts";
+import { groupDebts, isSettled, outstandingOfDebt, paidOfDebt, totalOfDebt } from "./debts";
 import type { Debt, DebtIncrement, DebtInstallment } from "./types";
 
 function debt(overrides: Partial<Debt>): Debt {
@@ -101,5 +101,40 @@ describe("isSettled", () => {
     const d = debt({ payment_type: "unico", total_amount: 100, status: "pagada" });
     const increments = [increment({ debt_id: "d1", amount: 50 })];
     expect(isSettled(d, [], increments)).toBe(false);
+  });
+});
+
+describe("groupDebts", () => {
+  it("dos deudas del mismo acreedor caen en un solo grupo", () => {
+    const groups = groupDebts([
+      debt({ id: "d1", name: "Mami" }),
+      debt({ id: "d2", name: "Mami" }),
+    ]);
+    expect(groups).toHaveLength(1);
+    expect(groups[0].name).toBe("Mami");
+    expect(groups[0].debts).toHaveLength(2);
+  });
+
+  it("acreedores distintos quedan en grupos distintos", () => {
+    const groups = groupDebts([
+      debt({ id: "d1", name: "Mami" }),
+      debt({ id: "d2", name: "Banco" }),
+    ]);
+    expect(groups).toHaveLength(2);
+    expect(groups.map((g) => g.name)).toEqual(["Mami", "Banco"]);
+  });
+
+  it("preserva el orden de entrada de los grupos", () => {
+    const groups = groupDebts([
+      debt({ id: "d1", name: "Banco" }),
+      debt({ id: "d2", name: "Mami" }),
+      debt({ id: "d3", name: "Banco" }),
+    ]);
+    expect(groups.map((g) => g.key)).toEqual(["Banco", "Mami"]);
+    expect(groups[0].debts.map((d) => d.id)).toEqual(["d1", "d3"]);
+  });
+
+  it("sin deudas devuelve una lista vacía", () => {
+    expect(groupDebts([])).toEqual([]);
   });
 });

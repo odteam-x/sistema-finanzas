@@ -45,3 +45,18 @@ export function isSettled(
 ): boolean {
   return outstandingOfDebt(debt, installments, increments) <= 0;
 }
+
+/** Agrupa las deudas por acreedor: el mismo nombre puede tener varias (dos
+ *  préstamos distintos con la misma persona o entidad). Vive acá y no en la
+ *  página porque ahora hay DOS pantallas que agrupan igual — pendientes e
+ *  historial — y si se desincronizaran, la misma deuda aparecería bajo
+ *  encabezados distintos según dónde la mires. */
+export function groupDebts(debts: Debt[]): { key: string; name: string; debts: Debt[] }[] {
+  const groups = new Map<string, { key: string; name: string; debts: Debt[] }>();
+  for (const d of debts) {
+    const g = groups.get(d.name) ?? { key: d.name, name: d.name, debts: [] };
+    g.debts.push(d);
+    groups.set(d.name, g);
+  }
+  return Array.from(groups.values());
+}
