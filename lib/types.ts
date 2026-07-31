@@ -234,7 +234,9 @@ export type MovementSource =
   | "goal_contribution"
   | "receivable_collected"
   /** Desembolso: el dinero que te prestaron entrando a tu cuenta. */
-  | "debt_disbursement";
+  | "debt_disbursement"
+  /** Desembolso simétrico: el dinero que TÚ prestaste saliendo de tu cuenta. */
+  | "receivable_disbursement";
 
 export interface SavingsMovement {
   id: string;

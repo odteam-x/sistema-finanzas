@@ -40,6 +40,7 @@ const sourceLabel: Record<MovementSource, string> = {
   goal_contribution: "Meta",
   receivable_collected: "Cobro",
   debt_disbursement: "Préstamo",
+  receivable_disbursement: "Préstamo dado",
 };
 
 function NewMovementForm({

@@ -161,6 +161,30 @@ export async function addReceivable(formData: FormData): Promise<ActionResult> {
   }
 
   const supabase = await createClient();
+  const chosenAccount = String(formData.get("account_id") ?? "") || null;
+
+  // ¿El dinero de este préstamo pasó por tus manos? Cuando kind='prestamo'
+  // (le prestas a alguien), ese dinero SALE de una cuenta real hoy mismo —
+  // simétrico a creditDisbursement() en deudas/actions.ts (cuando TE
+  // prestan, el dinero entra). Antes esto no existía: el balance de la
+  // cuenta no bajaba hasta cobrar, como si el préstamo no le hubiera
+  // costado nada al usuario hasta ese momento.
+  async function debitDisbursement(receivableId: string, amount: number) {
+    if (kind !== "prestamo") return;
+    const account_id = chosenAccount ?? (await getOrCreateDefaultAccountId(supabase, user.id));
+    if (!account_id) return;
+    const { error } = await supabase.from("savings_movements").insert({
+      account_id,
+      user_id: user.id,
+      kind: "retiro",
+      amount,
+      date: acquired_date,
+      note: `Préstamo dado: ${name}`,
+      source: "receivable_disbursement",
+      source_ref_id: receivableId,
+    });
+    if (error) console.error("[debitDisbursement] insert falló:", error.message);
+  }
 
   if (payment_type === "cuotas") {
     const count = Number(formData.get("installments_count"));
@@ -203,20 +227,26 @@ export async function addReceivable(formData: FormData): Promise<ActionResult> {
     }));
     const { error: instErr } = await supabase.from("receivable_installments").insert(rows);
     if (instErr) return { ok: false, error: "No se pudieron crear las cuotas." };
+    await debitDisbursement(rec.id, total);
   } else {
     const due_date = String(formData.get("due_date") ?? "") || null;
-    const { error } = await supabase.from("receivables").insert({
-      user_id: user.id,
-      kind,
-      name,
-      total_amount: total,
-      acquired_date,
-      payment_type: "unico",
-      due_date,
-      status: "pendiente",
-      note,
-    });
-    if (error) return { ok: false, error: "No se pudo crear el registro." };
+    const { data: rec, error } = await supabase
+      .from("receivables")
+      .insert({
+        user_id: user.id,
+        kind,
+        name,
+        total_amount: total,
+        acquired_date,
+        payment_type: "unico",
+        due_date,
+        status: "pendiente",
+        note,
+      })
+      .select("id")
+      .single();
+    if (error || !rec) return { ok: false, error: "No se pudo crear el registro." };
+    await debitDisbursement(rec.id, total);
   }
 
   revalidateAll();
@@ -352,15 +382,29 @@ export async function deleteReceivable(id: string): Promise<ActionResult> {
     .eq("receivable_id", id);
   const refIds = [id, ...(insts ?? []).map((i) => i.id)];
 
-  await supabase
-    .from("savings_movements")
-    .update({
-      source: "manual",
-      source_ref_id: null,
-      note: `Cobro de registro eliminado — ${rec?.name ?? "sin nombre"}`,
-    })
-    .eq("source", "receivable_collected")
-    .in("source_ref_id", refIds);
+  await Promise.all([
+    supabase
+      .from("savings_movements")
+      .update({
+        source: "manual",
+        source_ref_id: null,
+        note: `Cobro de registro eliminado — ${rec?.name ?? "sin nombre"}`,
+      })
+      .eq("source", "receivable_collected")
+      .in("source_ref_id", refIds),
+    // El dinero que prestaste SÍ salió de verdad (si kind='prestamo') —
+    // mismo criterio que arriba: se conserva re-etiquetado, no se borra.
+    // Borrarlo le devolvería a tu balance dinero que de verdad diste.
+    supabase
+      .from("savings_movements")
+      .update({
+        source: "manual",
+        source_ref_id: null,
+        note: `Préstamo de registro eliminado — ${rec?.name ?? "sin nombre"}`,
+      })
+      .eq("source", "receivable_disbursement")
+      .eq("source_ref_id", id),
+  ]);
 
   const { error } = await supabase.from("receivables").delete().eq("id", id);
   if (error) return { ok: false, error: "No se pudo eliminar." };

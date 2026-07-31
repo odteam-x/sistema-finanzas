@@ -126,7 +126,7 @@ export default async function CobrosPage({
       <PageHeader
         title="Por cobrar"
         subtitle="Dinero que te deben y préstamos que hiciste"
-        action={<NewReceivableForm today={today} triggerLabel="Nuevo" trigger="pill" />}
+        action={<NewReceivableForm today={today} triggerLabel="Nuevo" trigger="pill" accounts={accounts} />}
       />
 
       {/* Dos tiles idénticos enfrentados: ninguno mandaba. Manda el dinero
@@ -181,8 +181,8 @@ export default async function CobrosPage({
           icon="arrowDownLeft"
           illustration="make-it-rain"
           title="Nada por cobrar"
-          message="Registra el dinero que te deben o un préstamo que hiciste. No suma a tu balance hasta que lo recibas."
-          action={<NewReceivableForm today={today} triggerLabel="Registrar" />}
+          message="Registra el dinero que te deben o un préstamo que hiciste. Un cobro no suma a tu balance hasta que lo recibes; un préstamo dado sale de tu cuenta de una vez."
+          action={<NewReceivableForm today={today} triggerLabel="Registrar" accounts={accounts} />}
         />
       ) : visible.length === 0 ? (
         <EmptyState

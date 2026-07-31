@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
 import { Field, Input, Select, MoneyInput } from "@/components/ui/Field";
 import { addReceivable } from "./actions";
+import type { SavingsAccount } from "@/lib/types";
 
 /** Formulario propio (no FormModal) porque el tipo de pago cambia qué
  *  campos se muestran — mismo patrón que AddDebtForm en Deudas. */
@@ -13,19 +14,23 @@ export function NewReceivableForm({
   today,
   triggerLabel = "Nuevo",
   trigger,
+  accounts = [],
 }: {
   today: string;
   triggerLabel?: string;
   trigger?: "pill";
+  accounts?: SavingsAccount[];
 }) {
   const [open, setOpen] = useState(false);
   const [type, setType] = useState<"unico" | "cuotas">("unico");
+  const [kind, setKind] = useState<"cobro" | "prestamo">("cobro");
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
   function openModal() {
     setError(null);
     setType("unico");
+    setKind("cobro");
     setOpen(true);
   }
 
@@ -58,8 +63,21 @@ export function NewReceivableForm({
 
       <Modal open={open} onClose={() => setOpen(false)} title="Nuevo por cobrar">
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <Field label="¿Qué es?" htmlFor="rec-kind">
-            <Select id="rec-kind" name="kind" defaultValue="cobro">
+          <Field
+            label="¿Qué es?"
+            htmlFor="rec-kind"
+            hint={
+              kind === "prestamo"
+                ? "El monto sale de tu cuenta ahora, porque ese dinero ya se lo diste."
+                : undefined
+            }
+          >
+            <Select
+              id="rec-kind"
+              name="kind"
+              value={kind}
+              onChange={(e) => setKind(e.target.value as "cobro" | "prestamo")}
+            >
               <option value="cobro">Me deben dinero</option>
               <option value="prestamo">Le presté dinero a alguien</option>
             </Select>
@@ -127,6 +145,22 @@ export function NewReceivableForm({
                 <MoneyInput id="rec-instamt" name="installment_amount" />
               </Field>
             </div>
+          )}
+
+          {kind === "prestamo" && accounts.length > 0 && (
+            <Field
+              label="¿De qué cuenta sale?"
+              htmlFor="rec-account"
+              hint="Se registra como un retiro de esa cuenta."
+            >
+              <Select id="rec-account" name="account_id" defaultValue={accounts[0]?.id}>
+                {accounts.map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.name}
+                  </option>
+                ))}
+              </Select>
+            </Field>
           )}
 
           <Field label="Nota" htmlFor="rec-note">
