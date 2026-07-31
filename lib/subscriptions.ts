@@ -50,10 +50,19 @@ export async function runSubscriptionCatchUp(): Promise<void> {
       if (!updated || updated.length === 0) break;
 
       // El cargo va a una cuenta (la de la suscripción o la de por defecto),
-      // para que el ledger refleje siempre el gasto recurrente.
+      // para que el ledger refleje siempre el gasto recurrente. Sin cuenta,
+      // no se registra nada — antes el gasto se insertaba igual y quedaba
+      // fuera del ledger.
       const account_id = sub.account_id ?? (await getOrCreateDefaultAccountId(supabase, user.id));
+      if (!account_id) {
+        console.error(
+          `[runSubscriptionCatchUp] sin cuenta disponible — cargo de "${sub.name}" (${cursor}) no se registró.`,
+        );
+        cursor = nextCursor;
+        continue;
+      }
 
-      const { data: expense } = await supabase
+      const { data: expense, error: expErr } = await supabase
         .from("expenses")
         .insert({
           user_id: user.id,
@@ -66,17 +75,28 @@ export async function runSubscriptionCatchUp(): Promise<void> {
         .select("id")
         .single();
 
-      if (account_id && expense) {
-        await supabase.from("savings_movements").insert({
-          account_id,
-          user_id: user.id,
-          kind: "retiro",
-          amount: sub.amount,
-          date: cursor,
-          note: `Suscripción: ${sub.name}`,
-          source: "subscription",
-          source_ref_id: expense.id,
-        });
+      if (expErr || !expense) {
+        console.error(`[runSubscriptionCatchUp] insert de gasto falló para "${sub.name}":`, expErr?.message);
+        cursor = nextCursor;
+        continue;
+      }
+
+      const { error: movErr } = await supabase.from("savings_movements").insert({
+        account_id,
+        user_id: user.id,
+        kind: "retiro",
+        amount: sub.amount,
+        date: cursor,
+        note: `Suscripción: ${sub.name}`,
+        source: "subscription",
+        source_ref_id: expense.id,
+      });
+      // Mismo patrón que addExpense() (presupuesto/actions.ts): si el
+      // espejo falla, se revierte el gasto — mejor no registrar nada que
+      // dejarlo fuera del ledger.
+      if (movErr) {
+        await supabase.from("expenses").delete().eq("id", expense.id);
+        console.error(`[runSubscriptionCatchUp] espejo falló para "${sub.name}", gasto revertido:`, movErr.message);
       }
 
       cursor = nextCursor;
