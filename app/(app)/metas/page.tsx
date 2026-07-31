@@ -22,6 +22,7 @@ import { DeleteButton } from "@/components/ui/DeleteButton";
 import { MoneyValue } from "@/components/ui/MoneyValue";
 import { Money } from "@/components/ui/Money";
 import { IconBubble } from "@/components/ui/IconBubble";
+import { InfoTooltip } from "@/components/ui/InfoTooltip";
 import { addMovement, deleteAccount, updateAccount } from "../balance/actions";
 import { NewAccountForm } from "../balance/NewAccountForm";
 import { addGoal, addProgress, deleteGoal, updateGoal } from "./actions";
@@ -275,6 +276,13 @@ export default async function MetasPage() {
                     deudas vinculadas, con enlace a la deuda. */}
                 {progress.fromDebts > 0 && (
                   <div className="rounded-tile bg-surface-sunken p-2.5 text-xs">
+                    <div className="flex items-center justify-between gap-2 mb-1.5">
+                      <span className="font-semibold text-ink">De dónde viene</span>
+                      <InfoTooltip label="De dónde viene el progreso" className="text-muted">
+                        Lo que abonas a una deuda vinculada cuenta como progreso de esta meta: cada
+                        cuota que pagas te acerca a tenerla libre.
+                      </InfoTooltip>
+                    </div>
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-muted">De ahorros</span>
                       <span className="font-semibold text-ink">

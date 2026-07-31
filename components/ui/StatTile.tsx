@@ -14,6 +14,9 @@ interface StatTileProps {
   value: React.ReactNode;
   icon?: IconName;
   sub?: string;
+  /** Para un <InfoTooltip/>, no para texto: el microcopy que SIEMPRE debe
+   *  verse va en `sub`. Esto es el "?" que solo se abre si lo tocas. */
+  info?: React.ReactNode;
   tone?: Tone;
   emphasis?: Emphasis;
   className?: string;
@@ -94,6 +97,7 @@ export function StatTile({
   value,
   icon,
   sub,
+  info,
   tone = "primary",
   emphasis = "normal",
   className,
@@ -112,7 +116,10 @@ export function StatTile({
         {/* text-on-tint, no text-muted: la mitad de los tonos de este
             componente pintan un fondo teñido, y muted no llega a 4.5:1
             sobre ellos (ver la nota del token en globals.css). */}
-        <p className="min-w-0 flex-1 text-xs font-medium text-on-tint leading-tight">{label}</p>
+        <div className="min-w-0 flex-1 flex items-center gap-1.5">
+          <p className="min-w-0 text-xs font-medium text-on-tint leading-tight">{label}</p>
+          {info}
+        </div>
         {icon && (
           <IconBubble icon={icon} tone={toneToBubble[tone]} size={emphasis === "hero" ? "md" : "sm"} />
         )}

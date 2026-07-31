@@ -20,6 +20,7 @@ import { DailySpendCalculator } from "./DailySpendCalculator";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { StatTile } from "@/components/ui/StatTile";
+import { InfoTooltip } from "@/components/ui/InfoTooltip";
 import { CollapsibleCard } from "@/components/ui/CollapsibleCard";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Badge } from "@/components/ui/Badge";
@@ -195,6 +196,17 @@ export default async function PresupuestoPage({
             value={<Money value={perDay} />}
             icon="calendar"
             tone="neutral"
+            info={
+              <InfoTooltip label="Gasto fijo por día">
+                Es la suma de lo que asignaste por día trabajado en cada categoría activa. El
+                presupuesto de la quincena es ese monto × {workedQuincena}{" "}
+                {workedQuincena === 1 ? "día" : "días"}
+                {basis.mode === "personalizado"
+                  ? " que elegiste a mano"
+                  : " laborables del calendario"}
+                .
+              </InfoTooltip>
+            }
           />
           <StatTile
             emphasis="quiet"

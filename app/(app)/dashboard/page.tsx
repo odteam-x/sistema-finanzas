@@ -11,6 +11,7 @@ import { CollapsibleCard } from "@/components/ui/CollapsibleCard";
 import { StatTile } from "@/components/ui/StatTile";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { IconBubble } from "@/components/ui/IconBubble";
+import { InfoTooltip } from "@/components/ui/InfoTooltip";
 import { Icon, type IconName } from "@/components/ui/Icon";
 import { Money } from "@/components/ui/Money";
 import { MoneyValue } from "@/components/ui/MoneyValue";
@@ -162,6 +163,13 @@ export default async function DashboardPage() {
             // "Ahorros" más abajo solo muestra lo de metas, así que esta
             // cifra puede ser mayor a propósito, no es un error de cuadre.
             sub={s.generalSavings > 0 ? "Incluye ahorro sin meta asignada" : undefined}
+            info={
+              <InfoTooltip label="Total ahorrado">
+                Suma el progreso de todas tus metas más el saldo de tus cuentas de ahorro que no
+                están atadas a ninguna meta. El anillo de “Ahorros”, más abajo, solo cuenta la parte
+                de las metas — por eso es menor.
+              </InfoTooltip>
+            }
             icon="piggy"
             tone="primary"
             progress={ahorradoPct}
