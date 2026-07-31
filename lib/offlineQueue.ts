@@ -13,6 +13,7 @@
 import { addExpense } from "@/app/(app)/presupuesto/actions";
 import { addSalary } from "@/app/(app)/ingresos/actions";
 import { addMovement } from "@/app/(app)/balance/actions";
+import { isAlreadySynced } from "./offlineDedup";
 import type { ActionResult } from "./actions-shared";
 
 const QUEUE_KEY = "cachin:offline-queue";
@@ -126,12 +127,23 @@ const REGISTRY: Record<QueuedActionKey, (formData: FormData) => Promise<ActionRe
 /** Reintenta cada pendiente EN ORDEN. Un fallo de validación (ok:false) dea
  *  el ítem en la cola para que el usuario lo revise — nunca se descarta en
  *  silencio. Un fallo de red corta el intento entero (todavía sin señal),
- *  se reintenta en el próximo "online" o próxima carga de la app. */
+ *  se reintenta en el próximo "online" o próxima carga de la app.
+ *
+ *  Antes de reintentar, se revisa si el ítem YA se sincronizó — cubre el
+ *  caso de una excepción que ocurre después de que la Server Action ya
+ *  escribió en el servidor (la respuesta se perdió, no la escritura), que
+ *  antes duplicaba el gasto/ingreso/movimiento en cada reintento. */
 export async function flushQueue(): Promise<{ flushed: number; remaining: number }> {
   const items = getQueue();
   let flushed = 0;
   for (const item of items) {
     try {
+      const already = await isAlreadySynced(item.actionKey, item.entries, item.createdAt);
+      if (already) {
+        removeFromQueue(item.id);
+        flushed++;
+        continue;
+      }
       const res = await REGISTRY[item.actionKey](entriesToFormData(item.entries));
       if (res?.ok) {
         removeFromQueue(item.id);
