@@ -118,6 +118,10 @@
      y la etiqueta, no un color propio. */
   --color-tint-income: #dceeee;
   --color-tint-expense: #f7e6e0;
+  /* Mismo valor que --color-danger-soft: el tinte SÓLIDO de "peligro" para
+     tiles/IconBubble, distinto del de expense (que es un tono más naranja
+     de arcilla, no una alarma). */
+  --color-tint-danger: #fae2de;
   --color-tint-warning: #faebd6;
   --color-tint-info: #e6ebee;
   --color-tint-neutral: #eaeaea;
@@ -257,6 +261,7 @@
   --color-tint-brand: #123638;
   --color-tint-income: #123638;
   --color-tint-expense: #382a25;
+  --color-tint-danger: #3a2a25;
   --color-tint-warning: #3b2f1a;
   --color-tint-info: #232d38;
   --color-tint-neutral: #313131;

@@ -24,7 +24,7 @@ const tones = {
   brand: "bg-gradient-brand text-white",
   income: "bg-tint-income text-income",
   expense: "bg-tint-expense text-expense",
-  danger: "bg-tint-expense text-expense",
+  danger: "bg-tint-danger text-danger",
   warning: "bg-tint-warning text-warning",
   info: "bg-tint-info text-info",
   neutral: "bg-tint-neutral text-muted",

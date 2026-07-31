@@ -30,7 +30,7 @@ interface StatTileProps {
 const toneBar: Record<Tone, string> = {
   primary: "bg-primary",
   neutral: "bg-line-strong",
-  danger: "bg-expense",
+  danger: "bg-danger",
   warning: "bg-warning",
   info: "bg-info",
   income: "bg-income",
@@ -52,7 +52,7 @@ const toneToBubble = {
 const toneBg: Record<Tone, string> = {
   primary: "bg-surface border border-line",
   neutral: "bg-surface border border-line",
-  danger: "bg-tint-expense border border-line",
+  danger: "bg-tint-danger border border-line",
   warning: "bg-tint-warning border border-line",
   info: "bg-tint-info border border-line",
   income: "bg-tint-income border border-line",
