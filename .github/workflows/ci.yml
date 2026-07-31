@@ -1,0 +1,28 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run lint
+
+      - run: npm run test
+
+      # SUPABASE_URL/ANON_KEY tienen fallback a "" en lib/supabase/config.ts
+      # — el build solo verifica que compile y tipe bien, no necesita
+      # credenciales reales ni secrets configurados en el repo.
+      - run: npm run build
