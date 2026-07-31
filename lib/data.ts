@@ -217,7 +217,9 @@ export async function getSavingsAccounts(): Promise<SavingsAccount[]> {
     .from("savings_accounts")
     .select("*")
     .is("deleted_at", null)
-    .order("created_at", { ascending: true });
+    // Más reciente primero, igual que gastos, movimientos, deudas y cobros.
+    // Era la única lista de dinero que mostraba lo más viejo arriba.
+    .order("created_at", { ascending: false });
   return data ?? [];
 }
 

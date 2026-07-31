@@ -15,7 +15,9 @@ export const NAV_ROUTES: NavRoute[] = [
   { href: "/ingresos", label: "Ingresos", shortLabel: "Ingresos", icon: "wallet", primary: false },
   { href: "/calendario", label: "Calendario", shortLabel: "Días", icon: "calendar", primary: false },
   { href: "/balance", label: "Balance", shortLabel: "Balance", icon: "bank", primary: false },
-  { href: "/metas", label: "Ahorros", shortLabel: "Ahorros", icon: "goal", primary: false },
+  // 'piggy', no 'goal': es el mismo icono que usa "Total ahorrado" en Inicio,
+  // y el mismo concepto debe verse igual en toda la app.
+  { href: "/metas", label: "Ahorros", shortLabel: "Ahorros", icon: "piggy", primary: false },
   { href: "/deudas", label: "Deudas", shortLabel: "Deudas", icon: "debt", primary: false },
   { href: "/cobros", label: "Por cobrar", shortLabel: "Cobrar", icon: "arrowDownLeft", primary: false },
   { href: "/suscripciones", label: "Suscripciones", shortLabel: "Suscrip.", icon: "repeat", primary: false },

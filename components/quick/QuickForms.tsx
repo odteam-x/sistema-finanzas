@@ -225,10 +225,18 @@ export function QuickForms({
         open={active === "movimiento"}
         onOpenChange={close}
       >
-        <Field label="Tipo" htmlFor={`${idPrefix}-mv-kind`}>
+        {/* "Ingreso"/"Gasto" a secas repetían las palabras de las otras dos
+            acciones del mismo botón +, que escriben en tablas distintas
+            (salaries/expenses). Esto ajusta el saldo de una cuenta directo en
+            el ledger, sin contar como sueldo ni como gasto presupuestado. */}
+        <Field
+          label="Tipo"
+          htmlFor={`${idPrefix}-mv-kind`}
+          hint="Ajusta el saldo de la cuenta sin contarlo en tu presupuesto."
+        >
           <Select id={`${idPrefix}-mv-kind`} name="kind" defaultValue="retiro">
-            <option value="deposito">Ingreso</option>
-            <option value="retiro">Gasto</option>
+            <option value="deposito">Entrada sin categoría</option>
+            <option value="retiro">Salida sin categoría</option>
           </Select>
         </Field>
         <Field label="Monto" htmlFor={`${idPrefix}-mv-amount`} required>
