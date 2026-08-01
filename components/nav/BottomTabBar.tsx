@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { AnimatePresence, motion, useDragControls, useReducedMotion } from "framer-motion";
 import { cn } from "@/lib/cn";
 import { Icon } from "@/components/ui/Icon";
-import { PRIMARY_ROUTES, SECONDARY_ROUTES } from "./routes";
+import { PRIMARY_ROUTES, SECONDARY_GROUPS, SECONDARY_ROUTES } from "./routes";
 import { LogoutButton } from "./LogoutButton";
 
 export function BottomTabBar({
@@ -93,41 +93,57 @@ export function BottomTabBar({
               >
                 <div className="h-1.5 w-11 rounded-pill bg-line-strong" />
               </div>
-              {/* Rejilla de tiles: el ícono vive en un cuadrado de tinte
-                  sólido y la etiqueta va debajo, fuera del tile — así 11
-                  secciones se escanean por forma y color en vez de leerse
-                  como una lista de texto de 11 líneas. */}
-              <div className="grid grid-cols-4 gap-x-2 gap-y-3">
-                {SECONDARY_ROUTES.map((r) => {
-                  const active = pathname === r.href;
-                  return (
-                    <Link
-                      key={r.href}
-                      href={r.href}
-                      aria-current={active ? "page" : undefined}
-                      className="flex flex-col items-center gap-1.5 group active:scale-[0.97] transition-transform"
-                    >
-                      <span
-                        className={cn(
-                          "grid place-items-center size-14 rounded-tile transition-colors",
-                          active
-                            ? "bg-gradient-brand text-white"
-                            : "bg-tint-brand text-primary-fg group-hover:bg-primary-soft",
-                        )}
-                      >
-                        <Icon name={r.icon} size={24} weight={active ? "fill" : "light"} />
-                      </span>
-                      <span
-                        className={cn(
-                          "text-xs font-semibold text-center leading-tight",
-                          active ? "text-primary-fg" : "text-muted",
-                        )}
-                      >
-                        {r.label}
-                      </span>
-                    </Link>
-                  );
-                })}
+              {/* Rejilla de tiles agrupada: el ícono vive en un cuadrado de
+                  tinte sólido y la etiqueta va debajo, fuera del tile — así
+                  las secciones se escanean por forma y color en vez de leerse
+                  como una lista de texto. Con las 11 en una sola rejilla el
+                  orden era el del archivo y no significaba nada: "Balance"
+                  caía pegado a "Ahorros" pero también a "Deudas". Los
+                  encabezados dicen de qué va cada bloque.
+                  El scroll vive acá y no en la hoja entera para que el asa de
+                  arrastre y el bloque de cerrar sesión no se vayan de vista:
+                  agrupado son ~460px de rejilla, y en un teléfono chico la
+                  hoja se saldría por arriba. */}
+              <div className="max-h-[62dvh] overflow-y-auto overscroll-contain flex flex-col gap-4">
+                {SECONDARY_GROUPS.map((g) => (
+                  <nav key={g.group} aria-label={g.label}>
+                    <p className="px-1 mb-2 text-xs font-bold uppercase tracking-wide text-subtle">
+                      {g.label}
+                    </p>
+                    <div className="grid grid-cols-4 gap-x-2 gap-y-3">
+                      {g.routes.map((r) => {
+                        const active = pathname === r.href;
+                        return (
+                          <Link
+                            key={r.href}
+                            href={r.href}
+                            aria-current={active ? "page" : undefined}
+                            className="flex flex-col items-center gap-1.5 group active:scale-[0.97] transition-transform"
+                          >
+                            <span
+                              className={cn(
+                                "grid place-items-center size-14 rounded-tile transition-colors",
+                                active
+                                  ? "bg-gradient-brand text-white"
+                                  : "bg-tint-brand text-primary-fg group-hover:bg-primary-soft",
+                              )}
+                            >
+                              <Icon name={r.icon} size={24} weight={active ? "fill" : "light"} />
+                            </span>
+                            <span
+                              className={cn(
+                                "text-xs font-semibold text-center leading-tight",
+                                active ? "text-primary-fg" : "text-muted",
+                              )}
+                            >
+                              {r.label}
+                            </span>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  </nav>
+                ))}
               </div>
               {/* Separado por espacio, no por línea. */}
               <div className="mt-6">
