@@ -99,6 +99,14 @@ export default async function MetasPage() {
   const totalSaved = goals.reduce((s, g) => s + progressOf(g).total, 0);
 
   const generalSavings = accounts.filter((a) => a.type === "ahorro" && !a.goal_id);
+  // El encabezado decía "Ahorrado en total" pero solo sumaba metas, dejando
+  // fuera el ahorro general que esta MISMA pantalla lista justo debajo: la
+  // pantalla se contradecía a sí misma, y no cuadraba con el Dashboard, que sí
+  // los suma. Se suma sin convertir moneda, igual que las tarjetas de abajo —
+  // si algún día hay una cuenta de ahorro en otra moneda, hay que convertir
+  // acá Y en esas tarjetas a la vez, o volvería el mismo descuadre.
+  const generalSavingsTotal = generalSavings.reduce((s, a) => s + accountBalance(a.id), 0);
+  const savedOverall = totalSaved + generalSavingsTotal;
 
   return (
     <>
@@ -113,17 +121,26 @@ export default async function MetasPage() {
           (text-xl los dos), así que ninguna de las dos mandaba — y encima
           los saldos de ahorro general de arriba iban a text-lg, un tercer
           nivel casi idéntico. Ahora hay un solo protagonista arriba. */}
-      {goals.length > 0 && (
+      {/* Antes esto colgaba de `goals.length > 0`, así que quien tuviera
+          ahorro general pero ninguna meta no veía su total por ningún lado. */}
+      {(goals.length > 0 || generalSavings.length > 0) && (
         <section className="mb-6 rounded-hero bg-gradient-brand px-5 py-6 shadow-hero">
           <p className="text-sm font-medium text-on-brand-muted">Ahorrado en total</p>
           <MoneyValue
-            value={totalSaved}
+            value={savedOverall}
             decimals={false}
             className="block money-hero font-extrabold text-on-brand tabular mt-0.5"
           />
           <p className="mt-1.5 text-xs text-on-brand-muted">
-            De un objetivo de <Money value={totalTarget} decimals={false} /> ·{" "}
-            {goals.length} {goals.length === 1 ? "meta" : "metas"}
+            {goals.length > 0 ? (
+              <>
+                De un objetivo de <Money value={totalTarget} decimals={false} /> ·{" "}
+                {goals.length} {goals.length === 1 ? "meta" : "metas"}
+                {generalSavingsTotal > 0 && <> · Incluye ahorro sin meta asignada</>}
+              </>
+            ) : (
+              <>Todo en ahorro general, sin meta asignada</>
+            )}
           </p>
         </section>
       )}
