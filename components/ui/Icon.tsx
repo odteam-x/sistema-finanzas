@@ -143,20 +143,22 @@ interface IconProps {
   name: IconName;
   size?: number;
   className?: string;
-  /** "regular" inactivo / "fill" activo es el patrón recomendado para
-   *  estados seleccionados (tabs, filtros) — por defecto "bold" para
-   *  mantener el peso visual que tenía el set dibujado a mano. */
+  /** El default es "fill". Pásalo explícito solo para apartarte de eso: la
+   *  navegación usa "light" en lo inactivo para que el relleno marque el
+   *  estado activo, y un glifo con detalle interno fino que se vea manchado
+   *  en sólido a tamaño chico se rescata con "duotone". */
   weight?: IconWeight;
   "aria-hidden"?: boolean | "true" | "false";
   "aria-label"?: string;
 }
 
-// "regular": el peso base de Phosphor. Antes el default era "light", que a
-// 14-16px se leía demasiado fino y hacía que los íconos se perdieran contra
-// el texto que acompañan. Los pocos sitios que sí quieren el trazo fino (o
-// relleno) ya pasan `weight` explícito — nav, asistente, recibo. El peso se
-// cambia UNA vez acá y se propaga a las ~42 llamadas de la app.
-export function Icon({ name, size = 22, className, weight = "regular", ...props }: IconProps) {
+// "fill": glifo sólido, el lenguaje visual que la app usa dentro de las
+// burbujas de color (IconBubble). Pasó por "light" y "regular" antes: los dos
+// eran de contorno y a 14-16px se perdían contra el texto que acompañan, en
+// vez de anclarlo. Los sitios que sí quieren otra cosa ya pasan `weight`
+// explícito — la navegación ("light" inactivo), el recibo y el asistente. El
+// peso se cambia UNA vez acá y se propaga a las ~42 llamadas de la app.
+export function Icon({ name, size = 22, className, weight = "fill", ...props }: IconProps) {
   const Component = icons[name];
   return <Component size={size} weight={weight} className={className} aria-hidden="true" {...props} />;
 }
