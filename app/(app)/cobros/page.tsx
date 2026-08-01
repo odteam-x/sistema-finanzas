@@ -6,10 +6,14 @@ import {
 } from "@/lib/data";
 import { collectedOf, isCollected, pendingOf, totalPending } from "@/lib/receivables";
 import { formatDateLong, formatDateShort, todayISO, daysBetween } from "@/lib/format";
+import { RANGE_LABEL, parseRangePreset, rangeBounds, type RangePreset } from "@/lib/range";
+import { hrefWith } from "@/lib/href";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { StatTile } from "@/components/ui/StatTile";
 import { SegmentedLinks } from "@/components/ui/SegmentedLinks";
+import { FilterMenu } from "@/components/ui/FilterMenu";
+import { ActiveFilters } from "@/components/ui/ActiveFilters";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Badge } from "@/components/ui/Badge";
 import { DeleteButton } from "@/components/ui/DeleteButton";
@@ -82,11 +86,18 @@ function EditReceivableForm({ rec }: { rec: Receivable }) {
 export default async function CobrosPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tipo?: string }>;
+  searchParams: Promise<{ tipo?: string; range?: string }>;
 }) {
   const sp = await searchParams;
   const kindFilter: ReceivableKind | "todo" =
     sp.tipo === "cobro" || sp.tipo === "prestamo" ? sp.tipo : "todo";
+  const range = parseRangePreset(sp.range);
+  // Por `acquired_date` (cuándo lo registraste), que es la fecha que la propia
+  // tarjeta enseña. No por `due_date`: es null en todo lo que va por cuotas,
+  // así que filtrar por ella escondería justo los registros con más detalle. Y
+  // la ventana de rangeBounds() cierra HOY — sobre una fecha esperada, siempre
+  // futura, no dejaría nada visible.
+  const { from, to } = rangeBounds(range);
 
   const today = todayISO();
   const [receivables, installments, accounts] = await Promise.all([
@@ -106,7 +117,22 @@ export default async function CobrosPage({
   const pendingCobros = totalPending(receivables, installments, "cobro");
   const pendingPrestamos = totalPending(receivables, installments, "prestamo");
 
-  const visible = receivables.filter((r) => kindFilter === "todo" || r.kind === kindFilter);
+  const visible = receivables
+    .filter((r) => kindFilter === "todo" || r.kind === kindFilter)
+    .filter((r) => (!from || r.acquired_date >= from) && (!to || r.acquired_date <= to));
+
+  const hrefFor = (next: { tipo?: string | null; range?: string | null }) =>
+    hrefWith("/cobros", { tipo: sp.tipo, range: sp.range }, next);
+
+  const tipoLabel =
+    kindFilter === "cobro" ? "Me deben" : kindFilter === "prestamo" ? "Presté" : null;
+  const activeFilters = [
+    tipoLabel && { label: tipoLabel, removeHref: hrefFor({ tipo: null }) },
+    range !== "todo" && {
+      label: `Registrados: ${RANGE_LABEL[range].toLowerCase()}`,
+      removeHref: hrefFor({ range: null }),
+    },
+  ].filter((f): f is { label: string; removeHref: string } => Boolean(f));
 
   // Próximo vencimiento entre lo que aún falta por cobrar
   const upcoming: string[] = [];
@@ -164,16 +190,36 @@ export default async function CobrosPage({
       )}
 
       {receivables.length > 0 && (
-        <div className="mb-5">
-          <SegmentedLinks
-            label="Tipo"
-            segments={KIND_TABS.map((t) => ({
-              label: t.label,
-              href: t.value === "todo" ? "/cobros" : `/cobros?tipo=${t.value}`,
-              active: t.value === kindFilter,
-            }))}
-          />
-        </div>
+        <>
+          {/* ActiveFilters va acá abajo y no bajo el PageHeader (como en
+              Movimientos) porque los dos tiles de arriba se calculan sobre
+              TODO a propósito: si el aviso de "viendo solo…" quedara encima de
+              ellos, parecería que las cifras también están recortadas. */}
+          <ActiveFilters filters={activeFilters} clearHref="/cobros" />
+
+          <div className="mb-5 flex items-center gap-2 flex-wrap">
+            <SegmentedLinks
+              label="Tipo"
+              segments={KIND_TABS.map((t) => ({
+                label: t.label,
+                // Antes el href era `/cobros?tipo=x` a pelo: cambiar de
+                // pestaña reescribía la URL entera y se llevaba por delante
+                // cualquier otro filtro puesto.
+                href: hrefFor({ tipo: t.value === "todo" ? null : t.value }),
+                active: t.value === kindFilter,
+              }))}
+            />
+            <FilterMenu
+              label="Rango"
+              value={RANGE_LABEL[range]}
+              options={(Object.keys(RANGE_LABEL) as RangePreset[]).map((r) => ({
+                label: RANGE_LABEL[r],
+                href: hrefFor({ range: r === "todo" ? null : r }),
+                active: r === range,
+              }))}
+            />
+          </div>
+        </>
       )}
 
       {receivables.length === 0 ? (
@@ -188,10 +234,10 @@ export default async function CobrosPage({
         <EmptyState
           icon="arrowDownLeft"
           title="Sin resultados"
-          message="No hay registros de este tipo."
+          message="Ningún registro coincide con este filtro."
           action={
             <Link href="/cobros" className="text-sm font-semibold text-primary-fg">
-              Ver todos
+              Quitar filtros
             </Link>
           }
         />
