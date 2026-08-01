@@ -46,6 +46,12 @@ export async function addTag(formData: FormData): Promise<ActionResult> {
   const { error } = await supabase
     .from("tags")
     .insert({ user_id: user.id, name, color, monthly_limit });
+  // 23505 = violación del índice único. Desde migration-v29 no puede haber dos
+  // etiquetas vivas con el mismo nombre por usuario; sin este caso el usuario
+  // leía "No se pudo agregar" y no tenía cómo saber que ya la tiene creada.
+  if (error?.code === "23505") {
+    return { ok: false, error: "Ya tienes una etiqueta con ese nombre." };
+  }
   if (error) return { ok: false, error: "No se pudo agregar la etiqueta." };
   revalidateAll();
   return { ok: true };
@@ -64,6 +70,9 @@ export async function updateTag(formData: FormData): Promise<ActionResult> {
     .from("tags")
     .update({ name, color, monthly_limit })
     .eq("id", id);
+  if (error?.code === "23505") {
+    return { ok: false, error: "Ya tienes otra etiqueta con ese nombre." };
+  }
   if (error) return { ok: false, error: "No se pudo actualizar." };
   revalidateAll();
   return { ok: true };

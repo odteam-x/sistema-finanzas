@@ -23,16 +23,15 @@ const DEFAULT_TAGS = [
  *  crea el set por defecto. Editables/eliminables desde el día uno, no
  *  fijas — esto solo reduce la fricción de arrancar con la lista vacía. */
 export async function seedDefaultTagsIfEmpty(): Promise<void> {
-  const user = await requireUser();
+  await requireUser();
   const supabase = await createClient();
 
-  const { count } = await supabase
-    .from("tags")
-    .select("id", { count: "exact", head: true })
-    .eq("user_id", user.id);
-  if (count && count > 0) return;
-
-  await supabase
-    .from("tags")
-    .insert(DEFAULT_TAGS.map((name) => ({ user_id: user.id, name, color: "primary" })));
+  // Antes esto contaba acá y luego insertaba: dos viajes sin transacción que
+  // los una. Como Presupuesto y Configuración llaman a esta función al inicio
+  // de su render, dos cargas a la vez contaban 0 las dos e insertaban las 7
+  // cada una — 14 categorías, siete repetidas. Ahora la decisión de sembrar y
+  // la inserción ocurren dentro de la MISMA transacción en Postgres, con un
+  // lock por usuario (migration-v29). El criterio no cambió: sigue mirando la
+  // tabla completa, borradas incluidas.
+  await supabase.rpc("seed_default_tags", { p_names: DEFAULT_TAGS });
 }
