@@ -21,7 +21,14 @@
 //      deuda (mismo total que muestra la UI, ver lib/debts.ts).
 //
 // Uso:
-//   npm run check:coherence
+//   npm run check:coherence                    (todos los usuarios)
+//   npm run check:coherence -- --user a@b.com  (solo ese, por correo o id)
+//
+// Las verificaciones corren POR USUARIO y cada problema sale etiquetado con
+// de quién es. Antes leían las tablas completas sin filtrar: con un solo
+// usuario daba igual, pero con varias cuentas independientes un descuadre no
+// decía de quién era, y peor: los cruces entre tablas podían emparejar filas
+// de personas distintas y reportar incoherencias que no existían.
 //
 // Requiere en .env.local (o el entorno):
 //   NEXT_PUBLIC_SUPABASE_URL
@@ -78,9 +85,16 @@ const closeEnough = (a, b) => Math.abs(Number(a) - Number(b)) < 0.01;
 // necesitan su propia marca de borrado suave.
 const NO_SOFT_DELETE = new Set(["debt_installments", "receivable_installments"]);
 
+/** Usuario que se está verificando ahora mismo. Lo fija el bucle principal y
+ *  lo consume all(): así las siete verificaciones se escribieron una sola vez
+ *  y ninguna puede olvidarse de filtrar. Este script usa la service_role, que
+ *  bypasea RLS a propósito, así que el filtro tiene que ser explícito. */
+let scopeUserId = null;
+
 async function all(table, columns = "*") {
   let q = supabase.from(table).select(columns);
   if (!NO_SOFT_DELETE.has(table)) q = q.is("deleted_at", null);
+  if (scopeUserId) q = q.eq("user_id", scopeUserId);
   const { data, error } = await q;
   if (error) throw new Error(`No se pudo leer ${table}: ${error.message}`);
   return data ?? [];
@@ -321,15 +335,56 @@ const checks = [
   ["Totales de deudas en cuotas", checkDebtTotals],
 ];
 
-console.log("Verificando coherencia del ledger…\n");
-for (const [label, fn] of checks) {
-  const before = problems.length;
-  try {
-    await fn();
-  } catch (err) {
-    problems.push(`${label}: error al verificar — ${err.message}`);
+/** --user acepta correo o id. Útil cuando alguien reporta un descuadre
+ *  concreto y no interesa recorrer a todo el mundo. */
+function parseUserArg() {
+  const i = process.argv.indexOf("--user");
+  return i !== -1 ? process.argv[i + 1] : null;
+}
+
+async function listUsers() {
+  const wanted = parseUserArg();
+  // listUsers pagina de 50 en 50 por defecto; se sube el tope y se recorre,
+  // para que a partir del usuario 51 no dejen de verificarse en silencio.
+  const users = [];
+  for (let page = 1; page <= 100; page++) {
+    const { data, error } = await supabase.auth.admin.listUsers({ page, perPage: 200 });
+    if (error) throw new Error(`No se pudo listar usuarios: ${error.message}`);
+    users.push(...data.users);
+    if (data.users.length < 200) break;
   }
-  console.log(`  ${problems.length === before ? "✓" : "✗"} ${label}`);
+  if (!wanted) return users;
+  const match = users.filter((u) => u.id === wanted || u.email === wanted);
+  if (match.length === 0) throw new Error(`No se encontró ningún usuario con "${wanted}".`);
+  return match;
+}
+
+console.log("Verificando coherencia del ledger…\n");
+
+const users = await listUsers();
+if (users.length === 0) {
+  console.log("No hay usuarios registrados todavía. Nada que verificar.");
+  process.exit(0);
+}
+
+for (const user of users) {
+  scopeUserId = user.id;
+  const label = user.email ?? user.id;
+  console.log(`▸ ${label}`);
+  for (const [name, fn] of checks) {
+    const before = problems.length;
+    try {
+      await fn();
+    } catch (err) {
+      problems.push(`${name}: error al verificar — ${err.message}`);
+    }
+    // Cada problema nuevo se etiqueta con su dueño: con varias cuentas, un
+    // descuadre suelto no dice de quién es y no hay por dónde empezar.
+    for (let i = before; i < problems.length; i++) {
+      problems[i] = `[${label}] ${problems[i]}`;
+    }
+    console.log(`    ${problems.length === before ? "✓" : "✗"} ${name}`);
+  }
 }
 
 console.log("");
