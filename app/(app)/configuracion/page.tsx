@@ -20,6 +20,7 @@ import { Money } from "@/components/ui/Money";
 import { ThemeButton } from "@/components/theme/ThemeButton";
 import { NotificationToggle } from "@/components/NotificationToggle";
 import { SecuritySettings } from "@/components/SecuritySettings";
+import { isPersonalCodeConfigured } from "@/lib/personalCodeCrypto";
 import { DisplayNameForm } from "./DisplayNameForm";
 import { ExportCsvForm } from "./ExportCsvForm";
 import { ExchangeRateForm } from "./ExchangeRateForm";
@@ -310,7 +311,11 @@ export default async function ConfiguracionPage() {
 
       <Card id="seguridad" className="mt-6 mb-6 scroll-mt-24">
         <h2 className="font-bold text-ink mb-3">Seguridad</h2>
-        <SecuritySettings />
+        <SecuritySettings
+          hasCode={Boolean(profile?.personal_code)}
+          codeActive={profile?.personal_code_active ?? false}
+          configured={isPersonalCodeConfigured()}
+        />
       </Card>
 
       <Card id="preferencias" className="mb-6 scroll-mt-24">

@@ -1,26 +1,24 @@
-// Bloqueo local de la app (Bloque 11) — PIN + biometría opcional vía
-// WebAuthn. Todo vive en localStorage de este dispositivo, nunca en el
-// servidor: no es un mecanismo de autenticación remota (esa ya la resuelve
-// Supabase Auth), es una pantalla de "¿eres tú de verdad?" antes de mostrar
-// datos financieros si alguien más toma el teléfono desbloqueado. Por eso la
-// verificación de biometría no llama a ningún servidor — que el navegador
-// entregue una aserción de WebAuthn ya implica que el sensor del dispositivo
-// (Face ID/Touch ID/Windows Hello) verificó a la persona presente.
+// Preferencias del BLOQUEO POR INACTIVIDAD en este dispositivo.
+//
+// Acá ya no vive ningún secreto. El código personal se guarda cifrado en el
+// servidor (migration-v30) y se verifica allí; antes había un PIN hasheado en
+// localStorage, que era un segundo secreto que recordar y que se comparaba en
+// el cliente, o sea esquivable desde las herramientas del navegador.
+//
+// Lo que queda es lo que SÍ es del aparato: cada cuánto volver a pedir el
+// código, cuándo se fue a segundo plano, y si este dispositivo tiene una
+// credencial biométrica registrada. La verificación biométrica sigue sin
+// llamar al servidor — que el navegador entregue una aserción de WebAuthn ya
+// implica que el sensor verificó a la persona presente.
 const SETTINGS_KEY = "cachin:lock";
 const LAST_BACKGROUND_KEY = "cachin:lock-last-background";
 
 export interface LockSettings {
-  enabled: boolean;
-  pinHash: string | null;
-  salt: string | null;
   timeoutMinutes: number;
   webauthnCredentialId: string | null;
 }
 
 const DEFAULT_SETTINGS: LockSettings = {
-  enabled: false,
-  pinHash: null,
-  salt: null,
   timeoutMinutes: 5,
   webauthnCredentialId: null,
 };
@@ -80,48 +78,6 @@ function saveLockSettings(patch: Partial<LockSettings>): void {
   for (const l of listeners) l();
 }
 
-export function isLockEnabled(): boolean {
-  return getLockSettings().enabled;
-}
-
-// ---- PIN (hash con sal, SubtleCrypto — nunca el PIN en claro en disco) ----
-
-function toHex(buf: ArrayBuffer): string {
-  return Array.from(new Uint8Array(buf))
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
-}
-
-function randomSalt(): string {
-  return toHex(crypto.getRandomValues(new Uint8Array(16)).buffer);
-}
-
-async function hashPin(pin: string, salt: string): Promise<string> {
-  const data = new TextEncoder().encode(`${salt}:${pin}`);
-  const digest = await crypto.subtle.digest("SHA-256", data);
-  return toHex(digest);
-}
-
-/** Define/reemplaza el PIN y activa el bloqueo. 4-6 dígitos — validado por
- *  quien llama (la UI de Configuración), acá se asume ya válido. */
-export async function setPin(pin: string): Promise<void> {
-  const salt = randomSalt();
-  const pinHash = await hashPin(pin, salt);
-  saveLockSettings({ enabled: true, pinHash, salt });
-}
-
-export async function verifyPin(pin: string): Promise<boolean> {
-  const s = getLockSettings();
-  if (!s.pinHash || !s.salt) return false;
-  const attempt = await hashPin(pin, s.salt);
-  return attempt === s.pinHash;
-}
-
-/** Apaga el bloqueo por completo — borra PIN y credencial biométrica. */
-export function disableLock(): void {
-  saveLockSettings({ enabled: false, pinHash: null, salt: null, webauthnCredentialId: null });
-}
-
 export function getTimeoutMinutes(): number {
   return getLockSettings().timeoutMinutes;
 }
@@ -174,10 +130,11 @@ function base64UrlToBuf(b64url: string): ArrayBuffer {
   return Uint8Array.from(bin, (c) => c.charCodeAt(0)).buffer;
 }
 
-/** Crea una credencial local con el autenticador de plataforma (Face ID/
- *  Touch ID/Windows Hello) — nada de esto se manda a ningún servidor, el id
- *  de la credencial se guarda en localStorage para poder pedir la misma
- *  aserción de vuelta al desbloquear. */
+/** Crea una credencial local con el autenticador de plataforma del
+ *  dispositivo — nada de esto se manda a ningún servidor; el id de la
+ *  credencial se guarda en localStorage para poder pedir la misma aserción de
+ *  vuelta al desbloquear. Se habla de "dato biométrico" y no de la marca de
+ *  cada sistema: el texto no debe cambiar según el aparato. */
 export async function registerBiometric(): Promise<boolean> {
   if (typeof window === "undefined" || !window.PublicKeyCredential) return false;
   try {

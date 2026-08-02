@@ -1,7 +1,7 @@
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { SetupNotice } from "@/components/SetupNotice";
 import { requireUser } from "@/lib/auth";
-import { getSavingsAccounts } from "@/lib/data";
+import { getSavingsAccounts, getUserProfile } from "@/lib/data";
 import { Sidebar } from "@/components/nav/Sidebar";
 import { BottomTabBar } from "@/components/nav/BottomTabBar";
 import { QuickAddFab } from "@/components/nav/QuickAddFab";
@@ -30,13 +30,20 @@ export default async function AppLayout({
   // stream cierra. Resultado: la pantalla se veía lista y no respondía, así que
   // el primer toque no hacía nada y había que tocar dos veces. Es peor que
   // esperar: un blanco honesto se entiende, una pantalla muerta no.
-  const [user, accounts] = await Promise.all([requireUser(), getSavingsAccounts()]);
+  const [user, accounts, profile] = await Promise.all([
+    requireUser(),
+    getSavingsAccounts(),
+    getUserProfile(),
+  ]);
   const email = user.email ?? null;
 
   return (
     <PersonalizeProvider>
       <ToastProvider>
-        <AppLockGate>
+        {/* El re-bloqueo por inactividad solo aplica si el código está activo;
+            es estado de la CUENTA, así que llega del servidor y no de
+            localStorage como antes. */}
+        <AppLockGate codeActive={profile?.personal_code_active ?? false}>
           <StatusBarColor />
           <div className="fixed top-0 inset-x-0 z-[100] flex flex-col print:hidden">
             <OfflineBanner />

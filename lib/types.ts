@@ -334,6 +334,11 @@ export interface BudgetPeriodOverride {
 export interface UserProfileRow {
   user_id: string;
   display_name: string | null;
+  /** Código personal de 6 dígitos CIFRADO (v30). Nunca se manda al cliente:
+   *  solo lo leen Server Actions y el proxy. */
+  personal_code: string | null;
+  /** Asignarlo no lo activa — hace falta un paso explícito (ver 15.2). */
+  personal_code_active: boolean;
 }
 
 export type CsvDateFormat = "YYYY-MM-DD" | "DD/MM/YYYY" | "MM/DD/YYYY";

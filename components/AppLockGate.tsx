@@ -1,42 +1,56 @@
 "use client";
 
-import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore, useTransition } from "react";
 import * as lock from "@/lib/appLock";
+import { checkPersonalCode } from "@/app/(app)/configuracion/securityActions";
+import { PERSONAL_CODE_LENGTH } from "@/lib/personalCode";
+import { CodeInput } from "./ui/CodeInput";
 import { Icon } from "./ui/Icon";
 
-/** Snapshot del bloqueo (activo o no) — useSyncExternalStore en vez de
- *  useEffect+setState: evita el parpadeo de hidratación (SSR no tiene
- *  localStorage) sin disparar un re-render en cascada, mismo patrón que
- *  OfflineBanner.tsx en este proyecto. lib/appLock.ts cachea la referencia
- *  del objeto para que el snapshot sea estable entre renders. */
+/** Snapshot de las preferencias del dispositivo — useSyncExternalStore en vez
+ *  de useEffect+setState: evita el parpadeo de hidratación (SSR no tiene
+ *  localStorage) sin disparar un re-render en cascada. */
 function useLockSettings(): lock.LockSettings {
-  return useSyncExternalStore(lock.subscribeToLockSettings, lock.getLockSettings, lock.getLockSettingsServerSnapshot);
+  return useSyncExternalStore(
+    lock.subscribeToLockSettings,
+    lock.getLockSettings,
+    lock.getLockSettingsServerSnapshot,
+  );
 }
 
-/** Pantalla de bloqueo local (Bloque 11) — envuelve TODO el contenido
- *  autenticado.
+/** Re-bloqueo por inactividad DENTRO de la app.
  *
- *  Aclaración honesta: esto bloquea la INTERFAZ (evita que alguien que tome
- *  el teléfono desbloqueado vea u opere la app), no es cifrado — los datos
- *  que el servidor ya envió en esta carga de página siguen técnicamente en
- *  el payload de React aunque no se pinten. Ese es el modelo que se aprobó
- *  para este bloque (ver PLAN.md, Fase 7): TLS + cifrado en reposo de
- *  Supabase para el transporte/almacenamiento, este bloqueo para el acceso
- *  casual al dispositivo. */
-export function AppLockGate({ children }: { children: React.ReactNode }) {
+ *  Ojo con qué protege cada cosa: el código al iniciar sesión lo exige el
+ *  proxy (lib/supabase/middleware.ts) y es lo que de verdad impide entrar.
+ *  Esto de acá es la otra mitad: que quien tome el teléfono ya desbloqueado,
+ *  con la sesión abierta, no siga viendo la app. Bloquea la INTERFAZ, no
+ *  cifra — los datos que el servidor ya envió siguen en el payload de React
+ *  aunque no se pinten.
+ *
+ *  El código que pide es el MISMO del servidor, no un PIN local aparte: antes
+ *  había dos secretos distintos que recordar y el local se comparaba contra un
+ *  hash en localStorage, así que se esquivaba desde las herramientas del
+ *  navegador. */
+export function AppLockGate({
+  children,
+  codeActive,
+}: {
+  children: React.ReactNode;
+  /** Solo re-bloquea si el usuario tiene el código activo. Llega del servidor
+   *  porque es estado de la cuenta, no del dispositivo. */
+  codeActive: boolean;
+}) {
   const settings = useLockSettings();
-  const [sessionUnlocked, setSessionUnlocked] = useState(false);
+  const [sessionUnlocked, setSessionUnlocked] = useState(true);
   const [biometricAvailable, setBiometricAvailable] = useState(false);
-  const [pin, setPinInput] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [checkingBiometric, setCheckingBiometric] = useState(false);
+  const [pending, startTransition] = useTransition();
+  const formRef = useRef<HTMLFormElement>(null);
 
-  const locked = settings.enabled && !sessionUnlocked;
+  const locked = codeActive && !sessionUnlocked;
   const hasWebAuthn = biometricAvailable && settings.webauthnCredentialId !== null;
 
-  // Disponibilidad de biometría: genuinamente async (API del navegador), no
-  // una lectura síncrona de localStorage — llamar setState en el .then()
-  // no dispara el aviso de "setState síncrono en efecto".
   useEffect(() => {
     if (!locked) return;
     let cancelled = false;
@@ -52,32 +66,32 @@ export function AppLockGate({ children }: { children: React.ReactNode }) {
   // configurado ("Inmediato" = siempre) — no hay temporizador corriendo en
   // primer plano, solo se compara al recuperar visibilidad.
   useEffect(() => {
+    if (!codeActive) return;
     function handleVisibility() {
       if (document.visibilityState === "hidden") {
         lock.markBackgroundedNow();
-      } else if (document.visibilityState === "visible" && lock.isLockEnabled() && lock.hasExceededTimeout()) {
+      } else if (document.visibilityState === "visible" && lock.hasExceededTimeout()) {
         setSessionUnlocked(false);
       }
     }
     document.addEventListener("visibilitychange", handleVisibility);
     return () => document.removeEventListener("visibilitychange", handleVisibility);
-  }, []);
+  }, [codeActive]);
 
   const unlock = useCallback(() => {
     setSessionUnlocked(true);
-    setPinInput("");
     setError(null);
   }, []);
 
-  async function submitPin(e: React.FormEvent) {
-    e.preventDefault();
-    if (pin.length < 4) return;
-    const ok = await lock.verifyPin(pin);
-    if (ok) unlock();
-    else {
-      setError("PIN incorrecto.");
-      setPinInput("");
-    }
+  function submitCode(fd: FormData) {
+    const code = String(fd.get("code") ?? "");
+    if (code.length < PERSONAL_CODE_LENGTH) return;
+    setError(null);
+    startTransition(async () => {
+      const res = await checkPersonalCode(code);
+      if (res.ok) unlock();
+      else setError(res.error ?? "Código incorrecto.");
+    });
   }
 
   async function tryBiometric() {
@@ -86,7 +100,7 @@ export function AppLockGate({ children }: { children: React.ReactNode }) {
     const ok = await lock.verifyBiometric();
     setCheckingBiometric(false);
     if (ok) unlock();
-    else setError("No se pudo verificar. Usa tu PIN.");
+    else setError("No se pudo verificar. Usa tu código personal.");
   }
 
   if (!locked) return <>{children}</>;
@@ -99,32 +113,27 @@ export function AppLockGate({ children }: { children: React.ReactNode }) {
         </div>
         <div>
           <h1 className="text-xl font-bold text-ink">Cachin&apos; está bloqueado</h1>
-          <p className="text-sm text-muted mt-1">Ingresa tu PIN para continuar.</p>
+          <p className="text-sm text-muted mt-1">Ingresa tu código personal para continuar.</p>
         </div>
 
-        <form onSubmit={submitPin} className="w-full flex flex-col gap-3">
-          <input
-            type="password"
-            inputMode="numeric"
-            autoComplete="off"
+        <form ref={formRef} action={submitCode} className="w-full flex flex-col gap-3">
+          <CodeInput
+            name="code"
             autoFocus
-            maxLength={6}
-            value={pin}
-            onChange={(e) => {
-              setError(null);
-              setPinInput(e.target.value.replace(/\D/g, "").slice(0, 6));
-            }}
-            className="w-full text-center text-2xl tracking-[0.5em] rounded-tile border border-[var(--input-border)] bg-[var(--input-bg)] py-3 text-ink"
-            placeholder="••••"
+            disabled={pending}
+            onComplete={() => formRef.current?.requestSubmit()}
           />
           {error && (
-            <p className="text-sm font-medium text-danger bg-tint-expense rounded-tile px-3 py-2" role="alert">
+            <p
+              className="text-sm font-medium text-danger bg-tint-danger rounded-tile px-3 py-2"
+              role="alert"
+            >
               {error}
             </p>
           )}
           <button
             type="submit"
-            disabled={pin.length < 4}
+            disabled={pending}
             className="min-h-11 rounded-pill bg-primary text-white font-semibold cursor-pointer disabled:opacity-50"
           >
             Desbloquear
@@ -138,7 +147,7 @@ export function AppLockGate({ children }: { children: React.ReactNode }) {
             className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary-fg cursor-pointer disabled:opacity-60"
           >
             <Icon name="fingerprint" size={16} />
-            {checkingBiometric ? "Verificando…" : "Usar Face ID / Touch ID / Windows Hello"}
+            {checkingBiometric ? "Verificando…" : "Usar dato biométrico"}
           </button>
         )}
       </div>
