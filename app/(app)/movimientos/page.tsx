@@ -62,10 +62,18 @@ function NewMovementForm({
       triggerLabel={triggerLabel}
       trigger={trigger}
     >
-      <Field label="Tipo" htmlFor="mv-kind">
+      {/* Mismo criterio que el formulario del botón + (QuickForms): decir
+          "Ingreso"/"Gasto" a secas repetía las palabras de otras acciones que
+          escriben en tablas distintas. Esto ajusta el saldo de una cuenta
+          directo en el ledger, sin contar como sueldo ni gasto presupuestado. */}
+      <Field
+        label="Tipo"
+        htmlFor="mv-kind"
+        hint="Ajusta el saldo de la cuenta sin contarlo en tu presupuesto."
+      >
         <Select id="mv-kind" name="kind" defaultValue="retiro">
-          <option value="deposito">Ingreso</option>
-          <option value="retiro">Gasto</option>
+          <option value="deposito">Entrada sin categoría</option>
+          <option value="retiro">Salida sin categoría</option>
         </Select>
       </Field>
       <Field label="Monto" htmlFor="mv-amount" required>
@@ -74,15 +82,28 @@ function NewMovementForm({
       <Field label="Fecha" htmlFor="mv-date" required>
         <Input id="mv-date" name="date" type="date" defaultValue={today} required />
       </Field>
-      <Field label="Cuenta" htmlFor="mv-account" required>
-        <Select id="mv-account" name="account_id" required>
-          {accounts.map((a) => (
-            <option key={a.id} value={a.id}>
-              {a.name}
-            </option>
-          ))}
-        </Select>
-      </Field>
+      {/* Sin cuentas, un Select vacío y `required` es un callejón sin salida:
+          no hay nada que elegir y el formulario no puede enviarse. Se avisa
+          en su lugar y se enlaza a donde se resuelve. */}
+      {accounts.length > 0 ? (
+        <Field label="Cuenta" htmlFor="mv-account" required>
+          <Select id="mv-account" name="account_id" required>
+            {accounts.map((a) => (
+              <option key={a.id} value={a.id}>
+                {a.name}
+              </option>
+            ))}
+          </Select>
+        </Field>
+      ) : (
+        <p className="text-sm text-muted">
+          Necesitas una cuenta primero.{" "}
+          <Link href="/balance" className="font-semibold text-primary-fg">
+            Crear una en Balance
+          </Link>
+          .
+        </p>
+      )}
       <Field label="Nota" htmlFor="mv-note">
         <Input id="mv-note" name="note" placeholder="Opcional" />
       </Field>

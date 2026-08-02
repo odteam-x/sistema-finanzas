@@ -1,3 +1,4 @@
+import Link from "next/link";
 import {
   getAccountBalances,
   getDebts,
@@ -395,20 +396,37 @@ export default async function MetasPage() {
                       >
                         <MoneyInput id={`add-${g.id}`} name="amount" required />
                       </Field>
-                      <Field
-                        label="¿De qué cuenta sale?"
-                        htmlFor={`addacc-${g.id}`}
-                        required
-                        hint="El dinero sale de esa cuenta de verdad (o vuelve, si retiras)."
-                      >
-                        <Select id={`addacc-${g.id}`} name="account_id" required defaultValue={accounts[0]?.id ?? ""}>
-                          {accounts.map((a) => (
-                            <option key={a.id} value={a.id}>
-                              {a.name}
-                            </option>
-                          ))}
-                        </Select>
-                      </Field>
+                      {/* Sin cuentas el Select saldría vacío y `required` lo
+                          volvería imposible de enviar. Se avisa en su lugar. */}
+                      {accounts.length > 0 ? (
+                        <Field
+                          label="¿De qué cuenta sale?"
+                          htmlFor={`addacc-${g.id}`}
+                          required
+                          hint="El dinero sale de esa cuenta de verdad (o vuelve, si retiras)."
+                        >
+                          <Select
+                            id={`addacc-${g.id}`}
+                            name="account_id"
+                            required
+                            defaultValue={accounts[0]?.id ?? ""}
+                          >
+                            {accounts.map((a) => (
+                              <option key={a.id} value={a.id}>
+                                {a.name}
+                              </option>
+                            ))}
+                          </Select>
+                        </Field>
+                      ) : (
+                        <p className="text-sm text-muted">
+                          Necesitas una cuenta primero.{" "}
+                          <Link href="/balance" className="font-semibold text-primary-fg">
+                            Crear una en Balance
+                          </Link>
+                          .
+                        </p>
+                      )}
                     </FormModal>
                   )}
 

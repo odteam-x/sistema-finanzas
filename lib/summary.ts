@@ -68,6 +68,10 @@ export interface FinanceSummary {
   saldoReal: number;
   nextPay: string;
   daysToPay: number;
+  /** ¿El usuario ya dijo cuándo y cuánto cobra? `nextPay` no sirve para
+   *  saberlo: cae a hoy cuando no hay ancla, así que siempre trae algo.
+   *  Lo consume el bloque de primeros pasos del Inicio. */
+  hasSalaryConfigured: boolean;
   nextDue: string | null;
   daysToDue: number | null;
   nextDueName: string | null;
@@ -492,6 +496,7 @@ export async function getFinanceSummary(): Promise<FinanceSummary> {
     saldoEstimado,
     saldoReal,
     nextPay,
+    hasSalaryConfigured: Boolean(settings.next_pay_date) && Number(settings.default_amount) > 0,
     daysToPay: daysBetween(today, nextPay),
     nextDue: next?.date ?? null,
     daysToDue: next ? daysBetween(today, next.date) : null,

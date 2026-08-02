@@ -12,6 +12,7 @@ import { StatTile } from "@/components/ui/StatTile";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { IconBubble } from "@/components/ui/IconBubble";
 import { InfoTooltip } from "@/components/ui/InfoTooltip";
+import { Onboarding } from "@/components/Onboarding";
 import { Icon, type IconName } from "@/components/ui/Icon";
 import { Money } from "@/components/ui/Money";
 import { MoneyValue } from "@/components/ui/MoneyValue";
@@ -113,6 +114,16 @@ export default async function DashboardPage() {
         periodLabel={s.quincena.label}
         alertCount={s.alerts.length}
       />
+
+      {/* Primeros pasos, solo mientras falte algo de lo básico. Desaparece
+          sola: no hay estado que completar ni que marcar como visto. */}
+      {(s.accountBalances.length === 0 || s.perDay <= 0 || !s.hasSalaryConfigured) && (
+        <Onboarding
+          hasAccounts={s.accountBalances.length > 0}
+          hasExpenses={s.perDay > 0}
+          hasSalarySettings={s.hasSalaryConfigured}
+        />
+      )}
 
       {s.pendingSalary && <PendingSalaryNotice salary={s.pendingSalary} />}
 
