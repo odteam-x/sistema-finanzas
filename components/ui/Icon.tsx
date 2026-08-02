@@ -26,6 +26,7 @@ import {
   CreditCard,
   DownloadSimple,
   Eye,
+  Envelope,
   Fingerprint,
   EyeSlash,
   Gear,
@@ -93,7 +94,9 @@ export type IconName =
   | "sparkle"
   | "download"
   | "lock"
-  | "fingerprint";
+  | "fingerprint"
+  // Avisos de "revisa tu correo" del registro y la recuperación de contraseña.
+  | "mail";
 
 const icons: Record<IconName, PhosphorIcon> = {
   dashboard: House,
@@ -137,6 +140,7 @@ const icons: Record<IconName, PhosphorIcon> = {
   download: DownloadSimple,
   lock: Lock,
   fingerprint: Fingerprint,
+  mail: Envelope,
 };
 
 interface IconProps {
