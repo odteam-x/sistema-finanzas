@@ -47,7 +47,7 @@ export function Receipt({ data, onDone }: { data: ReceiptData; onDone: () => voi
           queued ? "bg-tint-warning text-warning" : "bg-tint-income text-income",
         )}
       >
-        <Icon name={queued ? "clock" : "check"} size={32} weight="bold" />
+        <Icon name={queued ? "clock" : "check"} size={32} />
       </span>
 
       {/* El título ("Gasto registrado") lo pone la cabecera del modal, que

@@ -1,57 +1,65 @@
 "use client";
 
-// Set de iconos: Phosphor (@phosphor-icons/react) — reemplaza el set propio
-// dibujado a mano de la Fase 0-4. Los componentes de Phosphor vienen
-// pre-empaquetados (nada de fetch a una API en runtime), así que siguen
-// funcionando offline como corresponde a una PWA. El mapa de nombres
-// conserva el mismo `IconName` que usaba el set anterior para no tocar
-// ninguno de los ~40 sitios que ya llaman <Icon name="..." />.
-import type { IconWeight } from "@phosphor-icons/react";
+// Set de iconos: Unicons Line (@iconscout/react-unicons).
+//
+// Vienen pre-empaquetados como componentes React (nada de fetch en runtime),
+// así que siguen funcionando offline como corresponde a una PWA, y el import
+// nombrado deja que el bundler descarte los ~1.160 que no se usan.
+//
+// SOBRE EL ESTILO — Unicons libre es SOLO de contorno. El paquete sólido
+// (@iconscout/react-unicons-solid) va bajo licencia de pago y no se puede
+// redistribuir en un repositorio público como este. Es lo contrario del
+// relleno sólido que se había adoptado antes con Phosphor "fill": el estado
+// activo de la navegación ya no puede marcarse por peso de trazo, así que
+// ahora se apoya solo en fondo y color, que es lo que ya hacía de todos
+// modos (bg-gradient-brand + text-white en el activo).
+//
+// El mapa conserva el mismo `IconName` de siempre para no tocar ninguno de
+// los ~40 sitios que llaman <Icon name="..." />.
+import type { UniconProps } from "@iconscout/react-unicons";
 import {
-  ArrowDownLeft,
-  ArrowUpRight,
-  ArrowsClockwise,
-  ArrowsLeftRight,
-  Bank,
-  Bell,
-  Calculator,
-  Calendar,
-  CaretDown,
-  CaretLeft,
-  CaretRight,
-  ChartBar,
-  Check,
-  Clock,
-  Coins,
-  CreditCard,
-  DownloadSimple,
-  Eye,
-  Envelope,
-  Fingerprint,
-  EyeSlash,
-  Gear,
-  House,
-  Lightbulb,
-  List,
-  Lock,
-  MagnifyingGlass,
-  Moon,
-  Palette,
-  PencilSimple,
-  PiggyBank,
-  Plus,
-  SignOut,
-  Sparkle,
-  Sun,
-  Target,
-  Trash,
-  TrendDown,
-  TrendUp,
-  Wallet,
-  WarningCircle,
-  X,
-  type Icon as PhosphorIcon,
-} from "@phosphor-icons/react";
+  UilAnalytics,
+  UilAngleDown,
+  UilAngleLeft,
+  UilAngleRight,
+  UilArrowDownLeft,
+  UilArrowUpRight,
+  UilBars,
+  UilBell,
+  UilBill,
+  UilCalculator,
+  UilCalendar,
+  UilChartDown,
+  UilChartGrowth,
+  UilChartPie,
+  UilCheck,
+  UilClock,
+  UilCog,
+  UilCoins,
+  UilDownloadAlt,
+  UilEdit,
+  UilEnvelope,
+  UilExchange,
+  UilExclamationTriangle,
+  UilEstate,
+  UilEye,
+  UilEyeSlash,
+  UilLightbulbAlt,
+  UilLock,
+  UilMoon,
+  UilPalette,
+  UilPlus,
+  UilRepeat,
+  UilSearch,
+  UilSignout,
+  UilStar,
+  UilSun,
+  UilTimes,
+  UilTrashAlt,
+  UilTrophy,
+  UilUniversity,
+  UilWallet,
+} from "@iconscout/react-unicons";
 
 export type IconName =
   | "dashboard"
@@ -98,71 +106,81 @@ export type IconName =
   // Avisos de "revisa tu correo" del registro y la recuperación de contraseña.
   | "mail";
 
-const icons: Record<IconName, PhosphorIcon> = {
-  dashboard: House,
-  wallet: Wallet,
-  calendar: Calendar,
-  budget: Coins,
-  goal: Target,
-  debt: CreditCard,
-  bulb: Lightbulb,
-  plus: Plus,
-  close: X,
-  trash: Trash,
-  edit: PencilSimple,
-  check: Check,
-  chevronLeft: CaretLeft,
-  chevronRight: CaretRight,
-  chevronDown: CaretDown,
-  alert: WarningCircle,
-  menu: List,
-  logout: SignOut,
-  trendUp: TrendUp,
-  trendDown: TrendDown,
-  calc: Calculator,
-  clock: Clock,
-  settings: Gear,
-  eye: Eye,
-  eyeOff: EyeSlash,
-  piggy: PiggyBank,
-  arrowDownLeft: ArrowDownLeft,
-  arrowUpRight: ArrowUpRight,
-  sun: Sun,
-  moon: Moon,
-  palette: Palette,
-  bank: Bank,
-  repeat: ArrowsClockwise,
-  chart: ChartBar,
-  movements: ArrowsLeftRight,
-  search: MagnifyingGlass,
-  bell: Bell,
-  sparkle: Sparkle,
-  download: DownloadSimple,
-  lock: Lock,
-  fingerprint: Fingerprint,
-  mail: Envelope,
+const icons: Record<IconName, (props: UniconProps) => React.ReactElement> = {
+  dashboard: UilEstate,
+  wallet: UilWallet,
+  calendar: UilCalendar,
+  budget: UilChartPie,
+  goal: UilTrophy,
+  debt: UilBill,
+  bulb: UilLightbulbAlt,
+  plus: UilPlus,
+  close: UilTimes,
+  trash: UilTrashAlt,
+  edit: UilEdit,
+  check: UilCheck,
+  chevronLeft: UilAngleLeft,
+  chevronRight: UilAngleRight,
+  chevronDown: UilAngleDown,
+  alert: UilExclamationTriangle,
+  menu: UilBars,
+  logout: UilSignout,
+  trendUp: UilChartGrowth,
+  trendDown: UilChartDown,
+  calc: UilCalculator,
+  clock: UilClock,
+  settings: UilCog,
+  eye: UilEye,
+  eyeOff: UilEyeSlash,
+  // Unicons no trae alcancía; las monedas son lo más cercano al ahorro.
+  piggy: UilCoins,
+  arrowDownLeft: UilArrowDownLeft,
+  arrowUpRight: UilArrowUpRight,
+  sun: UilSun,
+  moon: UilMoon,
+  palette: UilPalette,
+  bank: UilUniversity,
+  repeat: UilRepeat,
+  chart: UilAnalytics,
+  movements: UilExchange,
+  search: UilSearch,
+  bell: UilBell,
+  sparkle: UilStar,
+  download: UilDownloadAlt,
+  lock: UilLock,
+  // Tampoco hay huella dactilar en el set libre. El billete no encaja; se usa
+  // el candado, que al menos comunica "seguridad" en el mismo contexto.
+  fingerprint: UilLock,
+  mail: UilEnvelope,
 };
 
 interface IconProps {
   name: IconName;
   size?: number;
   className?: string;
-  /** El default es "fill". Pásalo explícito solo para apartarte de eso: la
-   *  navegación usa "light" en lo inactivo para que el relleno marque el
-   *  estado activo, y un glifo con detalle interno fino que se vea manchado
-   *  en sólido a tamaño chico se rescata con "duotone". */
-  weight?: IconWeight;
   "aria-hidden"?: boolean | "true" | "false";
   "aria-label"?: string;
 }
 
-// "fill": glifo sólido, el lenguaje visual que la app usa dentro de las
-// burbujas de color (IconBubble). Pasó por "light" y "regular" antes: los dos
-// eran de contorno y a 14-16px se perdían contra el texto que acompañan, en
-// vez de anclarlo. Los sitios que sí quieren otra cosa ya pasan `weight`
-// explícito — la navegación ("light" inactivo), el recibo y el asistente. El
-// peso se cambia UNA vez acá y se propaga a las ~42 llamadas de la app.
-export function Icon({ name, size = 22, className, weight = "fill", ...props }: IconProps) {
+// Sin prop `weight`: Unicons libre tiene un solo estilo (contorno), a
+// diferencia de Phosphor, que traía light/regular/bold/fill/duotone. Los
+// sitios que marcaban el estado activo con "fill" ahora se apoyan en el
+// fondo y el color, que ya llevaban.
+//
+// `color="currentColor"` NO es opcional: Unicons rellena con un gris fijo
+// (#a9a9a9) si no se le dice otra cosa, a diferencia de Phosphor, que hereda
+// currentColor por defecto. Sin esto TODOS los iconos saldrían del mismo gris
+// —el activo blanco de la navegación, los rojos de error, los teal— y las
+// clases text-* de alrededor no pintarían nada.
+export function Icon({ name, size = 22, className, ...props }: IconProps) {
   const Component = icons[name];
-  return <Component size={size} weight={weight} className={className} aria-hidden="true" {...props} />;
+  return (
+    <Component
+      size={size}
+      color="currentColor"
+      className={className}
+      aria-hidden="true"
+      {...props}
+    />
+  );
 }

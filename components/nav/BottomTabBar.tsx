@@ -128,7 +128,7 @@ export function BottomTabBar({
                                   : "bg-tint-brand text-primary-fg group-hover:bg-primary-soft",
                               )}
                             >
-                              <Icon name={r.icon} size={24} weight={active ? "fill" : "light"} />
+                              <Icon name={r.icon} size={24} />
                             </span>
                             <span
                               className={cn(
@@ -173,7 +173,7 @@ export function BottomTabBar({
                       active ? "text-primary-fg" : "text-muted",
                     )}
                   >
-                    <Icon name={r.icon} size={23} weight={active ? "fill" : "light"} />
+                    <Icon name={r.icon} size={23} />
                     {r.shortLabel}
                   </Link>
                 </li>
@@ -192,7 +192,7 @@ export function BottomTabBar({
                       active ? "text-primary-fg" : "text-muted",
                     )}
                   >
-                    <Icon name={r.icon} size={23} weight={active ? "fill" : "light"} />
+                    <Icon name={r.icon} size={23} />
                     {r.shortLabel}
                   </Link>
                 </li>
@@ -207,7 +207,7 @@ export function BottomTabBar({
                   onSecondary ? "text-primary-fg" : "text-muted",
                 )}
               >
-                <Icon name="menu" size={23} weight={onSecondary ? "fill" : "light"} />
+                <Icon name="menu" size={23} />
                 Más
               </button>
             </li>

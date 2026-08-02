@@ -27,7 +27,7 @@ export function Sidebar({ email }: { email: string | null }) {
             : "text-muted hover:bg-surface-sunken hover:text-ink",
         )}
       >
-        <Icon name={r.icon} size={20} weight={active ? "fill" : "light"} />
+        <Icon name={r.icon} size={20} />
         {r.label}
       </Link>
     );

@@ -68,7 +68,7 @@ export function AssistantWidget() {
           aria-label={open ? "Cerrar asistente" : "Abrir asistente"}
           className="relative grid place-items-center size-14 rounded-pill bg-gradient-brand text-white shadow-fab cursor-pointer active:scale-95 transition-transform"
         >
-          <Icon name={open ? "close" : "sparkle"} size={24} weight={open ? "bold" : "fill"} />
+          <Icon name={open ? "close" : "sparkle"} size={24} />
         </button>
       </div>
 
@@ -84,7 +84,7 @@ export function AssistantWidget() {
           >
             <div className="px-4 py-3 border-b border-line flex items-center gap-2">
               <span className="grid place-items-center size-7 rounded-pill bg-gradient-brand text-white shrink-0">
-                <Icon name="sparkle" size={14} weight="fill" />
+                <Icon name="sparkle" size={14} />
               </span>
               <p className="font-bold text-ink text-sm">Asistente de Cachin&apos;</p>
             </div>
