@@ -1,17 +1,12 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidateEverything } from "@/lib/revalidate";
 import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { parseAmount, type ActionResult } from "@/lib/actions-shared";
 import { softDeleteRows, type UndoableResult } from "@/lib/softDelete";
 import type { SubscriptionFrequency } from "@/lib/types";
 
-function revalidateAll() {
-  revalidatePath("/suscripciones");
-  revalidatePath("/dashboard");
-  revalidatePath("/calendario");
-}
 
 function parseFrequency(value: FormDataEntryValue | null): SubscriptionFrequency {
   return String(value ?? "") === "anual" ? "anual" : "mensual";
@@ -44,7 +39,7 @@ export async function addSubscription(formData: FormData): Promise<ActionResult>
   });
   if (error) return { ok: false, error: "No se pudo agregar la suscripción." };
 
-  revalidateAll();
+  revalidateEverything();
   return { ok: true };
 }
 
@@ -72,7 +67,7 @@ export async function updateSubscription(formData: FormData): Promise<ActionResu
     .eq("id", id);
   if (error) return { ok: false, error: "No se pudo actualizar." };
 
-  revalidateAll();
+  revalidateEverything();
   return { ok: true };
 }
 
@@ -82,7 +77,7 @@ export async function deleteSubscription(id: string): Promise<UndoableResult> {
   const res = await softDeleteRows("subscriptions", [id]);
   const error = res.ok ? null : true;
   if (error) return { ok: false, error: "No se pudo eliminar." };
-  revalidateAll();
+  revalidateEverything();
   return { ok: true, undo: res.undo };
 }
 
@@ -94,6 +89,6 @@ export async function toggleSubscriptionActive(id: string, active: boolean): Pro
     .update({ active: !active })
     .eq("id", id);
   if (error) return { ok: false };
-  revalidateAll();
+  revalidateEverything();
   return { ok: true };
 }

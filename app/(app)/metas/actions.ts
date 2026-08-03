@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidateEverything } from "@/lib/revalidate";
 import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { getOrCreateDefaultAccountId } from "@/lib/accounts";
@@ -8,13 +8,6 @@ import { parseAmount, type ActionResult } from "@/lib/actions-shared";
 import { todayISO } from "@/lib/format";
 import { softDeleteRows, type UndoableResult } from "@/lib/softDelete";
 
-function revalidateAll() {
-  revalidatePath("/metas");
-  revalidatePath("/dashboard");
-  revalidatePath("/deudas");
-  revalidatePath("/balance");
-  revalidatePath("/movimientos");
-}
 
 /** R14: vincular una deuda existente a esta meta. El vínculo se crea SIEMPRE
  *  desde la meta (nunca desde la deuda), y a partir de ahí el progreso de la
@@ -25,7 +18,7 @@ export async function linkDebtToGoal(goalId: string, debtId: string): Promise<Ac
   const supabase = await createClient();
   const { error } = await supabase.from("debts").update({ goal_id: goalId }).eq("id", debtId);
   if (error) return { ok: false, error: "No se pudo vincular la deuda." };
-  revalidateAll();
+  revalidateEverything();
   return { ok: true };
 }
 
@@ -37,7 +30,7 @@ export async function unlinkDebtFromGoal(debtId: string): Promise<ActionResult> 
   const supabase = await createClient();
   const { error } = await supabase.from("debts").update({ goal_id: null }).eq("id", debtId);
   if (error) return { ok: false, error: "No se pudo desvincular." };
-  revalidateAll();
+  revalidateEverything();
   return { ok: true };
 }
 
@@ -61,7 +54,7 @@ export async function addGoal(formData: FormData): Promise<ActionResult> {
     deadline,
   });
   if (error) return { ok: false, error: "No se pudo crear la meta." };
-  revalidateAll();
+  revalidateEverything();
   return { ok: true };
 }
 
@@ -82,7 +75,7 @@ export async function updateGoal(formData: FormData): Promise<ActionResult> {
     .update({ name, target_amount: target, deadline })
     .eq("id", id);
   if (error) return { ok: false, error: "No se pudo actualizar." };
-  revalidateAll();
+  revalidateEverything();
   return { ok: true };
 }
 
@@ -134,7 +127,7 @@ export async function addProgress(formData: FormData): Promise<ActionResult> {
   });
   if (error) return { ok: false, error: "No se pudo registrar el aporte." };
 
-  revalidateAll();
+  revalidateEverything();
   return { ok: true };
 }
 
@@ -144,6 +137,6 @@ export async function deleteGoal(id: string): Promise<UndoableResult> {
   const res = await softDeleteRows("goals", [id]);
   const error = res.ok ? null : true;
   if (error) return { ok: false, error: "No se pudo eliminar." };
-  revalidateAll();
+  revalidateEverything();
   return { ok: true, undo: res.undo };
 }

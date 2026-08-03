@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidateEverything } from "@/lib/revalidate";
 import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { getOrCreateDefaultAccountId } from "@/lib/accounts";
@@ -10,16 +10,6 @@ import { NEW_CREDITOR } from "./creditors-shared";
 import type { DebtFrequency, DebtKind } from "@/lib/types";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-function revalidateAll() {
-  revalidatePath("/deudas");
-  // Imprescindible, no de más: pagar la última cuota MUEVE la deuda de
-  // /deudas a /deudas/historial, y reabrirla la trae de vuelta.
-  revalidatePath("/deudas/historial");
-  revalidatePath("/dashboard");
-  revalidatePath("/balance");
-  revalidatePath("/movimientos");
-  revalidatePath("/presupuesto");
-}
 
 /** Registra el pago de una deuda: sale de una cuenta (ledger, para el saldo
  *  real de esa cuenta) Y cuenta como gasto real de la quincena (tabla
@@ -341,7 +331,7 @@ export async function addDebt(formData: FormData): Promise<ActionResult> {
     await creditDisbursement(debt.id, total);
   }
 
-  revalidateAll();
+  revalidateEverything();
   return { ok: true };
 }
 
@@ -396,7 +386,7 @@ export async function updateDebt(formData: FormData): Promise<ActionResult> {
 
   const { error } = await supabase.from("debts").update(patch).eq("id", id);
   if (error) return { ok: false, error: "No se pudo actualizar la deuda." };
-  revalidateAll();
+  revalidateEverything();
   return { ok: true };
 }
 
@@ -450,7 +440,7 @@ export async function addDebtIncrement(formData: FormData): Promise<ActionResult
     }
   }
 
-  revalidateAll();
+  revalidateEverything();
   return { ok: true };
 }
 
@@ -469,7 +459,7 @@ export async function deleteDebtIncrement(id: string): Promise<ActionResult> {
     .eq("source_ref_id", id);
   const { error } = await supabase.from("debt_increments").delete().eq("id", id);
   if (error) return { ok: false, error: "No se pudo eliminar." };
-  revalidateAll();
+  revalidateEverything();
   return { ok: true };
 }
 
@@ -506,7 +496,7 @@ export async function reopenDebt(id: string): Promise<ActionResult> {
     await unpayDebt(supabase, id, null);
   }
 
-  revalidateAll();
+  revalidateEverything();
   return { ok: true };
 }
 
@@ -541,7 +531,7 @@ export async function updateInstallment(formData: FormData): Promise<ActionResul
     .eq("id", id)
     .eq("paid", false);
   if (error) return { ok: false, error: "No se pudo actualizar la cuota." };
-  revalidateAll();
+  revalidateEverything();
   return { ok: true };
 }
 
@@ -585,7 +575,7 @@ export async function toggleInstallment(
     await unpayDebt(supabase, debtId, installmentId);
   }
 
-  revalidateAll();
+  revalidateEverything();
   return { ok: true };
 }
 
@@ -610,7 +600,7 @@ export async function toggleDebtPaid(
     await unpayDebt(supabase, id, null);
   }
 
-  revalidateAll();
+  revalidateEverything();
   return { ok: true };
 }
 
@@ -668,6 +658,6 @@ export async function deleteDebt(id: string): Promise<ActionResult> {
 
   const { error } = await supabase.from("debts").delete().eq("id", id);
   if (error) return { ok: false, error: "No se pudo eliminar la deuda." };
-  revalidateAll();
+  revalidateEverything();
   return { ok: true };
 }

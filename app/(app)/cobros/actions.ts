@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidateEverything } from "@/lib/revalidate";
 import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { getOrCreateDefaultAccountId } from "@/lib/accounts";
@@ -8,13 +8,6 @@ import { parseAmount, type ActionResult } from "@/lib/actions-shared";
 import { parseISODate, toISODate, todayISO } from "@/lib/format";
 import type { DebtFrequency, ReceivableKind } from "@/lib/types";
 import type { SupabaseClient } from "@supabase/supabase-js";
-
-function revalidateAll() {
-  revalidatePath("/cobros");
-  revalidatePath("/dashboard");
-  revalidatePath("/balance");
-  revalidatePath("/movimientos");
-}
 
 /** Registra que te PAGARON: el dinero entra a una cuenta (depósito en el
  *  ledger). Al contrario de un gasto, esto NO va a `expenses` — cobrar no
@@ -249,7 +242,7 @@ export async function addReceivable(formData: FormData): Promise<ActionResult> {
     await debitDisbursement(rec.id, total);
   }
 
-  revalidateAll();
+  revalidateEverything();
   return { ok: true };
 }
 
@@ -291,7 +284,7 @@ export async function updateReceivable(formData: FormData): Promise<ActionResult
     .update({ name, total_amount: total, due_date, note })
     .eq("id", id);
   if (error) return { ok: false, error: "No se pudo actualizar." };
-  revalidateAll();
+  revalidateEverything();
   return { ok: true };
 }
 
@@ -334,7 +327,7 @@ export async function toggleReceivableInstallment(
     await uncollectReceivable(supabase, receivableId, installmentId);
   }
 
-  revalidateAll();
+  revalidateEverything();
   return { ok: true };
 }
 
@@ -360,7 +353,7 @@ export async function toggleReceivableCollected(
     await uncollectReceivable(supabase, id, null);
   }
 
-  revalidateAll();
+  revalidateEverything();
   return { ok: true };
 }
 
@@ -408,6 +401,6 @@ export async function deleteReceivable(id: string): Promise<ActionResult> {
 
   const { error } = await supabase.from("receivables").delete().eq("id", id);
   if (error) return { ok: false, error: "No se pudo eliminar." };
-  revalidateAll();
+  revalidateEverything();
   return { ok: true };
 }

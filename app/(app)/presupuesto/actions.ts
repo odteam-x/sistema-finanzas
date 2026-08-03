@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidateEverything } from "@/lib/revalidate";
 import { after } from "next/server";
 import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
@@ -12,13 +12,6 @@ import { getQuincenaBudgetStatus } from "@/lib/budgetStatus";
 import { sendPushToCurrentUser } from "@/lib/webpush";
 import { formatDOP } from "@/lib/format";
 
-function revalidateAll() {
-  revalidatePath("/presupuesto");
-  revalidatePath("/presupuesto/categorias");
-  revalidatePath("/dashboard");
-  revalidatePath("/balance");
-  revalidatePath("/movimientos");
-}
 
 /** El límite mensual es opcional: un campo vacío guarda NULL (sin límite). */
 function parseOptionalAmount(value: FormDataEntryValue | null): number | null {
@@ -45,7 +38,7 @@ export async function addCategory(formData: FormData): Promise<ActionResult> {
     monthly_limit,
   });
   if (error) return { ok: false, error: "No se pudo agregar." };
-  revalidateAll();
+  revalidateEverything();
   return { ok: true };
 }
 
@@ -66,7 +59,7 @@ export async function updateCategory(formData: FormData): Promise<ActionResult> 
     .update({ name, amount_per_workday: amount, monthly_limit })
     .eq("id", id);
   if (error) return { ok: false, error: "No se pudo actualizar." };
-  revalidateAll();
+  revalidateEverything();
   return { ok: true };
 }
 
@@ -75,7 +68,7 @@ export async function deleteCategory(id: string): Promise<ActionResult> {
   const supabase = await createClient();
   const { error } = await supabase.from("budget_categories").delete().eq("id", id);
   if (error) return { ok: false };
-  revalidateAll();
+  revalidateEverything();
   return { ok: true };
 }
 
@@ -134,7 +127,7 @@ export async function addExpense(formData: FormData): Promise<ActionResult> {
     return { ok: false, error: "No se pudo registrar el gasto en la cuenta." };
   }
 
-  revalidateAll();
+  revalidateEverything();
 
   // Push real (Bloque 12): si ESTE gasto específicamente hizo cruzar el
   // presupuesto de la quincena por 80% o 100%, avisa — "cruzar" se detecta
@@ -182,7 +175,7 @@ export async function deleteExpense(id: string): Promise<UndoableResult> {
   ]);
   if (!expenseRes.ok) return { ok: false, error: "No se pudo eliminar el gasto." };
 
-  revalidateAll();
+  revalidateEverything();
   return {
     ok: true,
     undo: {
@@ -209,7 +202,7 @@ export async function setPeriodOverride(formData: FormData): Promise<ActionResul
     { onConflict: "user_id,period_key" },
   );
   if (error) return { ok: false, error: "No se pudo guardar." };
-  revalidateAll();
+  revalidateEverything();
   return { ok: true };
 }
 
@@ -232,7 +225,7 @@ export async function setCustomBudgetDays(
       .delete()
       .eq("user_id", user.id)
       .eq("period_key", periodKey);
-    revalidateAll();
+    revalidateEverything();
     return { ok: true };
   }
 
@@ -249,7 +242,7 @@ export async function setCustomBudgetDays(
     { onConflict: "user_id,period_key" },
   );
   if (error) return { ok: false, error: "No se pudo guardar." };
-  revalidateAll();
+  revalidateEverything();
   return { ok: true };
 }
 
@@ -262,6 +255,6 @@ export async function clearPeriodOverride(periodKey: string): Promise<ActionResu
     .eq("user_id", user.id)
     .eq("period_key", periodKey);
   if (error) return { ok: false };
-  revalidateAll();
+  revalidateEverything();
   return { ok: true };
 }

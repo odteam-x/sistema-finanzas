@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidateEverything } from "@/lib/revalidate";
 import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import type { ActionResult } from "@/lib/actions-shared";
@@ -33,8 +33,7 @@ export async function assignPersonalCode(formData: FormData): Promise<ActionResu
     .from("user_profile")
     .upsert({ user_id: user.id, personal_code: await encryptPersonalCode(code) });
   if (error) return { ok: false, error: "No se pudo guardar el código." };
-
-  revalidatePath("/configuracion");
+  revalidateEverything();
   return { ok: true };
 }
 
@@ -57,7 +56,7 @@ export async function activatePersonalCode(): Promise<ActionResult> {
   if (error) return { ok: false, error: "No se pudo activar." };
 
   await setCodeCookie(user.id, "ok");
-  revalidatePath("/configuracion");
+  revalidateEverything();
   return { ok: true };
 }
 
@@ -79,7 +78,7 @@ export async function deactivatePersonalCode(formData: FormData): Promise<Action
   // La cookie vieja diría "ok" durante ocho horas más; se tira para que el
   // estado del navegador no sobreviva al cambio.
   await clearCodeCookie();
-  revalidatePath("/configuracion");
+  revalidateEverything();
   return { ok: true };
 }
 

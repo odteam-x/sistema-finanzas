@@ -1,17 +1,10 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidateEverything } from "@/lib/revalidate";
 import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { type ActionResult } from "@/lib/actions-shared";
 import type { CsvDateFormat } from "@/lib/types";
-
-function revalidateAll() {
-  revalidatePath("/movimientos");
-  revalidatePath("/dashboard");
-  revalidatePath("/balance");
-  revalidatePath("/presupuesto");
-}
 
 export async function saveImportProfile(formData: FormData): Promise<ActionResult> {
   const user = await requireUser();
@@ -48,7 +41,7 @@ export async function saveImportProfile(formData: FormData): Promise<ActionResul
     { onConflict: "user_id,name" },
   );
   if (error) return { ok: false, error: "No se pudo guardar el mapeo." };
-  revalidatePath("/movimientos/importar");
+  revalidateEverything();
   return { ok: true };
 }
 
@@ -57,7 +50,7 @@ export async function deleteImportProfile(id: string): Promise<ActionResult> {
   const supabase = await createClient();
   const { error } = await supabase.from("import_profiles").delete().eq("id", id);
   if (error) return { ok: false, error: "No se pudo eliminar." };
-  revalidatePath("/movimientos/importar");
+  revalidateEverything();
   return { ok: true };
 }
 
@@ -151,6 +144,6 @@ export async function confirmImport(accountId: string, rows: ImportRow[]): Promi
   }
 
   if (imported === 0) return { ok: false, error: "No se pudo importar ninguna fila." };
-  revalidateAll();
+  revalidateEverything();
   return { ok: true, count: imported };
 }

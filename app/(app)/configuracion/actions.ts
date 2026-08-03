@@ -1,20 +1,12 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidateEverything } from "@/lib/revalidate";
 import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { parseAmount, type ActionResult } from "@/lib/actions-shared";
 import { softDeleteRows, type UndoableResult } from "@/lib/softDelete";
 import { normalizeKeyword } from "@/lib/categorize";
 
-function revalidateAll() {
-  revalidatePath("/configuracion");
-  revalidatePath("/dashboard");
-  revalidatePath("/ingresos");
-  revalidatePath("/presupuesto");
-  revalidatePath("/suscripciones");
-  revalidatePath("/reportes");
-}
 
 /** El límite mensual es opcional: un campo vacío guarda NULL (sin límite). */
 function parseOptionalAmount(value: FormDataEntryValue | null): number | null {
@@ -32,7 +24,7 @@ export async function saveDisplayName(formData: FormData): Promise<ActionResult>
     .from("user_profile")
     .upsert({ user_id: user.id, display_name });
   if (error) return { ok: false, error: "No se pudo guardar el nombre." };
-  revalidateAll();
+  revalidateEverything();
   return { ok: true };
 }
 
@@ -53,7 +45,7 @@ export async function addTag(formData: FormData): Promise<ActionResult> {
     return { ok: false, error: "Ya tienes una etiqueta con ese nombre." };
   }
   if (error) return { ok: false, error: "No se pudo agregar la etiqueta." };
-  revalidateAll();
+  revalidateEverything();
   return { ok: true };
 }
 
@@ -74,7 +66,7 @@ export async function updateTag(formData: FormData): Promise<ActionResult> {
     return { ok: false, error: "Ya tienes otra etiqueta con ese nombre." };
   }
   if (error) return { ok: false, error: "No se pudo actualizar." };
-  revalidateAll();
+  revalidateEverything();
   return { ok: true };
 }
 
@@ -84,7 +76,7 @@ export async function deleteTag(id: string): Promise<UndoableResult> {
   const res = await softDeleteRows("tags", [id]);
   const error = res.ok ? null : true;
   if (error) return { ok: false, error: "No se pudo eliminar." };
-  revalidateAll();
+  revalidateEverything();
   return { ok: true, undo: res.undo };
 }
 
@@ -109,8 +101,7 @@ export async function setExchangeRate(formData: FormData): Promise<ActionResult>
       { onConflict: "user_id,currency" },
     );
   if (error) return { ok: false, error: "No se pudo guardar la tasa." };
-  revalidateAll();
-  revalidatePath("/balance");
+  revalidateEverything();
   return { ok: true };
 }
 
@@ -135,7 +126,7 @@ export async function addCategorizationRule(formData: FormData): Promise<ActionR
       error: error.code === "23505" ? "Ya existe una regla con esa palabra clave." : "No se pudo agregar la regla.",
     };
   }
-  revalidateAll();
+  revalidateEverything();
   return { ok: true };
 }
 
@@ -144,6 +135,6 @@ export async function deleteCategorizationRule(id: string): Promise<ActionResult
   const supabase = await createClient();
   const { error } = await supabase.from("categorization_rules").delete().eq("id", id);
   if (error) return { ok: false, error: "No se pudo eliminar la regla." };
-  revalidateAll();
+  revalidateEverything();
   return { ok: true };
 }

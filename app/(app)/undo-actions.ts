@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidateEverything } from "@/lib/revalidate";
 import { requireUser } from "@/lib/auth";
 import { restoreRows, type UndoToken } from "@/lib/softDelete";
 import type { ActionResult } from "@/lib/actions-shared";
@@ -13,19 +13,6 @@ export async function undoDelete(token: UndoToken): Promise<ActionResult> {
   await requireUser();
   const ok = await restoreRows(token);
   if (!ok) return { ok: false, error: "No se pudo restaurar." };
-
-  revalidatePath("/dashboard");
-  revalidatePath("/movimientos");
-  revalidatePath("/presupuesto");
-  revalidatePath("/presupuesto/categorias");
-  revalidatePath("/ingresos");
-  revalidatePath("/balance");
-  revalidatePath("/metas");
-  revalidatePath("/deudas");
-  revalidatePath("/deudas/historial");
-  revalidatePath("/cobros");
-  revalidatePath("/suscripciones");
-  revalidatePath("/calendario");
-  revalidatePath("/configuracion");
+  revalidateEverything();
   return { ok: true };
 }

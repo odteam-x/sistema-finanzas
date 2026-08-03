@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidateEverything } from "@/lib/revalidate";
 import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { getOrCreateDefaultAccountId } from "@/lib/accounts";
@@ -28,14 +28,6 @@ function parseCurrency(value: FormDataEntryValue | null): Currency {
   return (CURRENCY_VALUES as string[]).includes(v) ? (v as Currency) : "DOP";
 }
 
-function revalidateAll() {
-  revalidatePath("/balance");
-  revalidatePath("/ingresos");
-  revalidatePath("/presupuesto");
-  revalidatePath("/dashboard");
-  revalidatePath("/metas");
-  revalidatePath("/movimientos");
-}
 
 /** De dónde sale el saldo inicial de una cuenta nueva.
  *  'transfer'  → ese dinero ya estaba en otra cuenta tuya: es una MOVIDA.
@@ -142,7 +134,7 @@ export async function addAccount(formData: FormData): Promise<ActionResult> {
     }
   }
 
-  revalidateAll();
+  revalidateEverything();
   return { ok: true };
 }
 
@@ -195,7 +187,7 @@ export async function updateAccount(formData: FormData): Promise<ActionResult> {
     })
     .eq("id", id);
   if (error) return { ok: false, error: "No se pudo actualizar." };
-  revalidateAll();
+  revalidateEverything();
   return { ok: true };
 }
 
@@ -237,7 +229,7 @@ export async function payCushionQuincena(): Promise<ActionResult> {
     source: "manual",
   });
   if (error) return { ok: false, error: "No se pudo registrar la transferencia." };
-  revalidateAll();
+  revalidateEverything();
   return { ok: true };
 }
 
@@ -295,7 +287,7 @@ export async function deleteAccount(id: string): Promise<ActionResult> {
   // no puede haber transferencias salientes colgando, bloqueadas arriba).
   const { error } = await supabase.from("savings_accounts").delete().eq("id", id);
   if (error) return { ok: false, error: "No se pudo eliminar la cuenta." };
-  revalidateAll();
+  revalidateEverything();
   return { ok: true };
 }
 
@@ -348,7 +340,7 @@ export async function addTransfer(formData: FormData): Promise<ActionResult> {
     source: "manual",
   });
   if (error) return { ok: false, error: "No se pudo registrar la transferencia." };
-  revalidateAll();
+  revalidateEverything();
   return { ok: true };
 }
 
@@ -375,7 +367,7 @@ export async function addMovement(formData: FormData): Promise<ActionResult> {
     note,
   });
   if (error) return { ok: false, error: "No se pudo registrar el movimiento." };
-  revalidateAll();
+  revalidateEverything();
   return { ok: true };
 }
 
@@ -385,6 +377,6 @@ export async function deleteMovement(id: string): Promise<UndoableResult> {
   // "Deshacer" sea instantáneo y no haya que reconstruir nada.
   const res = await softDeleteRows("savings_movements", [id]);
   if (!res.ok) return { ok: false, error: "No se pudo eliminar." };
-  revalidateAll();
+  revalidateEverything();
   return { ok: true, undo: res.undo };
 }

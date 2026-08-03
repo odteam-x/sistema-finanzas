@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidateEverything } from "@/lib/revalidate";
 import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { getOrCreateDefaultAccountId, getOrCreateAccountByType } from "@/lib/accounts";
@@ -9,15 +9,6 @@ import { fixedPayDays } from "@/lib/periods";
 import type { AccountType, PayFrequency } from "@/lib/types";
 
 const PAYMENT_METHODS: AccountType[] = ["efectivo", "banco", "tarjeta_debito", "tarjeta_credito"];
-
-function revalidateAll() {
-  revalidatePath("/ingresos");
-  revalidatePath("/dashboard");
-  revalidatePath("/presupuesto");
-  revalidatePath("/sugerencias");
-  revalidatePath("/balance");
-  revalidatePath("/movimientos");
-}
 
 export async function saveSalarySettings(
   formData: FormData,
@@ -58,7 +49,7 @@ export async function saveSalarySettings(
   });
   if (error) return { ok: false, error: "No se pudo guardar la configuración." };
 
-  revalidateAll();
+  revalidateEverything();
   return { ok: true };
 }
 
@@ -119,7 +110,7 @@ export async function addSalary(formData: FormData): Promise<ActionResult> {
     return { ok: false, error: "No se pudo acreditar el ingreso a la cuenta." };
   }
 
-  revalidateAll();
+  revalidateEverything();
   return { ok: true };
 }
 
@@ -157,7 +148,7 @@ export async function confirmSalary(id: string): Promise<ActionResult> {
     });
   }
 
-  revalidateAll();
+  revalidateEverything();
   return { ok: true };
 }
 
@@ -172,6 +163,6 @@ export async function deleteSalary(id: string): Promise<ActionResult> {
     .eq("source_ref_id", id);
   const { error } = await supabase.from("salaries").delete().eq("id", id);
   if (error) return { ok: false, error: "No se pudo eliminar." };
-  revalidateAll();
+  revalidateEverything();
   return { ok: true };
 }
