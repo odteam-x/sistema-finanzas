@@ -1,6 +1,6 @@
 // Nombre del usuario, guardado en este dispositivo (localStorage).
-// Se usa para personalizar el tono de las respuestas del asistente IA
-// (ver lib/ai/gemini.ts) y saludos dentro de la app.
+// Se usa para el saludo del Inicio (components/ui/HomeHero.tsx) y el
+// formulario de Configuración.
 
 const PROFILE_STORAGE_KEY = "bolsillo-seguro:profile";
 

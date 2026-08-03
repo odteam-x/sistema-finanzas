@@ -9,7 +9,6 @@ import { PersonalizeProvider } from "@/components/theme/PersonalizeContext";
 import { OfflineBanner } from "@/components/OfflineBanner";
 import { PendingSyncBanner } from "@/components/PendingSyncBanner";
 import { ToastProvider } from "@/components/ui/Toast";
-import { AssistantWidget } from "@/components/assistant/AssistantWidget";
 import { AppLockGate } from "@/components/AppLockGate";
 import { StatusBarColor } from "@/components/StatusBarColor";
 
@@ -63,9 +62,6 @@ export default async function AppLayout({
             <div className="print:hidden">
               <BottomTabBar email={email} fab={<QuickAddFab accounts={accounts} />} />
             </div>
-          </div>
-          <div className="print:hidden">
-            <AssistantWidget />
           </div>
         </AppLockGate>
       </ToastProvider>
