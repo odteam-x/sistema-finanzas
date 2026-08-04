@@ -7,15 +7,8 @@
 import { requireUser } from "./auth";
 import { createClient } from "./supabase/server";
 import { getOrCreateDefaultAccountId } from "./accounts";
-import { parseISODate, toISODate, todayISO } from "./format";
-import type { SubscriptionFrequency } from "./types";
-
-function stepDate(iso: string, freq: SubscriptionFrequency): string {
-  const d = parseISODate(iso);
-  if (freq === "mensual") d.setMonth(d.getMonth() + 1);
-  else d.setFullYear(d.getFullYear() + 1);
-  return toISODate(d);
-}
+import { todayISO } from "./format";
+import { stepChargeDate } from "./subscriptionDates";
 
 /**
  * Genera gastos retroactivos para suscripciones activas con
@@ -32,6 +25,10 @@ export async function runSubscriptionCatchUp(): Promise<void> {
   const { data: due } = await supabase
     .from("subscriptions")
     .select("*")
+    // `deleted_at` faltaba: una suscripción borrada (borrado suave, R15)
+    // seguía generando cargos cada vez que alguien abría Inicio, aunque ya no
+    // apareciera en ninguna lista. getSubscriptions sí lo filtraba.
+    .is("deleted_at", null)
     .eq("active", true)
     .lte("next_charge_date", today);
   if (!due || due.length === 0) return;
@@ -39,7 +36,7 @@ export async function runSubscriptionCatchUp(): Promise<void> {
   for (const sub of due) {
     let cursor = sub.next_charge_date as string;
     while (cursor <= today) {
-      const nextCursor = stepDate(cursor, sub.frequency);
+      const nextCursor = stepChargeDate(cursor, sub.frequency);
 
       const { data: updated } = await supabase
         .from("subscriptions")

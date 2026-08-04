@@ -47,6 +47,8 @@ declare module "@iconscout/react-unicons" {
   export const UilLock: Unicon;
   export const UilMoon: Unicon;
   export const UilPalette: Unicon;
+  export const UilPause: Unicon;
+  export const UilPlay: Unicon;
   export const UilPlus: Unicon;
   export const UilRepeat: Unicon;
   export const UilSearch: Unicon;

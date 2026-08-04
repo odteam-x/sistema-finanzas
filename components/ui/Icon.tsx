@@ -48,6 +48,8 @@ import {
   UilLock,
   UilMoon,
   UilPalette,
+  UilPause,
+  UilPlay,
   UilPlus,
   UilRepeat,
   UilSearch,
@@ -104,7 +106,10 @@ export type IconName =
   | "lock"
   | "fingerprint"
   // Avisos de "revisa tu correo" del registro y la recuperación de contraseña.
-  | "mail";
+  | "mail"
+  // Pausar / reanudar una suscripcion (21.1).
+  | "pause"
+  | "play";
 
 const icons: Record<IconName, (props: UniconProps) => React.ReactElement> = {
   dashboard: UilEstate,
@@ -152,6 +157,8 @@ const icons: Record<IconName, (props: UniconProps) => React.ReactElement> = {
   // el candado, que al menos comunica "seguridad" en el mismo contexto.
   fingerprint: UilLock,
   mail: UilEnvelope,
+  pause: UilPause,
+  play: UilPlay,
 };
 
 interface IconProps {

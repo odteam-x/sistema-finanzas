@@ -5,6 +5,8 @@ import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { parseAmount, type ActionResult } from "@/lib/actions-shared";
 import { softDeleteRows, type UndoableResult } from "@/lib/softDelete";
+import { todayISO } from "@/lib/format";
+import { nextFutureChargeDate } from "@/lib/subscriptionDates";
 import type { SubscriptionFrequency } from "@/lib/types";
 
 
@@ -81,14 +83,49 @@ export async function deleteSubscription(id: string): Promise<UndoableResult> {
   return { ok: true, undo: res.undo };
 }
 
-export async function toggleSubscriptionActive(id: string, active: boolean): Promise<ActionResult> {
+/** Pausa o reanuda una suscripción. `active` es el estado DESEADO — antes
+ *  recibía el actual y lo invertía por dentro, que se presta a error; como no
+ *  la llamaba nadie todavía, este es el momento de arreglarlo.
+ *
+ *  Pausar solo apaga la bandera: runSubscriptionCatchUp ya filtra por
+ *  `active`, así que mientras esté pausada no genera nada.
+ *
+ *  Reanudar es lo delicado. El catch-up recorre `while (cursor <= today)`
+ *  generando un gasto por CADA período vencido, así que reactivar una
+ *  mensual que llevaba un año pausada dispararía doce gastos y doce retiros
+ *  de golpe — cobros que nunca ocurrieron, justamente porque estuvo pausada.
+ *  Por eso al reanudar se adelanta `next_charge_date` a la próxima fecha
+ *  realmente futura: se retoma el cobro de aquí en adelante, sin cobrar el
+ *  tiempo en que no estuvo activa. */
+export async function toggleSubscriptionActive(
+  id: string,
+  active: boolean,
+): Promise<ActionResult> {
   await requireUser();
   const supabase = await createClient();
+
+  if (!active) {
+    const { error } = await supabase.from("subscriptions").update({ active: false }).eq("id", id);
+    if (error) return { ok: false, error: "No se pudo pausar." };
+    revalidateEverything();
+    return { ok: true };
+  }
+
+  const { data: sub } = await supabase
+    .from("subscriptions")
+    .select("next_charge_date, frequency")
+    .eq("id", id)
+    .maybeSingle();
+  if (!sub) return { ok: false, error: "No se encontró la suscripción." };
+
   const { error } = await supabase
     .from("subscriptions")
-    .update({ active: !active })
+    .update({
+      active: true,
+      next_charge_date: nextFutureChargeDate(sub.next_charge_date, sub.frequency, todayISO()),
+    })
     .eq("id", id);
-  if (error) return { ok: false };
+  if (error) return { ok: false, error: "No se pudo reanudar." };
   revalidateEverything();
   return { ok: true };
 }

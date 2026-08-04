@@ -14,6 +14,7 @@ import { MoneyValue } from "@/components/ui/MoneyValue";
 import { Money } from "@/components/ui/Money";
 import { deleteSubscription, updateSubscription } from "./actions";
 import { NewSubscriptionForm } from "./NewSubscriptionForm";
+import { SubscriptionPauseButton } from "./SubscriptionPauseButton";
 import { undoDelete } from "../undo-actions";
 
 export const metadata = { title: "Suscripciones · Cachin'" };
@@ -74,12 +75,19 @@ export default async function SuscripcionesPage() {
                     <Money value={Number(s.amount)} />
                   </p>
                   <p className="text-xs text-muted">
-                    Próximo cobro: {formatDateShort(s.next_charge_date)}
+                    {s.active
+                      ? `Próximo cobro: ${formatDateShort(s.next_charge_date)}`
+                      : "Pausada — no genera cobros"}
                   </p>
                 </div>
+                {/* El estado pausado solo se distinguía por un opacity-60, que
+                    es invisible si no tienes otra tarjeta al lado para
+                    comparar. El badge lo dice. */}
+                {!s.active && <Badge tone="warning">Pausada</Badge>}
                 <Badge tone={s.frequency === "anual" ? "info" : "neutral"}>
                   {s.frequency === "anual" ? "Anual" : "Mensual"}
                 </Badge>
+                <SubscriptionPauseButton id={s.id} active={s.active} name={s.name} />
                 <FormModal
                   title="Editar suscripción"
                   action={updateSubscription}
