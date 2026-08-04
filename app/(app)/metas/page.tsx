@@ -14,6 +14,7 @@ import { goalProgress } from "@/lib/goals";
 import { formatDateShort, clampPct, todayISO, daysBetween } from "@/lib/format";
 import { quincenasUntil } from "@/lib/periods";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { SectionHead } from "@/components/ui/SectionHead";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ProgressBar } from "@/components/ui/ProgressBar";
@@ -151,12 +152,10 @@ export default async function MetasPage() {
       )}
 
       {/* Ahorro general: guardar dinero sin atarlo a una meta específica. */}
-      <div className="flex items-center justify-between px-1 mb-2">
-        <h2 className="text-sm font-bold text-ink">Ahorro general</h2>
-        {generalSavings.length > 0 && (
-          <NewAccountForm accounts={accounts} variant="ahorro" trigger="pill" triggerLabel="Nueva cuenta" />
-        )}
-      </div>
+      <SectionHead
+        title="Ahorro general"
+        action={generalSavings.length > 0 ? <NewAccountForm accounts={accounts} variant="ahorro" trigger="pill" triggerLabel="Nueva cuenta" /> : undefined}
+      />
       {generalSavings.length === 0 ? (
         <Card className="mb-4 flex items-center gap-3">
           <IconBubble icon="piggy" tone="brand" />
@@ -246,7 +245,7 @@ export default async function MetasPage() {
         </div>
       )}
 
-      <h2 className="text-sm font-bold text-ink px-1 mb-2">Tus metas</h2>
+      <SectionHead title="Tus metas" />
 
       {goals.length === 0 ? (
         <EmptyState

@@ -11,6 +11,7 @@ import { balanceOfAccount } from "@/lib/balances";
 import { formatMoneyIn, ratesMap, toDOP } from "@/lib/currency";
 import { formatDateShort, todayISO } from "@/lib/format";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { SectionHead } from "@/components/ui/SectionHead";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Badge } from "@/components/ui/Badge";
@@ -366,7 +367,7 @@ export default async function BalancePage() {
       {/* Movimientos recientes */}
       {recentMovements.length > 0 && (
         <>
-          <h2 className="text-sm font-bold text-ink px-1 mb-2">Movimientos recientes</h2>
+          <SectionHead title="Movimientos recientes" />
           <ul className="flex flex-col gap-2">
             {recentMovements.map((m) => {
               const isDep = m.kind === "deposito";

@@ -95,7 +95,7 @@ export function InstallmentRow({
       >
         <span
           className={cn(
-            "grid place-items-center size-6 rounded-md border-2 shrink-0 transition-colors",
+            "grid place-items-center size-6 rounded-tile border-2 shrink-0 transition-colors",
             i.paid
               ? "bg-primary border-primary text-white"
               : "border-line-strong text-transparent",
@@ -176,7 +176,7 @@ export function DebtPaidToggle({
       >
         <span
           className={cn(
-            "grid place-items-center size-6 rounded-md border-2 shrink-0 transition-colors",
+            "grid place-items-center size-6 rounded-tile border-2 shrink-0 transition-colors",
             paid ? "bg-primary border-primary text-white" : "border-line-strong text-transparent",
           )}
         >

@@ -8,6 +8,7 @@ import { formatDateShort, daysBetween, clampPct } from "@/lib/format";
 import { greetingContext } from "@/lib/greetingContext";
 import { orderHomeSections, type HomeSection } from "@/lib/sectionOrder";
 import { HomeHero } from "@/components/ui/HomeHero";
+import { SectionHead } from "@/components/ui/SectionHead";
 import { PendingSalaryNotice } from "@/components/ui/PendingSalaryNotice";
 import { Card } from "@/components/ui/Card";
 import { CollapsibleCard } from "@/components/ui/CollapsibleCard";
@@ -51,28 +52,6 @@ function commitmentSub(days: number): string {
   if (days === 0) return "Hoy";
   if (days === 1) return "Mañana";
   return `En ${days} días`;
-}
-
-/** Encabezado de sección: separa por espacio, no por línea. */
-function SectionHead({
-  title,
-  href,
-  linkLabel,
-}: {
-  title: string;
-  href?: string;
-  linkLabel?: string;
-}) {
-  return (
-    <div className="flex items-center justify-between gap-3 px-1 mb-2.5">
-      <h2 className="text-sm font-bold text-ink">{title}</h2>
-      {href && (
-        <Link href={href} className="text-sm font-semibold text-primary-fg shrink-0">
-          {linkLabel}
-        </Link>
-      )}
-    </div>
-  );
 }
 
 export default async function DashboardPage() {
@@ -302,7 +281,18 @@ function MovimientosSection({ s }: { s: Summary }) {
       <SectionHead title="Últimos movimientos" href="/movimientos" linkLabel="Ver todos" />
       <Card>
         {s.recentMovements.length === 0 ? (
-          <p className="text-sm text-muted">Aún no has registrado movimientos.</p>
+          /* Antes era un <p> suelto, el único vacío escrito a mano frente a los
+             13 que usan EmptyState. Y no ofrecía salida: decía que no había
+             nada sin decir cómo empezar. */
+          <div className="flex items-center gap-3">
+            <IconBubble icon="movements" tone="neutral" />
+            <div className="min-w-0 flex-1">
+              <p className="text-sm text-muted">Aún no has registrado movimientos.</p>
+              <Link href="/movimientos" className="text-sm font-semibold text-primary-fg">
+                Registrar el primero
+              </Link>
+            </div>
+          </div>
         ) : (
           <ul className="flex flex-col gap-3.5">
             {s.recentMovements.map((m) => {

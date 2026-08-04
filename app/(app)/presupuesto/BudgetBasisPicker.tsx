@@ -185,7 +185,7 @@ export function BudgetBasisPicker({
                     key={iso}
                     onClick={() => toggleDay(iso)}
                     className={cn(
-                      "aspect-square rounded-xl text-xs font-semibold transition-colors cursor-pointer",
+                      "aspect-square rounded-tile text-xs font-semibold transition-colors cursor-pointer",
                       on ? "bg-primary text-white" : "bg-surface-sunken text-muted hover:bg-surface-sunken",
                     )}
                   >

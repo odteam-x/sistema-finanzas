@@ -8,6 +8,7 @@ import {
 } from "@/lib/data";
 import { todayISO, toISODate, clampPct } from "@/lib/format";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { SectionHead } from "@/components/ui/SectionHead";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ProgressBar } from "@/components/ui/ProgressBar";
@@ -174,10 +175,12 @@ export default async function ConfiguracionPage() {
         <DisplayNameForm initialName={profile?.display_name ?? ""} />
       </Card>
 
-      <div id="etiquetas" className="flex items-center justify-between px-1 mb-2 scroll-mt-24">
-        <h2 className="text-sm font-bold text-ink">Etiquetas</h2>
-        <NewTagForm triggerLabel="Nueva" trigger="link" triggerIcon="plus" />
-      </div>
+      <SectionHead
+        id="etiquetas"
+        className="scroll-mt-24"
+        title="Etiquetas"
+        action={<NewTagForm triggerLabel="Nueva" trigger="link" triggerIcon="plus" />}
+      />
 
       {tags.length === 0 ? (
         <EmptyState
@@ -257,13 +260,13 @@ export default async function ConfiguracionPage() {
 
       {tags.length > 0 && (
         <>
-          <div id="reglas" className="flex items-center justify-between px-1 mb-2 mt-6 scroll-mt-24">
-            <div>
-              <h2 className="text-sm font-bold text-ink">Reglas de categorización</h2>
-              <p className="text-xs text-muted">Categoriza gastos solos según su nota.</p>
-            </div>
-            <NewRuleForm tags={tags} triggerLabel="Nueva" trigger="link" triggerIcon="plus" />
-          </div>
+          <SectionHead
+            id="reglas"
+            className="mt-6 scroll-mt-24"
+            title="Reglas de categorización"
+            subtitle="Categoriza gastos solos según su nota."
+            action={<NewRuleForm tags={tags} triggerLabel="Nueva" trigger="link" triggerIcon="plus" />}
+          />
 
           {rules.length === 0 ? (
             <EmptyState

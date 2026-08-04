@@ -3,6 +3,7 @@ import { getSavingsAccounts, getTags } from "@/lib/data";
 import { todayISO } from "@/lib/format";
 import type { TipSituation } from "@/lib/tips";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { SectionHead } from "@/components/ui/SectionHead";
 import { Card } from "@/components/ui/Card";
 import { IconBubble } from "@/components/ui/IconBubble";
 import { Money } from "@/components/ui/Money";
@@ -51,7 +52,7 @@ export default async function SugerenciasPage() {
           con un solo tap; nunca se registra sola. */}
       {s.subscriptionCandidates.length > 0 && (
         <>
-          <h2 className="text-sm font-bold text-ink px-1 mb-2">Posibles suscripciones</h2>
+          <SectionHead title="Posibles suscripciones" />
           <div className="flex flex-col gap-2 mb-6">
             {s.subscriptionCandidates.map((c, i) => (
               <Card key={i} className="flex items-center gap-3">
@@ -78,7 +79,7 @@ export default async function SugerenciasPage() {
       )}
 
       {/* Alertas personalizadas */}
-      <h2 className="text-sm font-bold text-ink px-1 mb-2">Para ti ahora</h2>
+      <SectionHead title="Para ti ahora" />
       {s.alerts.length === 0 ? (
         <Card className="mb-6 flex items-center gap-3">
           <IconBubble icon="check" tone="brand" />
@@ -106,7 +107,7 @@ export default async function SugerenciasPage() {
 
       {/* Tips generales: colapsados por defecto, no compiten con "Para ti
           ahora" (lo único que de verdad cambia según tus datos). */}
-      <h2 className="text-sm font-bold text-ink px-1 mb-2">Aprender</h2>
+      <SectionHead title="Aprender" />
       <TipsList situation={situation} />
 
       <p className="text-xs text-muted text-center mt-6 px-4">

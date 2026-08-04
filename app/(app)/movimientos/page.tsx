@@ -232,7 +232,7 @@ export default async function MovimientosPage({
               cifra dominante. Ahora manda, y los dos totales que lo componen
               quedan debajo, más chicos. */}
           {(stats?.cantidad ?? visible.length) > 0 && (
-            <section className="mb-5">
+            <section className="mb-6">
               <StatTile
                 emphasis="hero"
                 // El label dice SOBRE QUÉ se calculó: "Neto · todo" no decía

@@ -15,6 +15,7 @@ import { resolveBudgetBasis } from "@/lib/budgetDays";
 import { quincenaForDate } from "@/lib/periods";
 import { groupByDate } from "@/lib/group";
 import { SearchBar } from "@/components/ui/SearchBar";
+import { SectionHead } from "@/components/ui/SectionHead";
 import { BudgetBasisPicker } from "./BudgetBasisPicker";
 import { DailySpendCalculator } from "./DailySpendCalculator";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -195,7 +196,7 @@ export default async function PresupuestoPage({
       {/* El DATO antes que la herramienta: el anillo gastado-vs-presupuesto
           es la cifra dominante de la pantalla, y estaba por debajo de una
           calculadora que no lee ni escribe nada del presupuesto. */}
-      <section className="mb-5">
+      <section className="mb-6">
         <Card>
           <div className="flex items-start justify-between gap-2">
             <BudgetRing spent={realQuincena} budget={estQuincena} />
@@ -339,9 +340,7 @@ export default async function PresupuestoPage({
       )}
 
       {/* Gastos reales */}
-      <div className="px-1 mb-2.5">
-        <h2 className="text-sm font-bold text-ink">Gastos reales de la quincena</h2>
-      </div>
+      <SectionHead title="Gastos reales de la quincena" />
 
       {expenses.length > 0 && (
         <div className="flex flex-col gap-2.5 mb-3">

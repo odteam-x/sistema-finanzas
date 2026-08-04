@@ -5,6 +5,7 @@ import { monthPeriods, type PeriodDays } from "@/lib/periods";
 import { getPeriodDays } from "@/lib/periodConfig";
 import { cn } from "@/lib/cn";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { SectionHead } from "@/components/ui/SectionHead";
 import { buttonClasses } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { StatTile } from "@/components/ui/StatTile";
@@ -344,7 +345,7 @@ export default async function ReportesPage({
           </div>
 
           <section className="mb-6 print:break-inside-avoid">
-            <h2 className="text-sm font-bold text-ink px-1 mb-2.5">Gasto total por período</h2>
+            <SectionHead title="Gasto total por período" />
             <Card>
               <BarCompare bars={bars} />
             </Card>
@@ -358,7 +359,7 @@ export default async function ReportesPage({
               vería vacía sin explicar por qué. */}
           {hasIncomeHistory && (
             <section className="mb-6 print:break-inside-avoid">
-              <h2 className="text-sm font-bold text-ink px-1 mb-2.5">Ingresos vs. gastos</h2>
+              <SectionHead title="Ingresos vs. gastos" />
               <Card>
                 {/* Leyenda arriba y separada por espacio, no por una línea
                     debajo del gráfico: se lee ANTES de mirar las barras, que
@@ -407,7 +408,7 @@ export default async function ReportesPage({
 
           {donutData.length > 0 && (
             <section className="print:break-inside-avoid">
-              <h2 className="text-sm font-bold text-ink px-1 mb-2.5">Distribución de este período</h2>
+              <SectionHead title="Distribución de este período" />
               <Card>
                 <DonutChart data={donutData} centerLabel="Este período" />
               </Card>

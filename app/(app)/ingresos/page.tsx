@@ -11,6 +11,7 @@ import { nextPayDateFrom, fixedPayDays } from "@/lib/periods";
 import { groupByDate } from "@/lib/group";
 import { RANGE_LABEL, parseRangePreset, rangeBounds, type RangePreset } from "@/lib/range";
 import { SearchBar } from "@/components/ui/SearchBar";
+import { SectionHead } from "@/components/ui/SectionHead";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { StatTile } from "@/components/ui/StatTile";
@@ -351,27 +352,29 @@ export default async function IngresosPage({
       </Card>
 
       {/* Historial */}
-      <div className="flex items-center justify-between px-1 mb-2">
-        <h2 className="text-sm font-bold text-ink">Historial de ingresos</h2>
-        {tags.length > 0 && salaries.length > 0 && (
-          <DropdownMenu>
-            <DropdownMenuTrigger className="card inline-flex items-center gap-1.5 rounded-tile px-3 py-1.5 text-xs font-semibold text-ink cursor-pointer">
-              <Icon name="chevronDown" size={12} />
-              {tagFilter ? (tags.find((t) => t.id === tagFilter)?.name ?? "Filtrar") : "Todos"}
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem asChild>
-                <Link href={hrefFor({ tag: undefined })}>Todos</Link>
-              </DropdownMenuItem>
-              {tags.map((t) => (
-                <DropdownMenuItem key={t.id} asChild>
-                  <Link href={hrefFor({ tag: t.id })}>{t.name}</Link>
+      <SectionHead
+        title="Historial de ingresos"
+        action={
+          tags.length > 0 && salaries.length > 0 ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger className="card inline-flex items-center gap-1.5 rounded-tile px-3 py-1.5 text-xs font-semibold text-ink cursor-pointer">
+                <Icon name="chevronDown" size={12} />
+                {tagFilter ? (tags.find((t) => t.id === tagFilter)?.name ?? "Filtrar") : "Todos"}
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem asChild>
+                  <Link href={hrefFor({ tag: undefined })}>Todos</Link>
                 </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
-      </div>
+                {tags.map((t) => (
+                  <DropdownMenuItem key={t.id} asChild>
+                    <Link href={hrefFor({ tag: t.id })}>{t.name}</Link>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : undefined
+        }
+      />
 
       {salaries.length > 0 && (
         <div className="flex flex-col gap-2 mb-3">
@@ -382,7 +385,7 @@ export default async function IngresosPage({
                 <Link
                   key={r}
                   href={hrefFor({ range: r })}
-                  className={`rounded-xl px-2.5 py-1 text-xs font-semibold transition-colors ${
+                  className={`rounded-tile px-2.5 py-1 text-xs font-semibold transition-colors ${
                     r === range ? "bg-primary text-on-brand" : "text-muted"
                   }`}
                 >

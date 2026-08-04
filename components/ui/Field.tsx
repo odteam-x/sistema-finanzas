@@ -165,7 +165,7 @@ export function Select({
                 key={opt.sentinel}
                 value={opt.sentinel}
                 disabled={opt.disabled}
-                className="relative flex items-center rounded-xl px-3 py-2.5 text-sm text-ink cursor-pointer outline-none select-none data-[highlighted]:bg-primary-soft data-[state=checked]:font-semibold"
+                className="relative flex items-center rounded-tile px-3 py-2.5 text-sm text-ink cursor-pointer outline-none select-none data-[highlighted]:bg-primary-soft data-[state=checked]:font-semibold"
               >
                 <SelectPrimitive.ItemText>{opt.label}</SelectPrimitive.ItemText>
               </SelectPrimitive.Item>

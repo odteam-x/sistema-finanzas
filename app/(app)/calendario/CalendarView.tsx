@@ -123,7 +123,7 @@ export function CalendarView({ year, month, exceptions, events, today }: Props) 
                   key={di}
                   onClick={() => setSelected(iso)}
                   className={cn(
-                    "relative aspect-square rounded-xl flex items-center justify-center text-sm font-semibold transition-[filter,transform] cursor-pointer hover:brightness-95 active:scale-90",
+                    "relative aspect-square rounded-tile flex items-center justify-center text-sm font-semibold transition-[filter,transform] cursor-pointer hover:brightness-95 active:scale-90",
                     isOverride ? "bg-primary text-white" : cellStyle[status],
                     isToday && "ring-2 ring-primary ring-offset-1 ring-offset-transparent",
                   )}
@@ -237,7 +237,7 @@ function Legend({
 }) {
   return (
     <span className="inline-flex items-center gap-1.5">
-      <span className={cn(dot ? "size-2 rounded-pill" : "size-3 rounded-md", className)} />
+      <span className={cn(dot ? "size-2 rounded-pill" : "size-3 rounded-pill", className)} />
       {label}
     </span>
   );
