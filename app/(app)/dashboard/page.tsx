@@ -1,10 +1,12 @@
+import { Fragment } from "react";
 import Link from "next/link";
-import { getFinanceSummary } from "@/lib/summary";
+import { getFinanceSummary, type FinanceSummary } from "@/lib/summary";
 import { getUserProfile } from "@/lib/data";
 import { runSubscriptionCatchUp } from "@/lib/subscriptions";
 import { runSalaryCatchUp } from "@/lib/salary";
 import { formatDateShort, daysBetween, clampPct } from "@/lib/format";
 import { greetingContext } from "@/lib/greetingContext";
+import { orderHomeSections, type HomeSection } from "@/lib/sectionOrder";
 import { HomeHero } from "@/components/ui/HomeHero";
 import { PendingSalaryNotice } from "@/components/ui/PendingSalaryNotice";
 import { Card } from "@/components/ui/Card";
@@ -23,6 +25,11 @@ import { NotificationTrigger, type NotificationCandidate } from "@/components/No
 import { cn } from "@/lib/cn";
 
 export const metadata = { title: "Inicio · Cachin'" };
+
+/** Alias local: cada sección movible recibe el resumen entero en vez de una
+ *  lista de props sueltas, porque cada una usa un puñado distinto de campos y
+ *  enumerarlos solo duplicaría la forma de FinanceSummary. */
+type Summary = FinanceSummary;
 
 const alertTone: Record<string, string> = {
   warning: "text-warning",
@@ -90,8 +97,19 @@ export default async function DashboardPage() {
     daysLeftInQuincena,
   });
 
-  const budgetPct = clampPct(s.realQuincena, s.estQuincena || 1);
-  const overBudget = s.realQuincena > s.estQuincena && s.estQuincena > 0;
+  // Qué sección de abajo reclama atención hoy (ver lib/sectionOrder.ts).
+  const sectionOrder = orderHomeSections({
+    budgetPct: s.estQuincena > 0 ? (s.realQuincena / s.estQuincena) * 100 : null,
+    daysToNextCommitment:
+      s.upcomingCommitments.length > 0 ? daysBetween(s.today, s.upcomingCommitments[0].date) : null,
+    goalsPct: s.totalTarget > 0 ? (s.totalSaved / s.totalTarget) * 100 : null,
+  });
+  const sections: Record<HomeSection, React.ReactNode> = {
+    compromisos: <CompromisosSection s={s} />,
+    movimientos: <MovimientosSection s={s} />,
+    gastos: <GastosSection s={s} />,
+    ahorros: <AhorrosSection s={s} />,
+  };
 
   // Proporción real entre lo ahorrado y lo adeudado, sobre su propia suma —
   // no un porcentaje inventado. Con ambos en 0 no hay nada que proporcionar,
@@ -224,6 +242,21 @@ export default async function DashboardPage() {
         </div>
       </section>
 
+      {/* Las cuatro secciones de abajo se pintan en el orden que decide
+          lib/sectionOrder.ts según lo que reclame atención hoy. Alertas y
+          "Tu situación" se quedan arriba pase lo que pase: son las dos
+          primeras lecturas de la pantalla, y mover eso cambiaría dónde
+          miras al abrir la app. */}
+      {sectionOrder.map((key) => (
+        <Fragment key={key}>{sections[key]}</Fragment>
+      ))}
+    </>
+  );
+}
+
+function CompromisosSection({ s }: { s: Summary }) {
+  return (
+    <>
       {/* Compromisos próximos: colapsado — el próximo pago y la próxima deuda
           ya están arriba; esto es el detalle completo (incluye
           suscripciones), no la primera lectura de la pantalla. */}
@@ -259,79 +292,96 @@ export default async function DashboardPage() {
           </CollapsibleCard>
         </section>
       )}
+    </>
+  );
+}
 
-      <section className="mb-6">
-        <SectionHead title="Últimos movimientos" href="/movimientos" linkLabel="Ver todos" />
-        <Card>
-          {s.recentMovements.length === 0 ? (
-            <p className="text-sm text-muted">Aún no has registrado movimientos.</p>
-          ) : (
-            <ul className="flex flex-col gap-3.5">
-              {s.recentMovements.map((m) => {
-                const isDep = m.kind === "deposito";
-                return (
-                  <li key={m.id} className="flex items-center gap-3">
-                    <IconBubble
-                      icon={isDep ? "arrowDownLeft" : "arrowUpRight"}
-                      tone={isDep ? "income" : "expense"}
-                      size="sm"
-                    />
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-semibold text-ink truncate">
-                        {m.note ?? (isDep ? "Ingreso" : "Gasto")}
-                      </p>
-                      <p className="text-xs text-muted">{formatDateShort(m.date)}</p>
-                    </div>
-                    {/* El monto es lo que se escanea en una lista de dinero:
-                        a la derecha, en negrita y tabular, con el color que
-                        dice la dirección sin tener que leer el signo. */}
-                    <p
-                      className={cn(
-                        "text-sm font-bold tabular shrink-0",
-                        isDep ? "text-income" : "text-expense",
-                      )}
-                    >
-                      {isDep ? "+" : "−"}
-                      <Money value={Number(m.amount)} />
+function MovimientosSection({ s }: { s: Summary }) {
+  return (
+    <section className="mb-6">
+      <SectionHead title="Últimos movimientos" href="/movimientos" linkLabel="Ver todos" />
+      <Card>
+        {s.recentMovements.length === 0 ? (
+          <p className="text-sm text-muted">Aún no has registrado movimientos.</p>
+        ) : (
+          <ul className="flex flex-col gap-3.5">
+            {s.recentMovements.map((m) => {
+              const isDep = m.kind === "deposito";
+              return (
+                <li key={m.id} className="flex items-center gap-3">
+                  <IconBubble
+                    icon={isDep ? "arrowDownLeft" : "arrowUpRight"}
+                    tone={isDep ? "income" : "expense"}
+                    size="sm"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-ink truncate">
+                      {m.note ?? (isDep ? "Ingreso" : "Gasto")}
                     </p>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </Card>
-      </section>
+                    <p className="text-xs text-muted">{formatDateShort(m.date)}</p>
+                  </div>
+                  {/* El monto es lo que se escanea en una lista de dinero:
+                      a la derecha, en negrita y tabular, con el color que
+                      dice la dirección sin tener que leer el signo. */}
+                  <p
+                    className={cn(
+                      "text-sm font-bold tabular shrink-0",
+                      isDep ? "text-income" : "text-expense",
+                    )}
+                  >
+                    {isDep ? "+" : "−"}
+                    <Money value={Number(m.amount)} />
+                  </p>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </Card>
+    </section>
+  );
+}
 
-      <section className="mb-6">
-        <SectionHead title="Gastos de la quincena" href="/presupuesto" linkLabel="Ver" />
-        <Card>
-          <div className="mb-5">
-            <div className="flex items-end justify-between gap-3 mb-2">
-              <span className="text-sm text-muted">
-                Gastado{" "}
-                <span className={cn("font-bold tabular", overBudget ? "text-expense" : "text-ink")}>
-                  <Money value={s.realQuincena} decimals={false} />
-                </span>
+function GastosSection({ s }: { s: Summary }) {
+  const budgetPct = clampPct(s.realQuincena, s.estQuincena || 1);
+  const overBudget = s.realQuincena > s.estQuincena && s.estQuincena > 0;
+
+  return (
+    <section className="mb-6">
+      <SectionHead title="Gastos de la quincena" href="/presupuesto" linkLabel="Ver" />
+      <Card>
+        <div className="mb-5">
+          <div className="flex items-end justify-between gap-3 mb-2">
+            <span className="text-sm text-muted">
+              Gastado{" "}
+              <span className={cn("font-bold tabular", overBudget ? "text-expense" : "text-ink")}>
+                <Money value={s.realQuincena} decimals={false} />
               </span>
-              <span className="text-sm text-muted">
-                de{" "}
-                <span className="font-bold text-ink tabular">
-                  <Money value={s.estQuincena} decimals={false} />
-                </span>
+            </span>
+            <span className="text-sm text-muted">
+              de{" "}
+              <span className="font-bold text-ink tabular">
+                <Money value={s.estQuincena} decimals={false} />
               </span>
-            </div>
-            <ProgressBar value={budgetPct} tone={overBudget ? "danger" : "primary"} />
+            </span>
           </div>
-          <BarCompare
-            bars={[
-              { name: "Ingreso quincenal", value: s.ingresoQuincena, tone: "income" },
-              { name: "Presupuesto gastos", value: s.estQuincena, tone: "accent" },
-              { name: "Cuotas del periodo", value: s.cuotasPeriodo, tone: "warning" },
-            ]}
-          />
-        </Card>
-      </section>
+          <ProgressBar value={budgetPct} tone={overBudget ? "danger" : "primary"} />
+        </div>
+        <BarCompare
+          bars={[
+            { name: "Ingreso quincenal", value: s.ingresoQuincena, tone: "income" },
+            { name: "Presupuesto gastos", value: s.estQuincena, tone: "accent" },
+            { name: "Cuotas del periodo", value: s.cuotasPeriodo, tone: "warning" },
+          ]}
+        />
+      </Card>
+    </section>
+  );
+}
 
+function AhorrosSection({ s }: { s: Summary }) {
+  return (
+    <>
       {s.goals.length > 0 && (
         <section className="mb-6">
           <SectionHead title="Ahorros" href="/metas" linkLabel="Ver todos" />
