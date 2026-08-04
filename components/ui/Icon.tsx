@@ -1,67 +1,86 @@
 "use client";
 
-// Set de iconos: Unicons Line (@iconscout/react-unicons).
+// Set de iconos: Tabler (@tabler/icons-react).
 //
 // Vienen pre-empaquetados como componentes React (nada de fetch en runtime),
 // así que siguen funcionando offline como corresponde a una PWA, y el import
-// nombrado deja que el bundler descarte los ~1.160 que no se usan.
+// nombrado deja que el bundler descarte los ~6.140 que no se usan.
 //
-// SOBRE EL ESTILO — Unicons libre es SOLO de contorno. El paquete sólido
-// (@iconscout/react-unicons-solid) va bajo licencia de pago y no se puede
-// redistribuir en un repositorio público como este. Es lo contrario del
-// relleno sólido que se había adoptado antes con Phosphor "fill": el estado
-// activo de la navegación ya no puede marcarse por peso de trazo, así que
-// ahora se apoya solo en fondo y color, que es lo que ya hacía de todos
-// modos (bg-gradient-brand + text-white en el activo).
+// SOBRE EL RELLENO — Tabler publica contorno y relleno bajo la misma licencia
+// MIT, sin la barrera de pago que tenía Unicons. El relleno cubre 31 de
+// nuestros 44 nombres; los 13 restantes se quedan en contorno también cuando
+// están activos. Eso NO se nota: `filled` solo lo usa la navegación para
+// marcar la sección actual, y solo hay UNA sección actual a la vez, así que
+// nunca se ven un relleno y un contorno lado a lado como estados equivalentes.
 //
-// El mapa conserva el mismo `IconName` de siempre para no tocar ninguno de
-// los ~40 sitios que llaman <Icon name="..." />.
-import type { UniconProps } from "@iconscout/react-unicons";
+// A diferencia de Unicons, Tabler ya usa `color = "currentColor"` por defecto,
+// así que no hace falta forzarlo: los text-* de alrededor pintan el icono.
+import type { TablerIcon } from "@tabler/icons-react";
 import {
-  UilAnalytics,
-  UilAngleDown,
-  UilAngleLeft,
-  UilAngleRight,
-  UilArrowDownLeft,
-  UilArrowUpRight,
-  UilBars,
-  UilBell,
-  UilBill,
-  UilCalculator,
-  UilCalendar,
-  UilChartDown,
-  UilChartGrowth,
-  UilChartPie,
-  UilCheck,
-  UilClock,
-  UilCog,
-  UilCoins,
-  UilDownloadAlt,
-  UilEdit,
-  UilEnvelope,
-  UilExchange,
-  UilExclamationTriangle,
-  UilEstate,
-  UilEye,
-  UilEyeSlash,
-  UilLightbulbAlt,
-  UilLock,
-  UilMoon,
-  UilPalette,
-  UilPause,
-  UilPlay,
-  UilPlus,
-  UilRepeat,
-  UilSearch,
-  UilSignout,
-  UilStar,
-  UilSun,
-  UilTimes,
-  UilTrashAlt,
-  UilTrophy,
-  UilUniversity,
-  UilWallet,
-} from "@iconscout/react-unicons";
+  IconAlertTriangle,
+  IconAlertTriangleFilled,
+  IconArrowDownLeft,
+  IconArrowUpRight,
+  IconBell,
+  IconBellFilled,
+  IconBuildingBank,
+  IconBulb,
+  IconBulbFilled,
+  IconCalculator,
+  IconCalculatorFilled,
+  IconCalendar,
+  IconCalendarFilled,
+  IconChartBar,
+  IconChartPie,
+  IconChartPieFilled,
+  IconCheck,
+  IconChevronDown,
+  IconChevronLeft,
+  IconChevronRight,
+  IconClock,
+  IconClockFilled,
+  IconDownload,
+  IconExchange,
+  IconExchangeFilled,
+  IconEye,
+  IconEyeFilled,
+  IconEyeOff,
+  IconFileInvoice,
+  IconFileInvoiceFilled,
+  IconFingerprint,
+  IconHome,
+  IconHomeFilled,
+  IconLock,
+  IconLockFilled,
+  IconLogout,
+  IconMail,
+  IconMailFilled,
+  IconMenu2,
+  IconMoon,
+  IconMoonFilled,
+  IconPalette,
+  IconPencil,
+  IconPigMoney,
+  IconPlayerPause,
+  IconPlayerPauseFilled,
+  IconPlayerPlay,
+  IconPlayerPlayFilled,
+  IconPlus,
+  IconRepeat,
+  IconSearch,
+  IconSettings,
+  IconSettingsFilled,
+  IconSparkles,
+  IconSun,
+  IconSunFilled,
+  IconTrash,
+  IconTrendingDown,
+  IconTrendingUp,
+  IconTrophy,
+  IconTrophyFilled,
+  IconWallet,
+  IconX,
+} from "@tabler/icons-react";
 
 export type IconName =
   | "dashboard"
@@ -111,83 +130,98 @@ export type IconName =
   | "pause"
   | "play";
 
-const icons: Record<IconName, (props: UniconProps) => React.ReactElement> = {
-  dashboard: UilEstate,
-  wallet: UilWallet,
-  calendar: UilCalendar,
-  budget: UilChartPie,
-  goal: UilTrophy,
-  debt: UilBill,
-  bulb: UilLightbulbAlt,
-  plus: UilPlus,
-  close: UilTimes,
-  trash: UilTrashAlt,
-  edit: UilEdit,
-  check: UilCheck,
-  chevronLeft: UilAngleLeft,
-  chevronRight: UilAngleRight,
-  chevronDown: UilAngleDown,
-  alert: UilExclamationTriangle,
-  menu: UilBars,
-  logout: UilSignout,
-  trendUp: UilChartGrowth,
-  trendDown: UilChartDown,
-  calc: UilCalculator,
-  clock: UilClock,
-  settings: UilCog,
-  eye: UilEye,
-  eyeOff: UilEyeSlash,
-  // Unicons no trae alcancía; las monedas son lo más cercano al ahorro.
-  piggy: UilCoins,
-  arrowDownLeft: UilArrowDownLeft,
-  arrowUpRight: UilArrowUpRight,
-  sun: UilSun,
-  moon: UilMoon,
-  palette: UilPalette,
-  bank: UilUniversity,
-  repeat: UilRepeat,
-  chart: UilAnalytics,
-  movements: UilExchange,
-  search: UilSearch,
-  bell: UilBell,
-  sparkle: UilStar,
-  download: UilDownloadAlt,
-  lock: UilLock,
-  // Tampoco hay huella dactilar en el set libre. El billete no encaja; se usa
-  // el candado, que al menos comunica "seguridad" en el mismo contexto.
-  fingerprint: UilLock,
-  mail: UilEnvelope,
-  pause: UilPause,
-  play: UilPlay,
+const outline: Record<IconName, TablerIcon> = {
+  dashboard: IconHome,
+  wallet: IconWallet,
+  calendar: IconCalendar,
+  budget: IconChartPie,
+  goal: IconTrophy,
+  debt: IconFileInvoice,
+  bulb: IconBulb,
+  plus: IconPlus,
+  close: IconX,
+  trash: IconTrash,
+  edit: IconPencil,
+  check: IconCheck,
+  chevronLeft: IconChevronLeft,
+  chevronRight: IconChevronRight,
+  chevronDown: IconChevronDown,
+  alert: IconAlertTriangle,
+  menu: IconMenu2,
+  logout: IconLogout,
+  trendUp: IconTrendingUp,
+  trendDown: IconTrendingDown,
+  calc: IconCalculator,
+  clock: IconClock,
+  settings: IconSettings,
+  eye: IconEye,
+  eyeOff: IconEyeOff,
+  // Tabler sí trae alcancía. Se usa la variante con la moneda (PigMoney) y no
+  // el cerdo a secas, aunque el relleno solo exista para el segundo: cambiar
+  // de glifo entre activo e inactivo parecería otro icono, no el mismo lleno.
+  piggy: IconPigMoney,
+  arrowDownLeft: IconArrowDownLeft,
+  arrowUpRight: IconArrowUpRight,
+  sun: IconSun,
+  moon: IconMoon,
+  palette: IconPalette,
+  bank: IconBuildingBank,
+  repeat: IconRepeat,
+  chart: IconChartBar,
+  movements: IconExchange,
+  search: IconSearch,
+  bell: IconBell,
+  sparkle: IconSparkles,
+  download: IconDownload,
+  lock: IconLock,
+  fingerprint: IconFingerprint,
+  mail: IconMail,
+  pause: IconPlayerPause,
+  play: IconPlayerPlay,
+};
+
+/* Solo los que tienen relleno en Tabler. Es parcial a propósito: el que falta
+   cae en el contorno de arriba en vez de romper, así que añadir un icono nuevo
+   nunca obliga a buscarle un relleno que quizá no exista.
+
+   Se dejan fuera algunos que SÍ tienen relleno pero donde no significa nada
+   (plus, close, check, chevrones, trash, edit): son glifos de trazo y su
+   versión rellena es una silueta maciza que no se parece al original. */
+const filledByName: Partial<Record<IconName, TablerIcon>> = {
+  dashboard: IconHomeFilled,
+  calendar: IconCalendarFilled,
+  budget: IconChartPieFilled,
+  goal: IconTrophyFilled,
+  debt: IconFileInvoiceFilled,
+  bulb: IconBulbFilled,
+  alert: IconAlertTriangleFilled,
+  calc: IconCalculatorFilled,
+  clock: IconClockFilled,
+  settings: IconSettingsFilled,
+  eye: IconEyeFilled,
+  sun: IconSunFilled,
+  moon: IconMoonFilled,
+  movements: IconExchangeFilled,
+  bell: IconBellFilled,
+  lock: IconLockFilled,
+  mail: IconMailFilled,
+  pause: IconPlayerPauseFilled,
+  play: IconPlayerPlayFilled,
 };
 
 interface IconProps {
   name: IconName;
   size?: number;
+  /** Pinta la variante rellena, si el icono tiene una. Lo usa la navegación
+   *  para la sección activa; si no existe relleno, cae al contorno y el estado
+   *  activo sigue distinguiéndose por color y fondo como hasta ahora. */
+  filled?: boolean;
   className?: string;
   "aria-hidden"?: boolean | "true" | "false";
   "aria-label"?: string;
 }
 
-// Sin prop `weight`: Unicons libre tiene un solo estilo (contorno), a
-// diferencia de Phosphor, que traía light/regular/bold/fill/duotone. Los
-// sitios que marcaban el estado activo con "fill" ahora se apoyan en el
-// fondo y el color, que ya llevaban.
-//
-// `color="currentColor"` NO es opcional: Unicons rellena con un gris fijo
-// (#a9a9a9) si no se le dice otra cosa, a diferencia de Phosphor, que hereda
-// currentColor por defecto. Sin esto TODOS los iconos saldrían del mismo gris
-// —el activo blanco de la navegación, los rojos de error, los teal— y las
-// clases text-* de alrededor no pintarían nada.
-export function Icon({ name, size = 22, className, ...props }: IconProps) {
-  const Component = icons[name];
-  return (
-    <Component
-      size={size}
-      color="currentColor"
-      className={className}
-      aria-hidden="true"
-      {...props}
-    />
-  );
+export function Icon({ name, size = 22, filled = false, className, ...props }: IconProps) {
+  const Component = (filled && filledByName[name]) || outline[name];
+  return <Component size={size} className={className} aria-hidden="true" {...props} />;
 }

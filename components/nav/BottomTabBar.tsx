@@ -128,7 +128,7 @@ export function BottomTabBar({
                                   : "bg-tint-brand text-primary-fg group-hover:bg-primary-soft",
                               )}
                             >
-                              <Icon name={r.icon} size={24} />
+                              <Icon name={r.icon} size={24} filled={active} />
                             </span>
                             <span
                               className={cn(
@@ -173,7 +173,7 @@ export function BottomTabBar({
                       active ? "text-primary-fg" : "text-muted",
                     )}
                   >
-                    <Icon name={r.icon} size={23} />
+                    <Icon name={r.icon} size={23} filled={active} />
                     {r.shortLabel}
                   </Link>
                 </li>
@@ -192,7 +192,7 @@ export function BottomTabBar({
                       active ? "text-primary-fg" : "text-muted",
                     )}
                   >
-                    <Icon name={r.icon} size={23} />
+                    <Icon name={r.icon} size={23} filled={active} />
                     {r.shortLabel}
                   </Link>
                 </li>

@@ -7,7 +7,7 @@ const nextConfig: NextConfig = {
   // en vez de barrer el árbol del paquete completo — build y dev más
   // rápidos, mismo bundle final.
   experimental: {
-    optimizePackageImports: ["@phosphor-icons/react", "framer-motion"],
+    optimizePackageImports: ["@tabler/icons-react", "framer-motion"],
   },
 };
 
