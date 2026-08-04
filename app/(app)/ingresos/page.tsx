@@ -17,6 +17,7 @@ import { StatTile } from "@/components/ui/StatTile";
 import { Badge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Field, Input, Select, MoneyInput } from "@/components/ui/Field";
+import { DateField } from "@/components/ui/DateField";
 import { FormModal } from "@/components/ui/FormModal";
 import { DeleteButton } from "@/components/ui/DeleteButton";
 import { IconBubble } from "@/components/ui/IconBubble";
@@ -73,7 +74,7 @@ function NewSalaryForm({
         />
       </Field>
       <Field label="Fecha" htmlFor="pay_date" required>
-        <Input id="pay_date" name="pay_date" type="date" defaultValue={today} required />
+        <DateField id="pay_date" name="pay_date" defaultValue={today} required />
       </Field>
       <Field label="Tipo" htmlFor="kind">
         <Select id="kind" name="kind" defaultValue="quincena">
@@ -307,10 +308,9 @@ export default async function IngresosPage({
               required
               hint="A partir de aquí se calcula (y se registra sola) cada fecha siguiente."
             >
-              <Input
+              <DateField
                 id="next_pay_date"
                 name="next_pay_date"
-                type="date"
                 defaultValue={settings.next_pay_date ?? today}
                 required
               />

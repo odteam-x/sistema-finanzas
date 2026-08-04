@@ -15,6 +15,7 @@ import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Badge } from "@/components/ui/Badge";
 import { Field, Input, Select, MoneyInput } from "@/components/ui/Field";
+import { DateField } from "@/components/ui/DateField";
 import { FormModal } from "@/components/ui/FormModal";
 import { DeleteButton } from "@/components/ui/DeleteButton";
 import { Icon } from "@/components/ui/Icon";
@@ -91,7 +92,7 @@ function TransferForm({ accounts, today }: { accounts: SavingsAccount[]; today: 
         <MoneyInput id="tr-amount" name="amount" required />
       </Field>
       <Field label="Fecha" htmlFor="tr-date" required>
-        <Input id="tr-date" name="date" type="date" defaultValue={today} required />
+        <DateField id="tr-date" name="date" defaultValue={today} required />
       </Field>
       <Field label="Nota" htmlFor="tr-note">
         <Input id="tr-note" name="note" placeholder="Opcional" />
@@ -313,7 +314,7 @@ export default async function BalancePage() {
                         <MoneyInput id={`dep-${a.id}`} name="amount" required />
                       </Field>
                       <Field label="Fecha" htmlFor={`depd-${a.id}`} required>
-                        <Input id={`depd-${a.id}`} name="date" type="date" defaultValue={today} required />
+                        <DateField id={`depd-${a.id}`} name="date" defaultValue={today} required />
                       </Field>
                       <Field label="Nota" htmlFor={`depn-${a.id}`}>
                         <Input id={`depn-${a.id}`} name="note" placeholder="Opcional" />
@@ -335,7 +336,7 @@ export default async function BalancePage() {
                         <MoneyInput id={`ret-${a.id}`} name="amount" required />
                       </Field>
                       <Field label="Fecha" htmlFor={`retd-${a.id}`} required>
-                        <Input id={`retd-${a.id}`} name="date" type="date" defaultValue={today} required />
+                        <DateField id={`retd-${a.id}`} name="date" defaultValue={today} required />
                       </Field>
                       <Field label="Nota" htmlFor={`retn-${a.id}`}>
                         <Input id={`retn-${a.id}`} name="note" placeholder="Opcional" />

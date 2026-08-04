@@ -8,6 +8,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { Badge } from "@/components/ui/Badge";
 import { IconBubble } from "@/components/ui/IconBubble";
 import { Field, Input, Select, MoneyInput } from "@/components/ui/Field";
+import { DateField } from "@/components/ui/DateField";
 import { FormModal } from "@/components/ui/FormModal";
 import { DeleteButton } from "@/components/ui/DeleteButton";
 import { MoneyValue } from "@/components/ui/MoneyValue";
@@ -110,10 +111,9 @@ export default async function SuscripcionesPage() {
                     </Select>
                   </Field>
                   <Field label="Próximo cobro" htmlFor={`d-${s.id}`} required>
-                    <Input
+                    <DateField
                       id={`d-${s.id}`}
                       name="next_charge_date"
-                      type="date"
                       defaultValue={s.next_charge_date}
                       required
                     />

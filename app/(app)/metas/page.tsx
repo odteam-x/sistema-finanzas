@@ -18,6 +18,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { Badge } from "@/components/ui/Badge";
 import { Field, Input, MoneyInput, Select } from "@/components/ui/Field";
+import { DateField } from "@/components/ui/DateField";
 import { FormModal } from "@/components/ui/FormModal";
 import { DeleteButton } from "@/components/ui/DeleteButton";
 import { MoneyValue } from "@/components/ui/MoneyValue";
@@ -59,7 +60,7 @@ function NewGoalForm({
         </Field>
       </div>
       <Field label="Fecha límite" htmlFor="deadline">
-        <Input id="deadline" name="deadline" type="date" />
+        <DateField id="deadline" name="deadline" />
       </Field>
     </FormModal>
   );
@@ -214,7 +215,7 @@ export default async function MetasPage() {
                       <MoneyInput id={`sadep-${a.id}`} name="amount" required />
                     </Field>
                     <Field label="Fecha" htmlFor={`sadepd-${a.id}`} required>
-                      <Input id={`sadepd-${a.id}`} name="date" type="date" defaultValue={today} required />
+                      <DateField id={`sadepd-${a.id}`} name="date" defaultValue={today} required />
                     </Field>
                   </FormModal>
                   <FormModal
@@ -232,7 +233,7 @@ export default async function MetasPage() {
                       <MoneyInput id={`saret-${a.id}`} name="amount" required />
                     </Field>
                     <Field label="Fecha" htmlFor={`saretd-${a.id}`} required>
-                      <Input id={`saretd-${a.id}`} name="date" type="date" defaultValue={today} required />
+                      <DateField id={`saretd-${a.id}`} name="date" defaultValue={today} required />
                     </Field>
                   </FormModal>
                 </div>
@@ -356,7 +357,7 @@ export default async function MetasPage() {
                           <MoneyInput id={`gdep-${g.id}`} name="amount" required />
                         </Field>
                         <Field label="Fecha" htmlFor={`gdepd-${g.id}`} required>
-                          <Input id={`gdepd-${g.id}`} name="date" type="date" defaultValue={today} required />
+                          <DateField id={`gdepd-${g.id}`} name="date" defaultValue={today} required />
                         </Field>
                       </FormModal>
                       <FormModal
@@ -374,7 +375,7 @@ export default async function MetasPage() {
                           <MoneyInput id={`gret-${g.id}`} name="amount" required />
                         </Field>
                         <Field label="Fecha" htmlFor={`gretd-${g.id}`} required>
-                          <Input id={`gretd-${g.id}`} name="date" type="date" defaultValue={today} required />
+                          <DateField id={`gretd-${g.id}`} name="date" defaultValue={today} required />
                         </Field>
                       </FormModal>
                     </>
@@ -451,10 +452,9 @@ export default async function MetasPage() {
                       />
                     </Field>
                     <Field label="Fecha límite" htmlFor={`gd-${g.id}`}>
-                      <Input
+                      <DateField
                         id={`gd-${g.id}`}
                         name="deadline"
-                        type="date"
                         defaultValue={g.deadline ?? ""}
                       />
                     </Field>

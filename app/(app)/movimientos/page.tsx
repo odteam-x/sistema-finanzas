@@ -24,6 +24,7 @@ import { DayPicker } from "@/components/ui/DayPicker";
 import { FilterMenu } from "@/components/ui/FilterMenu";
 import { ActiveFilters } from "@/components/ui/ActiveFilters";
 import { Field, Input, Select, MoneyInput } from "@/components/ui/Field";
+import { DateField } from "@/components/ui/DateField";
 import { FormModal } from "@/components/ui/FormModal";
 import { cn } from "@/lib/cn";
 import { addMovement, deleteMovement } from "../balance/actions";
@@ -80,7 +81,7 @@ function NewMovementForm({
         <MoneyInput id="mv-amount" name="amount" required />
       </Field>
       <Field label="Fecha" htmlFor="mv-date" required>
-        <Input id="mv-date" name="date" type="date" defaultValue={today} required />
+        <DateField id="mv-date" name="date" defaultValue={today} required />
       </Field>
       {/* Sin cuentas, un Select vacío y `required` es un callejón sin salida:
           no hay nada que elegir y el formulario no puede enviarse. Se avisa

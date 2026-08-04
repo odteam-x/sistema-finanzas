@@ -5,6 +5,7 @@ import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
 import { Field, Input, MoneyInput } from "@/components/ui/Field";
+import { DateField } from "@/components/ui/DateField";
 import { FormModal } from "@/components/ui/FormModal";
 import { Money } from "@/components/ui/Money";
 import { formatDateShort } from "@/lib/format";
@@ -32,7 +33,7 @@ export function AddIncrementButton({ debtId, today }: { debtId: string; today: s
         <MoneyInput id={`inc-amt-${debtId}`} name="amount" required />
       </Field>
       <Field label="Fecha" htmlFor={`inc-date-${debtId}`} required>
-        <Input id={`inc-date-${debtId}`} name="date" type="date" defaultValue={today} required />
+        <DateField id={`inc-date-${debtId}`} name="date" defaultValue={today} required />
       </Field>
       <Field label="Nota" htmlFor={`inc-note-${debtId}`}>
         <Input id={`inc-note-${debtId}`} name="note" placeholder="Opcional" />

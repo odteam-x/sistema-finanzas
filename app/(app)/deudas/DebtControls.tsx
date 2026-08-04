@@ -5,7 +5,8 @@ import { cn } from "@/lib/cn";
 import { Icon } from "@/components/ui/Icon";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
-import { Field, Input, MoneyInput, Select } from "@/components/ui/Field";
+import { Field, MoneyInput, Select } from "@/components/ui/Field";
+import { DateField } from "@/components/ui/DateField";
 import { FormModal } from "@/components/ui/FormModal";
 import { formatDateShort } from "@/lib/format";
 import { Money } from "@/components/ui/Money";
@@ -132,7 +133,7 @@ export function InstallmentRow({
             <MoneyInput id={`ci-amt-${i.id}`} name="amount" defaultValue={String(i.amount)} required />
           </Field>
           <Field label="Fecha de vencimiento" htmlFor={`ci-date-${i.id}`} required hint="Aplázala si necesitas más tiempo.">
-            <Input id={`ci-date-${i.id}`} name="due_date" type="date" defaultValue={i.due_date} required />
+            <DateField id={`ci-date-${i.id}`} name="due_date" defaultValue={i.due_date} required />
           </Field>
         </FormModal>
       )}

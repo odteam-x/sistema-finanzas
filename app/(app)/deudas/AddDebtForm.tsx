@@ -5,6 +5,7 @@ import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
 import { Field, Input, Select, MoneyInput } from "@/components/ui/Field";
+import { DateField } from "@/components/ui/DateField";
 import { todayISO } from "@/lib/format";
 import { addDebt } from "./actions";
 import { NEW_CREDITOR } from "./creditors-shared";
@@ -145,10 +146,9 @@ export function AddDebtForm({
               <MoneyInput id="total_amount" name="total_amount" required />
             </Field>
             <Field label="Fecha adquirida" htmlFor="acquired_date" required>
-              <Input
+              <DateField
                 id="acquired_date"
                 name="acquired_date"
-                type="date"
                 defaultValue={today}
                 required
               />
@@ -169,7 +169,7 @@ export function AddDebtForm({
 
           {type === "unico" ? (
             <Field label="Fecha de pago" htmlFor="due_date">
-              <Input id="due_date" name="due_date" type="date" />
+              <DateField id="due_date" name="due_date" />
             </Field>
           ) : (
             <div className="flex flex-col gap-4 rounded-tile bg-surface-sunken p-3">
@@ -194,10 +194,9 @@ export function AddDebtForm({
                 </Field>
               </div>
               <Field label="Primera cuota (fecha)" htmlFor="first_due_date" required>
-                <Input
+                <DateField
                   id="first_due_date"
                   name="first_due_date"
-                  type="date"
                   defaultValue={today}
                   required
                 />

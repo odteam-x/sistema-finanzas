@@ -1,4 +1,5 @@
 import { Field, Input, Select, MoneyInput } from "@/components/ui/Field";
+import { DateField } from "@/components/ui/DateField";
 import { FormModal } from "@/components/ui/FormModal";
 import { addSubscription } from "./actions";
 import type { SavingsAccount, Tag } from "@/lib/types";
@@ -49,7 +50,7 @@ export function NewSubscriptionForm({
         </Select>
       </Field>
       <Field label="Próximo cobro" htmlFor="next_charge_date" required>
-        <Input id="next_charge_date" name="next_charge_date" type="date" defaultValue={today} required />
+        <DateField id="next_charge_date" name="next_charge_date" defaultValue={today} required />
       </Field>
       {tags.length > 0 && (
         <Field label="Categoría" htmlFor="tag_id" hint="Opcional.">

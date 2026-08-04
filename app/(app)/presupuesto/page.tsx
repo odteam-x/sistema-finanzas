@@ -24,7 +24,8 @@ import { SPENDING_WINDOW_DAYS, perDayFromHistory, spendingWindow } from "@/lib/s
 import { CollapsibleCard } from "@/components/ui/CollapsibleCard";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Badge } from "@/components/ui/Badge";
-import { Field, Input, Select, MoneyInput } from "@/components/ui/Field";
+import { Field, Select, MoneyInput } from "@/components/ui/Field";
+import { DateField } from "@/components/ui/DateField";
 import { FormModal } from "@/components/ui/FormModal";
 import { DeleteButton } from "@/components/ui/DeleteButton";
 import { IconBubble } from "@/components/ui/IconBubble";
@@ -71,7 +72,7 @@ function NewExpenseForm({
         <MoneyInput id="exp-amount" name="amount" required />
       </Field>
       <Field label="Fecha" htmlFor="exp-date" required>
-        <Input id="exp-date" name="date" type="date" defaultValue={today} required />
+        <DateField id="exp-date" name="date" defaultValue={today} required />
       </Field>
       <ExpenseCategoryFields tags={tags} rules={rules} idPrefix="exp" />
       {accounts.length > 0 && (

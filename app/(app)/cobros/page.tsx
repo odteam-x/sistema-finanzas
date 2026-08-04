@@ -20,6 +20,7 @@ import { DeleteButton } from "@/components/ui/DeleteButton";
 import { IconBubble } from "@/components/ui/IconBubble";
 import { Money } from "@/components/ui/Money";
 import { Field, Input, MoneyInput } from "@/components/ui/Field";
+import { DateField } from "@/components/ui/DateField";
 import { FormModal } from "@/components/ui/FormModal";
 import { NewReceivableForm } from "./NewReceivableForm";
 import { ReceivableInstallmentRow, ReceivableCollectedToggle } from "./ReceivableControls";
@@ -70,7 +71,7 @@ function EditReceivableForm({ rec }: { rec: Receivable }) {
             />
           </Field>
           <Field label="Fecha esperada de cobro" htmlFor={`erd-${rec.id}`}>
-            <Input id={`erd-${rec.id}`} name="due_date" type="date" defaultValue={rec.due_date ?? ""} />
+            <DateField id={`erd-${rec.id}`} name="due_date" defaultValue={rec.due_date ?? ""} />
           </Field>
         </>
       ) : (

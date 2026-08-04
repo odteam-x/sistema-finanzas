@@ -1,6 +1,7 @@
 "use client";
 
 import { Field, Input, Select, MoneyInput } from "@/components/ui/Field";
+import { DateField } from "@/components/ui/DateField";
 import { FormModal } from "@/components/ui/FormModal";
 import { addExpense } from "@/app/(app)/presupuesto/actions";
 import { addSalary } from "@/app/(app)/ingresos/actions";
@@ -149,7 +150,7 @@ export function QuickForms({
           <MoneyInput id={`${idPrefix}-exp-amount`} name="amount" required />
         </Field>
         <Field label="Fecha" htmlFor={`${idPrefix}-exp-date`} required>
-          <Input id={`${idPrefix}-exp-date`} name="date" type="date" defaultValue={today} required />
+          <DateField id={`${idPrefix}-exp-date`} name="date" defaultValue={today} required />
         </Field>
         {accounts.length > 0 && (
           <Field label="Cuenta" htmlFor={`${idPrefix}-exp-account`} hint="De dónde sale el dinero.">
@@ -181,7 +182,7 @@ export function QuickForms({
           <MoneyInput id={`${idPrefix}-inc-amount`} name="amount" required />
         </Field>
         <Field label="Fecha del pago" htmlFor={`${idPrefix}-inc-date`} required>
-          <Input id={`${idPrefix}-inc-date`} name="pay_date" type="date" defaultValue={today} required />
+          <DateField id={`${idPrefix}-inc-date`} name="pay_date" defaultValue={today} required />
         </Field>
         <Field
           label="¿Cómo cobras?"
@@ -243,7 +244,7 @@ export function QuickForms({
           <MoneyInput id={`${idPrefix}-mv-amount`} name="amount" required />
         </Field>
         <Field label="Fecha" htmlFor={`${idPrefix}-mv-date`} required>
-          <Input id={`${idPrefix}-mv-date`} name="date" type="date" defaultValue={today} required />
+          <DateField id={`${idPrefix}-mv-date`} name="date" defaultValue={today} required />
         </Field>
         <Field label="Cuenta" htmlFor={`${idPrefix}-mv-account`} required>
           <Select id={`${idPrefix}-mv-account`} name="account_id" required>
@@ -275,13 +276,13 @@ export function QuickForms({
         <Field label="Monto total" htmlFor={`${idPrefix}-debt-amount`} required>
           <MoneyInput id={`${idPrefix}-debt-amount`} name="total_amount" required />
         </Field>
-        {/* Este campo tenía max-w-[180px] para que un date vacío no se viera
-            como una caja enorme. Pero un <input type="date"> tiene un ancho
-            mínimo propio (los tres subcampos + el icono del calendario) que a
-            16px de texto supera esos 180px: el control se desbordaba de su
-            caja. Ancho completo, como todos los demás campos. */}
+        {/* Ancho completo, como todos los demás campos. El max-w-[180px] que
+            llevaba venía de cuando esto era un <input type="date"> nativo y se
+            quería evitar una caja enorme vacía; el nativo ya no está y el
+            disparador de DateField es un botón normal que se comporta como
+            cualquier otro control. */}
         <Field label="Fecha de pago" htmlFor={`${idPrefix}-debt-due`} hint="Opcional.">
-          <Input id={`${idPrefix}-debt-due`} name="due_date" type="date" />
+          <DateField id={`${idPrefix}-debt-due`} name="due_date" />
         </Field>
         <Field label="Nota" htmlFor={`${idPrefix}-debt-note`}>
           <Input id={`${idPrefix}-debt-note`} name="note" placeholder="Opcional" />

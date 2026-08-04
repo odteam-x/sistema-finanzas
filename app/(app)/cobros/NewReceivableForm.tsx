@@ -5,6 +5,7 @@ import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
 import { Field, Input, Select, MoneyInput } from "@/components/ui/Field";
+import { DateField } from "@/components/ui/DateField";
 import { addReceivable } from "./actions";
 import type { SavingsAccount } from "@/lib/types";
 
@@ -92,7 +93,7 @@ export function NewReceivableForm({
               <MoneyInput id="rec-total" name="total_amount" required />
             </Field>
             <Field label="Desde" htmlFor="rec-acq" required>
-              <Input id="rec-acq" name="acquired_date" type="date" defaultValue={today} required />
+              <DateField id="rec-acq" name="acquired_date" defaultValue={today} required />
             </Field>
           </div>
 
@@ -110,7 +111,7 @@ export function NewReceivableForm({
 
           {type === "unico" ? (
             <Field label="Fecha esperada de cobro" htmlFor="rec-due">
-              <Input id="rec-due" name="due_date" type="date" />
+              <DateField id="rec-due" name="due_date" />
             </Field>
           ) : (
             <div className="flex flex-col gap-4 rounded-tile bg-surface-sunken p-3">
@@ -135,7 +136,7 @@ export function NewReceivableForm({
                 </Field>
               </div>
               <Field label="Primera cuota (fecha)" htmlFor="rec-first" required>
-                <Input id="rec-first" name="first_due_date" type="date" defaultValue={today} required />
+                <DateField id="rec-first" name="first_due_date" defaultValue={today} required />
               </Field>
               <Field
                 label="Monto por cuota"

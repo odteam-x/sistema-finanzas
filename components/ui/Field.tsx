@@ -8,11 +8,12 @@ import { Icon } from "./Icon";
 // El relleno propio (--input-bg, distinto del de la tarjeta que lo contiene)
 // es lo que delimita el control; el borde solo lo remata. Por eso el borde
 // puede quedarse discreto sin perder accesibilidad.
-// `min-w-0` + `max-w-full`: un <input type="date"> trae un ancho intrínseco
-// propio (tres subcampos más el icono del calendario) y, si el contenedor es
-// más estrecho, el control se sale de su caja en vez de encogerse. Con esto
-// nunca desborda aunque alguien lo meta en una columna angosta.
-const baseControl =
+// `min-w-0` + `max-w-full`: se añadieron por el <input type="date"> nativo,
+// que traía un ancho intrínseco propio y se salía de su caja en columnas
+// estrechas. Ese control ya no existe (ver DateField.tsx), pero las clases se
+// quedan: valen igual para el disparador de DateField, que lleva texto largo
+// ("17 de agosto de 2026") y sin ellas tampoco encogería.
+export const baseControl =
   "w-full min-w-0 max-w-full min-h-11 rounded-tile bg-[var(--input-bg)] border border-[var(--input-border)] px-3.5 " +
   "text-ink placeholder:text-muted " +
   "focus:outline-none focus:border-primary-fg focus:bg-[var(--input-bg-focus)] transition-colors";

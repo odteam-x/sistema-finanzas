@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Field, Input, Select } from "@/components/ui/Field";
+import { Field, Select } from "@/components/ui/Field";
+import { DateField } from "@/components/ui/DateField";
 import { todayISO, addDaysISO } from "@/lib/format";
 
 export function ExportCsvForm() {
@@ -16,10 +17,12 @@ export function ExportCsvForm() {
     <div className="flex flex-col gap-3">
       <div className="grid grid-cols-2 gap-3">
         <Field label="Desde" htmlFor="csv-from">
-          <Input id="csv-from" type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
+          {/* Sin `name`: estos dos no se envían en un formulario, solo arman
+              el href de descarga de abajo. */}
+          <DateField id="csv-from" value={from} onChange={setFrom} required />
         </Field>
         <Field label="Hasta" htmlFor="csv-to">
-          <Input id="csv-to" type="date" value={to} onChange={(e) => setTo(e.target.value)} />
+          <DateField id="csv-to" value={to} onChange={setTo} required />
         </Field>
       </div>
       <Field label="Qué exportar" htmlFor="csv-kind">

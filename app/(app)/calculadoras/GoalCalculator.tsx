@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Field, Input, MoneyInput } from "@/components/ui/Field";
+import { DateField } from "@/components/ui/DateField";
 import { FormModal } from "@/components/ui/FormModal";
 import { formatDOP, todayISO } from "@/lib/format";
 import { periodAfterN } from "@/lib/periods";
@@ -71,7 +72,7 @@ export function GoalCalculator() {
             <MoneyInput id="calc-goal-saved" name="current_amount" defaultValue={savedN > 0 ? String(savedN) : ""} />
           </Field>
           <Field label="Fecha límite" htmlFor="calc-goal-deadline" hint="Calculada con las quincenas que ingresaste arriba.">
-            <Input id="calc-goal-deadline" name="deadline" type="date" defaultValue={deadline} />
+            <DateField id="calc-goal-deadline" name="deadline" defaultValue={deadline} />
           </Field>
         </FormModal>
       )}

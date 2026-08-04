@@ -16,6 +16,7 @@ import { DeleteButton } from "@/components/ui/DeleteButton";
 import { IconBubble } from "@/components/ui/IconBubble";
 import { Money } from "@/components/ui/Money";
 import { Field, Input, MoneyInput, Select } from "@/components/ui/Field";
+import { DateField } from "@/components/ui/DateField";
 import { FormModal } from "@/components/ui/FormModal";
 import { InstallmentRow, DebtPaidToggle } from "./DebtControls";
 import { AddIncrementButton, IncrementHistory, ReopenDebtButton } from "./DebtActions";
@@ -109,7 +110,7 @@ function EditDebtForm({ debt, creditors }: { debt: Debt; creditors: Creditor[] }
             />
           </Field>
           <Field label="Fecha de pago" htmlFor={`edd-${debt.id}`} hint="Aplázala si necesitas más tiempo.">
-            <Input id={`edd-${debt.id}`} name="due_date" type="date" defaultValue={debt.due_date ?? ""} />
+            <DateField id={`edd-${debt.id}`} name="due_date" defaultValue={debt.due_date ?? ""} />
           </Field>
         </>
       ) : (
