@@ -3,14 +3,18 @@ import { getDebtIncrements, getDebts, getInstallments, getSalarySettings, getSub
 import { outstandingOfDebt } from "@/lib/debts";
 import { nextPayDateFrom, fixedPayDays, periodDaysFor, type PeriodDays } from "@/lib/periods";
 import { daysBetween, todayISO } from "@/lib/format";
-import { itemsDueBefore, type PayoutItem } from "@/lib/payoutPlan";
+import { debtsDueAfter, itemsDueBefore, type PayoutItem } from "@/lib/payoutPlan";
 
 export interface PayoutContext {
   /** Lo que el usuario dijo que cobra. 0 si no lo ha configurado. */
   gross: number;
   nextPay: string | null;
   daysUntilNextPay: number;
+  /** Vencen antes del próximo cobro. Cuentan por defecto. */
   items: PayoutItem[];
+  /** Deudas que vencen después. NO cuentan por defecto: están para poder
+   *  adelantar el pago de alguna si sobra dinero. */
+  laterDebts: PayoutItem[];
   periodDays: PeriodDays;
 }
 
@@ -80,6 +84,7 @@ export async function getPayoutContext(): Promise<PayoutContext> {
     // de payoutTotals se apaga solo con 0.
     daysUntilNextPay: nextPay ? Math.max(0, daysBetween(today, nextPay)) : 0,
     items: nextPay ? itemsDueBefore(todos, today, nextPay) : [],
+    laterDebts: nextPay ? debtsDueAfter(todos, nextPay) : [],
     periodDays: periodDaysFor(settings),
   };
 }

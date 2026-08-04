@@ -68,3 +68,22 @@ export function itemsDueBefore(
     .map((i) => ({ ...i, overdue: i.date < todayISO }))
     .sort((a, b) => a.date.localeCompare(b.date));
 }
+
+/** Deudas que vencen DESPUÉS del próximo cobro.
+ *
+ *  Este cobro no tiene por qué cubrirlas —ya las cubre el siguiente—, pero
+ *  poder adelantarlas es una decisión real: si te sobra, quizá prefieras
+ *  quitártelas de encima. Por eso van en un bloque aparte y SIN contar por
+ *  defecto: sumarlas de entrada haría que el neto pareciera peor de lo que es.
+ *
+ *  Solo deudas: una suscripción que vence después se va a cobrar igual en su
+ *  fecha, así que "adelantarla" no significa nada. */
+export function debtsDueAfter(
+  items: readonly PayoutItem[],
+  nextPayISO: string,
+): PayoutItem[] {
+  return items
+    .filter((i) => i.kind === "debt" && i.date >= nextPayISO)
+    .map((i) => ({ ...i, overdue: false }))
+    .sort((a, b) => a.date.localeCompare(b.date));
+}

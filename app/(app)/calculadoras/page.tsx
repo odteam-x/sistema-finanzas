@@ -29,6 +29,7 @@ export default async function CalculadorasPage() {
             nextPay={ctx.nextPay}
             daysUntilNextPay={ctx.daysUntilNextPay}
             items={ctx.items}
+            laterDebts={ctx.laterDebts}
           />
         </TabsContent>
         <TabsContent value="goal">

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Field, MoneyInput } from "@/components/ui/Field";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
+import { SectionHead } from "@/components/ui/SectionHead";
 import { IconBubble } from "@/components/ui/IconBubble";
 import { Icon } from "@/components/ui/Icon";
 import { cn } from "@/lib/cn";
@@ -16,6 +17,62 @@ interface Props {
   nextPay: string | null;
   daysUntilNextPay: number;
   items: PayoutItem[];
+  laterDebts: PayoutItem[];
+}
+
+/** Una fila que se puede contar o no. La fila ENTERA alterna, no una casilla
+ *  de 20px: es lo que se toca en un teléfono. El estado se lee por el relleno
+ *  del check y por si el monto está tachado, no solo por color — un daltónico
+ *  ve el cambio igual. */
+function FilaCompromiso({
+  item,
+  incluido,
+  onToggle,
+}: {
+  item: PayoutItem;
+  incluido: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-pressed={incluido}
+      className={cn(
+        "card rounded-card w-full flex items-center gap-3 px-4 py-2.5 text-left",
+        "cursor-pointer transition-opacity active:scale-[0.99]",
+        !incluido && "opacity-55",
+      )}
+    >
+      <span
+        aria-hidden="true"
+        className={cn(
+          "grid place-items-center size-6 shrink-0 rounded-tile border-2 transition-colors",
+          incluido ? "bg-primary border-primary text-on-brand" : "border-line-strong text-transparent",
+        )}
+      >
+        <Icon name="check" size={14} />
+      </span>
+      <IconBubble
+        icon={item.kind === "debt" ? "debt" : "repeat"}
+        tone={item.overdue ? "danger" : item.kind === "debt" ? "warning" : "info"}
+        size="sm"
+      />
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-semibold text-ink truncate">{item.name}</p>
+        <p className="text-xs text-muted">{formatDateShort(item.date)}</p>
+      </div>
+      {item.overdue && <Badge tone="danger">Vencida</Badge>}
+      <p
+        className={cn(
+          "text-sm font-bold tabular shrink-0",
+          incluido ? "text-expense" : "text-muted line-through",
+        )}
+      >
+        −{formatDOP(item.amount, false)}
+      </p>
+    </button>
+  );
 }
 
 /** "Cobro el 20, ¿con cuánto me quedo?"
@@ -27,12 +84,25 @@ interface Props {
  *
  *  Arranca con TODO tildado: olvidarse de restar algo hace daño, restar de
  *  más solo asusta. */
-export function PayoutCalculator({ gross, nextPay, daysUntilNextPay, items }: Props) {
+export function PayoutCalculator({ gross, nextPay, daysUntilNextPay, items, laterDebts }: Props) {
   const [monto, setMonto] = useState(gross > 0 ? String(gross) : "");
-  const [excluidos, setExcluidos] = useState<string[]>([]);
+  /* Las deudas que vencen DESPUÉS arrancan excluidas: este cobro no tiene que
+     cubrirlas, y contarlas de entrada haría que el neto pareciera peor de lo
+     que es. Están para poder adelantar alguna, no para asustar. */
+  const [excluidos, setExcluidos] = useState<string[]>(() => laterDebts.map((i) => i.id));
 
   const montoN = Number(monto.replace(/[^0-9.]/g, "")) || 0;
-  const { comprometido, neto, porDia } = payoutTotals(montoN, items, excluidos, daysUntilNextPay);
+  const { neto, porDia } = payoutTotals(
+    montoN,
+    [...items, ...laterDebts],
+    excluidos,
+    daysUntilNextPay,
+  );
+  const suma = (lista: PayoutItem[]) =>
+    lista.filter((i) => !excluidos.includes(i.id)).reduce((s, i) => s + i.amount, 0);
+  const comprometido = suma(items);
+  const adelantado = suma(laterDebts);
+  const sinContar = items.filter((i) => excluidos.includes(i.id)).length;
   const enRojo = neto < 0;
 
   function alternar(id: string) {
@@ -65,7 +135,7 @@ export function PayoutCalculator({ gross, nextPay, daysUntilNextPay, items }: Pr
         />
       </Field>
 
-      {items.length === 0 ? (
+      {items.length === 0 && laterDebts.length === 0 ? (
         /* Sin EmptyState: ese componente exige una acción, y "no debes nada"
            es una buena noticia, no una pantalla a la que le falte algo. La
            única acción real aparece cuando ni siquiera hay fecha de cobro. */
@@ -86,80 +156,78 @@ export function PayoutCalculator({ gross, nextPay, daysUntilNextPay, items }: Pr
         </Card>
       ) : (
         <>
-          <div className="flex items-baseline justify-between gap-3 px-1">
-            <h2 className="text-sm font-bold text-ink">Antes de tu próximo cobro</h2>
-            <p className="text-sm text-muted">
-              {nextPay ? formatDateShort(nextPay) : ""}
-            </p>
-          </div>
-
-          <ul className="flex flex-col gap-2">
-            {items.map((i) => {
-              const incluido = !excluidos.includes(i.id);
-              return (
-                <li key={i.id}>
-                  {/* La fila ENTERA alterna, no una casilla de 20px: es lo que
-                      se toca en un teléfono. El estado se lee por el relleno
-                      del check y por si el monto está tachado, no solo por
-                      color — un daltónico ve el cambio igual. */}
-                  <button
-                    type="button"
-                    onClick={() => alternar(i.id)}
-                    aria-pressed={incluido}
-                    className={cn(
-                      "card rounded-card w-full flex items-center gap-3 px-4 py-2.5 text-left",
-                      "cursor-pointer transition-opacity active:scale-[0.99]",
-                      !incluido && "opacity-55",
-                    )}
-                  >
-                    <span
-                      aria-hidden="true"
-                      className={cn(
-                        "grid place-items-center size-6 shrink-0 rounded-tile border-2 transition-colors",
-                        incluido
-                          ? "bg-primary border-primary text-on-brand"
-                          : "border-line-strong text-transparent",
-                      )}
-                    >
-                      <Icon name="check" size={14} />
-                    </span>
-                    <IconBubble
-                      icon={i.kind === "debt" ? "debt" : "repeat"}
-                      tone={i.overdue ? "danger" : i.kind === "debt" ? "warning" : "info"}
-                      size="sm"
+          {items.length > 0 && (
+            <>
+              <SectionHead
+                title="Antes de tu próximo cobro"
+                action={
+                  <span className="text-sm text-muted">
+                    {nextPay ? formatDateShort(nextPay) : ""}
+                  </span>
+                }
+              />
+              <ul className="flex flex-col gap-2">
+                {items.map((i) => (
+                  <li key={i.id}>
+                    <FilaCompromiso
+                      item={i}
+                      incluido={!excluidos.includes(i.id)}
+                      onToggle={() => alternar(i.id)}
                     />
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-semibold text-ink truncate">{i.name}</p>
-                      <p className="text-xs text-muted">{formatDateShort(i.date)}</p>
-                    </div>
-                    {i.overdue && <Badge tone="danger">Vencida</Badge>}
-                    <p
-                      className={cn(
-                        "text-sm font-bold tabular shrink-0",
-                        incluido ? "text-expense" : "text-muted line-through",
-                      )}
-                    >
-                      −{formatDOP(i.amount, false)}
-                    </p>
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+
+          {/* Deudas que vencen después: este cobro no tiene que cubrirlas —ya
+              las cubre el siguiente— pero adelantarlas es una decisión real si
+              te sobra. Van destildadas y el subtítulo lo dice, para que nadie
+              piense que se le olvidó contarlas. */}
+          {laterDebts.length > 0 && (
+            <>
+              <SectionHead
+                className={items.length > 0 ? "mt-4" : undefined}
+                title="Deudas que vencen después"
+                subtitle="No cuentan salvo que quieras adelantarlas con este cobro."
+              />
+              <ul className="flex flex-col gap-2">
+                {laterDebts.map((i) => (
+                  <li key={i.id}>
+                    <FilaCompromiso
+                      item={i}
+                      incluido={!excluidos.includes(i.id)}
+                      onToggle={() => alternar(i.id)}
+                    />
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
 
           <Card className="flex flex-col gap-2 py-3">
             <div className="flex items-center justify-between gap-3">
               <span className="text-sm text-muted">Cobras</span>
               <span className="text-sm font-bold text-ink tabular">{formatDOP(montoN, false)}</span>
             </div>
-            <div className="flex items-center justify-between gap-3">
-              <span className="text-sm text-muted">
-                Comprometido{excluidos.length > 0 && ` (${excluidos.length} sin contar)`}
-              </span>
-              <span className="text-sm font-bold text-expense tabular">
-                −{formatDOP(comprometido, false)}
-              </span>
-            </div>
+            {items.length > 0 && (
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-sm text-muted">
+                  Comprometido{sinContar > 0 && ` (${sinContar} sin contar)`}
+                </span>
+                <span className="text-sm font-bold text-expense tabular">
+                  −{formatDOP(comprometido, false)}
+                </span>
+              </div>
+            )}
+            {adelantado > 0 && (
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-sm text-muted">Adelantado</span>
+                <span className="text-sm font-bold text-expense tabular">
+                  −{formatDOP(adelantado, false)}
+                </span>
+              </div>
+            )}
             <div className="flex items-center justify-between gap-3 border-t border-line pt-2">
               <span className="text-sm font-semibold text-ink">Te queda</span>
               <span

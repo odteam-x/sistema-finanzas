@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { payoutTotals, itemsDueBefore, type PayoutItem } from "./payoutPlan";
+import { payoutTotals, itemsDueBefore, debtsDueAfter, type PayoutItem } from "./payoutPlan";
 
 const item = (id: string, amount: number, date: string): PayoutItem => ({
   id,
@@ -96,5 +96,47 @@ describe("itemsDueBefore", () => {
     const antes = items.map((i) => i.overdue);
     itemsDueBefore(items, hoy, proximoCobro);
     expect(items.map((i) => i.overdue)).toEqual(antes);
+  });
+});
+
+describe("debtsDueAfter", () => {
+  const proximoCobro = "2026-09-05";
+  const items: PayoutItem[] = [
+    item("antes", 500, "2026-08-30"),
+    item("el-dia", 900, "2026-09-05"),
+    item("despues", 1500, "2026-09-20"),
+    { ...item("sub-despues", 400, "2026-09-25"), kind: "subscription" },
+  ];
+
+  it("solo lo que vence en el próximo cobro o después", () => {
+    const ids = debtsDueAfter(items, proximoCobro).map((i) => i.id);
+    expect(ids).toEqual(["el-dia", "despues"]);
+  });
+
+  it("las suscripciones NO entran: se cobran solas en su fecha", () => {
+    expect(debtsDueAfter(items, proximoCobro).map((i) => i.id)).not.toContain("sub-despues");
+  });
+
+  it("no se solapa con itemsDueBefore: cada deuda cae en un solo bloque", () => {
+    const hoy = "2026-08-20";
+    const antes = itemsDueBefore(items, hoy, proximoCobro).map((i) => i.id);
+    const despues = debtsDueAfter(items, proximoCobro).map((i) => i.id);
+    expect(antes.filter((id) => despues.includes(id))).toEqual([]);
+  });
+
+  it("nada se marca como vencido: por definición aún no vencen", () => {
+    expect(debtsDueAfter(items, proximoCobro).every((i) => !i.overdue)).toBe(true);
+  });
+
+  it("excluidas por defecto, el neto no cambia", () => {
+    const futuras = debtsDueAfter(items, proximoCobro);
+    const t = payoutTotals(10000, futuras, futuras.map((i) => i.id), 15);
+    expect(t.neto).toBe(10000);
+  });
+
+  it("adelantar una sí la resta", () => {
+    const futuras = debtsDueAfter(items, proximoCobro);
+    const t = payoutTotals(10000, futuras, ["el-dia"], 15);
+    expect(t.neto).toBe(8500);
   });
 });
