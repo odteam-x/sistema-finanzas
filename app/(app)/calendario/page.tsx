@@ -7,6 +7,7 @@ import {
   getSubscriptions,
 } from "@/lib/data";
 import { toISODate, formatMonth, todayISO } from "@/lib/format";
+import { periodDaysFor } from "@/lib/periods";
 import { countWorkdays, exceptionsMap } from "@/lib/calendar";
 import { monthPeriods, paydaysInMonthFrom, fixedPayDays } from "@/lib/periods";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -100,7 +101,7 @@ export default async function CalendarioPage({
 
   // Conteos
   const workedMonth = countWorkdays(monthStart, monthEnd, exMap);
-  const [q1, q2] = monthPeriods(year, month);
+  const [q1, q2] = monthPeriods(year, month, periodDaysFor(settings));
   const workedQ1 = countWorkdays(q1.start, q1.end, exMap);
   const workedQ2 = countWorkdays(q2.start, q2.end, exMap);
 

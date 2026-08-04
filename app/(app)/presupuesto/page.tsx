@@ -8,7 +8,8 @@ import {
   getSubscriptions,
   getTags,
 } from "@/lib/data";
-import { formatDateLong, todayISO, toISODate } from "@/lib/format";
+import { formatDateLong, todayISO, toISODate, parseISODate } from "@/lib/format";
+import { getPeriodDays } from "@/lib/periodConfig";
 import { countWorkdays, exceptionsMap } from "@/lib/calendar";
 import { resolveBudgetBasis } from "@/lib/budgetDays";
 import { quincenaForDate } from "@/lib/periods";
@@ -108,9 +109,13 @@ export default async function PresupuestoPage({
   const tagFilter = sp.tag || "";
   const search = (sp.q ?? "").trim().toLowerCase();
   const today = todayISO();
-  const q = quincenaForDate(today);
+  const q = quincenaForDate(today, await getPeriodDays());
   const monthStart = toISODate(new Date(q.year, q.month, 1, 12));
-  const monthEnd = toISODate(new Date(q.year, q.month + 1, 0, 12));
+  // Hasta el final del mes donde CIERRA el período: con días de cobro
+  // propios cruza de mes (20 ago -> 4 sep) y cortar en el 31 dejaria fuera
+  // dias trabajados de este mismo periodo.
+  const qEnd = parseISODate(q.end);
+  const monthEnd = toISODate(new Date(qEnd.getFullYear(), qEnd.getMonth() + 1, 0, 12));
 
   const window = spendingWindow(today);
   const [exceptions, expenses, accounts, tags, overrides, subscriptions, rules, historyExpenses] =

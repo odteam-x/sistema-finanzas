@@ -39,6 +39,9 @@ export const metadata = { title: "Ingresos · Cachin'" };
 const FREQ_LABEL: Record<string, string> = {
   semanal: "Semanal",
   quincenal: "Quincenal (cada 15 días)",
+  // Faltaba: la opción existe en el selector desde que se añadió 'dias_fijos',
+  // pero acá no, así que la línea de resumen salía cortada en "· ".
+  dias_fijos: "Días fijos del mes",
   mensual: "Mensual",
 };
 
@@ -167,6 +170,9 @@ export default async function IngresosPage({
   }
 
   const today = todayISO();
+  // "Puestos" = distintos de los valores por defecto del esquema (15 y 30):
+  // si nunca los tocó, no hay nada que avisar.
+  const diasDeCobroPuestos = settings.pay_day_1 !== 15 || settings.pay_day_2 !== 30;
   const thisMonth = today.slice(0, 7);
   const monthTotal = salaries
     .filter((s) => s.confirmed && s.pay_date.slice(0, 7) === thisMonth)
@@ -241,7 +247,20 @@ export default async function IngresosPage({
                 <Money value={settings.default_amount} />
               </span>{" "}
               · {FREQ_LABEL[settings.frequency]}
+              {settings.frequency === "dias_fijos" && ` (${settings.pay_day_1} y ${settings.pay_day_2})`}
             </p>
+            {/* Los días de cobro SOLO los lee la frecuencia "días fijos". Antes
+                el formulario los dejaba poner igual y el único aviso era un
+                hint en letra pequeña dentro del modal: se podía dejar puesto
+                "cobro el 5 y el 20" y que el sistema no lo leyera nunca. Ahora
+                se dice en la pantalla, no escondido en el formulario. */}
+            {settings.frequency !== "dias_fijos" && diasDeCobroPuestos && (
+              <p className="text-xs text-warning font-semibold mt-1">
+                Tienes puestos los días {settings.pay_day_1} y {settings.pay_day_2}, pero con
+                “{FREQ_LABEL[settings.frequency]}” no se usan. Cambia a “Días fijos del mes”
+                para que tus quincenas arranquen en esos días.
+              </p>
+            )}
           </div>
           <FormModal
             title="Configuración del sueldo"

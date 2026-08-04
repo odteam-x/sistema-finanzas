@@ -29,8 +29,14 @@ import { normalizeKeyword } from "./categorize";
 import { ratesMap, toDOP } from "./currency";
 import { outstandingOfDebt } from "./debts";
 import { goalProgress } from "./goals";
-import { quincenaForDate, nextPayDateFrom, fixedPayDays, type Period } from "./periods";
-import { addDaysISO, daysBetween, formatDOP, toISODate, todayISO } from "./format";
+import {
+  quincenaForDate,
+  nextPayDateFrom,
+  fixedPayDays,
+  periodDaysFor,
+  type Period,
+} from "./periods";
+import { addDaysISO, daysBetween, formatDOP, parseISODate, toISODate, todayISO } from "./format";
 import type { AccountType, Currency, Goal, Salary, SavingsMovement } from "./types";
 
 export interface Alert {
@@ -110,16 +116,29 @@ export interface FinanceSummary {
 
 export async function getFinanceSummary(): Promise<FinanceSummary> {
   const today = todayISO();
-  const q = quincenaForDate(today);
+
+  /* Los ajustes se leen ANTES que todo lo demás y no dentro del Promise.all:
+     de ellos sale en qué días arrancan los períodos, y sin eso no se sabe qué
+     rango de fechas pedirle a las demás consultas. Es una fila con clave
+     primaria, así que el viaje extra no se nota. */
+  const settings = await getSalarySettings();
+  const periodDays = periodDaysFor(settings);
+
+  const q = quincenaForDate(today, periodDays);
   const monthStart = toISODate(new Date(q.year, q.month, 1, 12));
-  const monthEnd = toISODate(new Date(q.year, q.month + 1, 0, 12));
+  /* Hasta el final del mes en el que CIERRA el período, no en el que abre.
+     Con días de cobro propios un período cruza de mes (20 ago → 4 sep), y
+     cortar en el 31 de agosto dejaría fuera los feriados y excepciones del
+     1 al 4 de septiembre — que son días trabajados de ESTE período y cambian
+     el gasto diario. */
+  const qEnd = parseISODate(q.end);
+  const monthEnd = toISODate(new Date(qEnd.getFullYear(), qEnd.getMonth() + 1, 0, 12));
 
   // Ventana de 3 meses hacia atrás (incluye el mes actual) para comparar el
   // gasto por etiqueta de este mes contra su promedio reciente.
   const anomalyStart = toISODate(new Date(q.year, q.month - 2, 1, 12));
 
   const [
-    settings,
     salaries,
     categories,
     exceptions,
@@ -140,7 +159,6 @@ export async function getFinanceSummary(): Promise<FinanceSummary> {
     goalContributions,
     historyExpenses,
   ] = await Promise.all([
-    getSalarySettings(),
     getSalaries(),
     getBudgetCategories(),
     getExceptions(monthStart, monthEnd),

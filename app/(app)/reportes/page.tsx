@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { getExpenses, getSalaries, getTags } from "@/lib/data";
 import { formatDateLong, formatDOP, formatMonthShort, todayISO, toISODate } from "@/lib/format";
-import { monthPeriods } from "@/lib/periods";
+import { monthPeriods, type PeriodDays } from "@/lib/periods";
+import { getPeriodDays } from "@/lib/periodConfig";
 import { cn } from "@/lib/cn";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { buttonClasses } from "@/components/ui/Button";
@@ -36,12 +37,18 @@ interface ReportPeriod {
  *  lib/periods.ts- ("quincena"). Ambos modos comparten la misma forma
  *  {key, barLabel, start, end}: el resto de la página agrega/filtra por
  *  rango de fechas sin ramificar por modo. */
-function buildPeriods(mode: ReportMode, months: { year: number; month: number }[]): ReportPeriod[] {
+function buildPeriods(
+  mode: ReportMode,
+  months: { year: number; month: number }[],
+  days: PeriodDays,
+): ReportPeriod[] {
   if (mode === "quincena") {
     return months.flatMap(({ year, month }) =>
-      monthPeriods(year, month).map((p) => ({
+      monthPeriods(year, month, days).map((p) => ({
         key: p.key,
-        barLabel: `${p.half === 1 ? "1-15" : "16+"} ${formatMonthShort(year, month)}`,
+        // El rótulo sale de los días reales del usuario: estaba fijo en
+        // "1-15"/"16+", que con días de cobro propios era mentira.
+        barLabel: `${p.half === 1 ? days[0] : days[1]}+ ${formatMonthShort(year, month)}`,
         start: p.start,
         end: p.end,
       })),
@@ -109,7 +116,7 @@ export default async function ReportesPage({
   // confirmar no cuenta como ingreso real todavía (ver lib/summary.ts).
   const salaries = widestSalaries.filter((s) => s.confirmed && s.pay_date >= fromISO);
 
-  const periods = buildPeriods(mode, months);
+  const periods = buildPeriods(mode, months, await getPeriodDays());
 
   const totalsByPeriod = new Map<string, number>();
   const incomeByPeriod = new Map<string, number>();

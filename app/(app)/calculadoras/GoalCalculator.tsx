@@ -5,10 +5,13 @@ import { Field, Input, MoneyInput } from "@/components/ui/Field";
 import { DateField } from "@/components/ui/DateField";
 import { FormModal } from "@/components/ui/FormModal";
 import { formatDOP, todayISO } from "@/lib/format";
-import { periodAfterN } from "@/lib/periods";
+import { periodAfterN, type PeriodDays } from "@/lib/periods";
 import { addGoal } from "../metas/actions";
 
-export function GoalCalculator() {
+/** `periodDays` llega desde el servidor: las quincenas de este usuario
+ *  arrancan en SUS días de cobro, y este componente es de cliente, así que
+ *  no puede consultarlos por su cuenta. */
+export function GoalCalculator({ periodDays }: { periodDays: PeriodDays }) {
   const [target, setTarget] = useState("");
   const [saved, setSaved] = useState("");
   const [periods, setPeriods] = useState("");
@@ -18,7 +21,7 @@ export function GoalCalculator() {
   const periodsN = Math.min(240, Math.max(0, Math.floor(Number(periods) || 0)));
   const remaining = Math.max(0, targetN - savedN);
   const perPeriod = periodsN > 0 ? remaining / periodsN : null;
-  const deadline = periodsN > 0 ? periodAfterN(todayISO(), periodsN).end : "";
+  const deadline = periodsN > 0 ? periodAfterN(todayISO(), periodsN, periodDays).end : "";
 
   return (
     <div className="flex flex-col gap-4">

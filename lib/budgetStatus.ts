@@ -8,14 +8,19 @@ import { exceptionsMap } from "./calendar";
 import { resolveBudgetBasis } from "./budgetDays";
 import { perDayFromHistory, spendingWindow } from "./spendingHistory";
 import { quincenaForDate } from "./periods";
-import { toISODate } from "./format";
+import { getPeriodDays } from "./periodConfig";
+import { parseISODate, toISODate } from "./format";
 
 export async function getQuincenaBudgetStatus(
   dateISO: string,
 ): Promise<{ estQuincena: number; realQuincena: number }> {
-  const q = quincenaForDate(dateISO);
+  // Mismos períodos que el resto de la app: los que arrancan en los días de
+  // cobro del usuario (ver lib/periods.ts).
+  const q = quincenaForDate(dateISO, await getPeriodDays());
   const monthStart = toISODate(new Date(q.year, q.month, 1, 12));
-  const monthEnd = toISODate(new Date(q.year, q.month + 1, 0, 12));
+  // Hasta el final del mes donde CIERRA: el período puede cruzar de mes.
+  const qEnd = parseISODate(q.end);
+  const monthEnd = toISODate(new Date(qEnd.getFullYear(), qEnd.getMonth() + 1, 0, 12));
 
   const window = spendingWindow(dateISO);
   const [exceptions, periodOverrides, expenses, historyExpenses] = await Promise.all([

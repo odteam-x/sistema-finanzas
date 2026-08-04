@@ -9,6 +9,7 @@ import {
   getSavingsMovements,
 } from "@/lib/data";
 import { balanceOfAccount } from "@/lib/balances";
+import { getPeriodDays } from "@/lib/periodConfig";
 import { goalProgress } from "@/lib/goals";
 import { formatDateShort, clampPct, todayISO, daysBetween } from "@/lib/format";
 import { quincenasUntil } from "@/lib/periods";
@@ -80,6 +81,8 @@ export default async function MetasPage() {
     getGoalContributionMovements(),
   ]);
   const today = todayISO();
+  // Las quincenas del usuario, no las mitades del calendario.
+  const periodDays = await getPeriodDays();
 
   // Si la vista aún no existe (migration-v17 sin correr), se cae al cálculo
   // de siempre sobre el historial completo — mismo patrón que en Balance.
@@ -264,7 +267,7 @@ export default async function MetasPage() {
             const daysLeft = g.deadline ? daysBetween(today, g.deadline) : null;
             const perQuincena =
               !done && g.deadline && daysLeft !== null && daysLeft >= 0
-                ? (Number(g.target_amount) - currentAmount) / quincenasUntil(today, g.deadline)
+                ? (Number(g.target_amount) - currentAmount) / quincenasUntil(today, g.deadline, periodDays)
                 : null;
             return (
               <Card key={g.id} className="flex flex-col gap-3 min-w-0">
