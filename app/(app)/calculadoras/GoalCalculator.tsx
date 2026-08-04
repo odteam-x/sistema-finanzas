@@ -26,7 +26,7 @@ export function GoalCalculator() {
           mientras escribes, y en móvil quedaba fuera de la pantalla justo
           cuando el teclado está abierto — o sea, invisible siempre que
           servía de algo. */}
-      <div className="rounded-hero bg-gradient-brand px-5 py-6 text-center shadow-hero">
+      <div className="rounded-hero tone-calc bg-gradient-brand px-5 py-6 text-center shadow-hero">
         <p className="text-sm font-medium text-on-brand-muted">Debes ahorrar por quincena</p>
         <p className="money-lg font-extrabold text-on-brand tabular mt-0.5">
           {perPeriod != null ? formatDOP(perPeriod, false) : "—"}

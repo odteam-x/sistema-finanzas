@@ -29,7 +29,7 @@ export function LoanCalculator() {
     <div className="flex flex-col gap-4">
       {/* Igual que en GoalCalculator: el resultado vive arriba, donde se ve
           mientras se escriben los campos. */}
-      <div className="rounded-hero bg-gradient-brand px-5 py-6 text-center shadow-hero">
+      <div className="rounded-hero tone-calc bg-gradient-brand px-5 py-6 text-center shadow-hero">
         <p className="text-sm font-medium text-on-brand-muted">Cuota {FREQ_LABEL[frequency]}</p>
         <p className="money-lg font-extrabold text-on-brand tabular mt-0.5">
           {installmentAmount != null ? formatDOP(installmentAmount, false) : "—"}

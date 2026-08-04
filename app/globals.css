@@ -361,8 +361,13 @@ body {
    contraste, no solo para el gusto: el extremo oscuro (9.71:1 con blanco)
    queda arriba, donde viven el avatar, la campana y el label; el medio
    (5.53:1, también AA normal) queda abajo, bajo la cifra grande. Los
-   semánticos se quedan planos — el gradiente es solo del teal, el único
-   elemento saturado por pantalla.
+   semánticos (danger/warning/info) siguen planos: son estados, no secciones.
+
+   ANTES ESTO DECÍA que el teal era "el único elemento saturado por pantalla".
+   Ya no: cada sección con bloque hero tiene su propio tono (ver .tone-* más
+   abajo). Sigue habiendo UNO por pantalla — lo que cambia es que no siempre
+   es el mismo. La regla real nunca fue "solo teal" sino "un solo bloque
+   saturado", y esa se mantiene.
 --------------------------------------------------------------------------- */
 .bg-gradient-brand {
   background-image: linear-gradient(
@@ -371,6 +376,88 @@ body {
     var(--brand-grad-to) 100%
   );
 }
+/* ---------------------------------------------------------------------------
+   Tono por sección. Cada clase REDEFINE los cuatro tokens del hero en su
+   propio subárbol, así que el marcado no cambia: el bloque sigue usando
+   `bg-gradient-brand`, `text-on-brand-muted` y `bg-on-brand-well` como
+   siempre, y solo hereda otros valores. Sin esto harían falta cinco juegos
+   de clases nuevas y tocar cada hero por dentro.
+
+   Los cuatro valores de cada tono están DERIVADOS, no elegidos a ojo: se
+   oscureció cada matiz hasta cumplir el mismo baremo que el teal, y se
+   verificaron los tres pares que llevan texto encima.
+
+   El que manda NO es el blanco sobre el fondo, es el label secundario: con un
+   gris neutro ni el propio teal llegaba a 4.5:1. Por eso cada tono lleva su
+   `--color-on-brand-muted` teñido de su matiz, igual que el teal lleva el
+   suyo, y el extremo claro se fijó en ~6:1 con blanco para que ese label
+   quepa con holgura. El objetivo del label es 4.7 y no 4.5 a propósito:
+   clavarlo en el mínimo deja el diseño a merced de que alguien retoque un
+   matiz un pelo y lo tumbe por debajo sin darse cuenta.
+
+   Inicio no tiene clase: se queda con el teal de marca, que es el de la app.
+   Presupuesto tampoco entra — no tiene bloque hero, es plano por diseño.
+--------------------------------------------------------------------------- */
+.tone-balance {
+  --brand-grad-from: #3a4a5a;
+  --brand-grad-to: #4f657c;
+  --color-on-brand-muted: #dee4e9;
+  --color-on-brand-well: #435669;
+}
+.tone-ingresos {
+  --brand-grad-from: #1d5237;
+  --brand-grad-to: #276f4a;
+  --color-on-brand-muted: #d5e7de;
+  --color-on-brand-well: #225f3f;
+}
+.tone-metas {
+  --brand-grad-from: #563e73;
+  --brand-grad-to: #75549b;
+  --color-on-brand-muted: #e8e1ef;
+  --color-on-brand-well: #634884;
+}
+.tone-reportes {
+  --brand-grad-from: #733728;
+  --brand-grad-to: #9d4b37;
+  --color-on-brand-muted: #efe1dd;
+  --color-on-brand-well: #86402f;
+}
+.tone-calc {
+  --brand-grad-from: #47494d;
+  --brand-grad-to: #606369;
+  --color-on-brand-muted: #e3e4e5;
+  --color-on-brand-well: #515459;
+}
+
+/* En oscuro los extremos bajan, por el mismo motivo que el teal: el modo
+   oscuro sube la luminosidad percibida y el label secundario se quedaría sin
+   margen. Aquí el extremo claro se fija en ~7:1 con blanco. */
+[data-mode="dark"] .tone-balance {
+  --brand-grad-from: #354352;
+  --brand-grad-to: #475b6f;
+  --color-on-brand-muted: #ccd5dd;
+}
+[data-mode="dark"] .tone-ingresos {
+  --brand-grad-from: #1b4b32;
+  --brand-grad-to: #236442;
+  --color-on-brand-muted: #bfd9cb;
+}
+[data-mode="dark"] .tone-metas {
+  --brand-grad-from: #4e3868;
+  --brand-grad-to: #684b8b;
+  --color-on-brand-muted: #d9cfe5;
+}
+[data-mode="dark"] .tone-reportes {
+  --brand-grad-from: #683225;
+  --brand-grad-to: #8c4331;
+  --color-on-brand-muted: #e5cec8;
+}
+[data-mode="dark"] .tone-calc {
+  --brand-grad-from: #404246;
+  --brand-grad-to: #56595e;
+  --color-on-brand-muted: #d3d4d6;
+}
+
 .bg-gradient-danger {
   background-color: var(--color-danger);
 }

@@ -126,7 +126,7 @@ export default async function MetasPage() {
       {/* Antes esto colgaba de `goals.length > 0`, así que quien tuviera
           ahorro general pero ninguna meta no veía su total por ningún lado. */}
       {(goals.length > 0 || generalSavings.length > 0) && (
-        <section className="mb-6 rounded-hero bg-gradient-brand px-5 py-6 shadow-hero">
+        <section className="mb-6 rounded-hero tone-metas bg-gradient-brand px-5 py-6 shadow-hero">
           <p className="text-sm font-medium text-on-brand-muted">Ahorrado en total</p>
           <MoneyValue
             value={savedOverall}
