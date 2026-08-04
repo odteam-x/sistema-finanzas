@@ -18,6 +18,7 @@ import { Field, Input, Select, MoneyInput } from "@/components/ui/Field";
 import { DateField } from "@/components/ui/DateField";
 import { FormModal } from "@/components/ui/FormModal";
 import { DeleteButton } from "@/components/ui/DeleteButton";
+import { undoDelete } from "../undo-actions";
 import { Icon } from "@/components/ui/Icon";
 import { MoneyValue } from "@/components/ui/MoneyValue";
 import { Money } from "@/components/ui/Money";
@@ -390,11 +391,20 @@ export default async function BalancePage() {
                     <Badge tone={isDep ? "primary" : "danger"}>
                       {isDep ? "Depósito" : "Retiro"}
                     </Badge>
-                    <DeleteButton
-                      action={deleteMovement.bind(null, m.id)}
-                      title="¿Eliminar movimiento?"
-                      message="Se recalculará el saldo de la cuenta."
-                    />
+                    {/* Mismo criterio que /movimientos: solo se ofrece borrar
+                        lo que se registró a mano. Un movimiento espejo (el de
+                        un gasto, un sueldo, una cuota de deuda…) borrado solo
+                        deja su origen vivo y el dinero de vuelta en la cuenta.
+                        deleteMovement lo rechaza igualmente — esto es para que
+                        el botón ni siquiera aparezca. */}
+                    {m.source === "manual" && !m.source_ref_id && (
+                      <DeleteButton
+                        action={deleteMovement.bind(null, m.id)}
+                        undoAction={undoDelete}
+                        title="¿Eliminar movimiento?"
+                        message="Se recalculará el saldo de la cuenta."
+                      />
+                    )}
                   </Card>
                 </li>
               );

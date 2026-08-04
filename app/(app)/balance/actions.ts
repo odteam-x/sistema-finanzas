@@ -7,7 +7,7 @@ import { getOrCreateDefaultAccountId } from "@/lib/accounts";
 import { parseAmount, type ActionResult } from "@/lib/actions-shared";
 import { softDeleteRows, type UndoableResult } from "@/lib/softDelete";
 import { todayISO } from "@/lib/format";
-import type { AccountType, Currency, MovementKind } from "@/lib/types";
+import type { AccountType, Currency, MovementKind, MovementSource } from "@/lib/types";
 
 const ACCOUNT_TYPE_VALUES: AccountType[] = [
   "ahorro",
@@ -371,8 +371,60 @@ export async function addMovement(formData: FormData): Promise<ActionResult> {
   return { ok: true };
 }
 
+/** De dónde vino un movimiento que NO se puede borrar suelto, y adónde hay
+ *  que ir a borrar el original. El texto se le enseña al usuario tal cual.
+ *
+ *  `manual` está en la lista y no es contradictorio: el espejo de un gasto
+ *  corriente se guarda con source='manual' y el id del gasto en
+ *  source_ref_id. Es el caso MÁS común con diferencia, así que merece su
+ *  propio texto en vez de caer en el genérico. Lo que distingue a un
+ *  movimiento suelto no es el source, es no tener source_ref_id. */
+const ORIGEN_DEL_MOVIMIENTO: Partial<Record<MovementSource, string>> = {
+  manual: "un gasto registrado — elimina el gasto desde Movimientos o Presupuesto",
+  salary: "un ingreso registrado — elimínalo desde Ingresos",
+  subscription: "un cobro de suscripción — elimina el gasto desde Movimientos",
+  debt_payment: "el pago de una deuda — deshazlo desde Deudas",
+  goal_contribution: "un aporte a una meta — deshazlo desde Ahorros",
+  receivable_collected: "el cobro de un préstamo — deshazlo desde Cobros",
+  debt_disbursement: "el dinero que recibiste de una deuda — elimina la deuda desde Deudas",
+  receivable_disbursement: "el dinero que prestaste — elimina el préstamo desde Cobros",
+};
+
 export async function deleteMovement(id: string): Promise<UndoableResult> {
   await requireUser();
+  const supabase = await createClient();
+
+  /* Un movimiento espejo NO se puede borrar solo. Si se borra el espejo de un
+     gasto, el gasto sigue vivo pero su dinero vuelve a la cuenta: el saldo
+     sube y el gasto se sigue contando como gastado. Es exactamente la
+     invariante que vigila check:coherence ("todo gasto vivo tiene UN espejo"),
+     y romperla desde la UI descuadra el ledger, que es la fuente de verdad.
+
+     La comprobación va acá y no solo en la pantalla porque una acción de
+     servidor es un endpoint público: esconder el botón evita el accidente,
+     no el caso de que la acción se invoque igual. /movimientos ya escondía el
+     botón; /balance lo mostraba en TODOS los movimientos, y por ahí sí se
+     llegaba. Ahora ambas cosas están cubiertas. */
+  const { data: movement, error: readError } = await supabase
+    .from("savings_movements")
+    .select("source, source_ref_id")
+    .eq("id", id)
+    .is("deleted_at", null)
+    .maybeSingle();
+  if (readError) return { ok: false, error: "No se pudo eliminar." };
+  if (!movement) return { ok: false, error: "Ese movimiento ya no existe." };
+
+  const esEspejo = movement.source !== "manual" || movement.source_ref_id !== null;
+  if (esEspejo) {
+    const origen = ORIGEN_DEL_MOVIMIENTO[movement.source as MovementSource];
+    return {
+      ok: false,
+      error: origen
+        ? `Este movimiento viene de ${origen}. Si lo borras solo, el saldo dejaría de cuadrar.`
+        : "Este movimiento viene de otro registro y no se puede borrar suelto.",
+    };
+  }
+
   // R15: borrado suave — la fila se marca, no se destruye, para que
   // "Deshacer" sea instantáneo y no haya que reconstruir nada.
   const res = await softDeleteRows("savings_movements", [id]);
