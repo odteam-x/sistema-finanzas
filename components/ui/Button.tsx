@@ -33,6 +33,39 @@ const sizes: Record<Size, string> = {
   md: "min-h-11 px-4 text-[1.05rem] gap-2",
 };
 
+/** Las clases de un botón, sin el botón.
+ *
+ *  Existe porque hay acciones primarias que son ENLACES y no botones ("Ver
+ *  movimientos", "Ir a Balance", "Registrar gasto", "Descargar CSV"): un
+ *  <a>/<Link> no puede ser <Button>, y copiar el className a mano ya se había
+ *  desviado —las copias usaban `hover:brightness-[0.97]`, que OSCURECE, contra
+ *  el `hover:brightness-110` de aquí, que aclara. Dos controles idénticos
+ *  reaccionaban al revés al pasar el cursor.
+ *
+ *  Lo único que no comparte un enlace es el rebote al pulsar: lo dibuja
+ *  framer-motion desde <Button>, no una clase. */
+export function buttonClasses({
+  variant = "primary",
+  size = "md",
+  full,
+  className,
+}: {
+  variant?: Variant;
+  size?: Size;
+  full?: boolean;
+  className?: string;
+} = {}): string {
+  return cn(
+    "inline-flex items-center justify-center rounded-pill font-semibold",
+    "transition-[filter,background-color] duration-150 cursor-pointer select-none",
+    "disabled:opacity-50 disabled:cursor-not-allowed",
+    variants[variant],
+    sizes[size],
+    full && "w-full",
+    className,
+  );
+}
+
 export function Button({
   variant = "primary",
   size = "md",
@@ -47,15 +80,7 @@ export function Button({
     <motion.button
       whileTap={{ scale: 0.96 }}
       transition={{ type: "spring", stiffness: 500, damping: 30 }}
-      className={cn(
-        "inline-flex items-center justify-center rounded-pill font-semibold",
-        "transition-[filter,background-color] duration-150 cursor-pointer select-none",
-        "disabled:opacity-50 disabled:cursor-not-allowed",
-        variants[variant],
-        sizes[size],
-        full && "w-full",
-        className,
-      )}
+      className={buttonClasses({ variant, size, full, className })}
       disabled={disabled || loading}
       {...props}
     >

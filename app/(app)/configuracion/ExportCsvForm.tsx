@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Field, Select } from "@/components/ui/Field";
+import { buttonClasses } from "@/components/ui/Button";
 import { DateField } from "@/components/ui/DateField";
 import { todayISO, addDaysISO } from "@/lib/format";
 
@@ -40,7 +41,7 @@ export function ExportCsvForm() {
       <a
         href={href}
         download
-        className="inline-flex items-center justify-center self-start rounded-pill font-semibold min-h-9 px-4 text-sm bg-gradient-brand text-white shadow-sm hover:brightness-[0.97] active:brightness-95 transition-[filter] duration-150 cursor-pointer"
+        className={buttonClasses({ size: "sm", className: "self-start" })}
       >
         Descargar CSV
       </a>

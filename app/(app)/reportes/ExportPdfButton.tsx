@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
 
 /** Reusa el HTML ya renderizado de la página (con estilos de impresión en
@@ -7,13 +8,9 @@ import { Icon } from "@/components/ui/Icon";
  *  usuario elige "Guardar como PDF" en el diálogo nativo de impresión. */
 export function ExportPdfButton() {
   return (
-    <button
-      type="button"
-      onClick={() => window.print()}
-      className="inline-flex items-center justify-center gap-2 rounded-pill font-semibold min-h-11 px-4 text-sm card text-ink hover:brightness-[0.97] active:brightness-95 cursor-pointer"
-    >
+    <Button type="button" variant="secondary" size="sm" onClick={() => window.print()}>
       <Icon name="download" size={16} />
       Exportar PDF
-    </button>
+    </Button>
   );
 }

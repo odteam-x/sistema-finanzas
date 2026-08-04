@@ -4,6 +4,7 @@ import { formatDateLong, formatDOP, formatMonthShort, todayISO, toISODate } from
 import { monthPeriods } from "@/lib/periods";
 import { cn } from "@/lib/cn";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { buttonClasses } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { StatTile } from "@/components/ui/StatTile";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -246,7 +247,7 @@ export default async function ReportesPage({
           action={
             <Link
               href="/presupuesto"
-              className="inline-flex items-center justify-center gap-2 rounded-pill font-semibold min-h-11 px-4 text-[1.05rem] bg-gradient-brand text-white shadow-sm hover:brightness-[0.97] active:brightness-95"
+              className={buttonClasses()}
             >
               <Icon name="plus" size={18} />
               Registrar gasto

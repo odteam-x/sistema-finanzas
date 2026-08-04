@@ -1,5 +1,6 @@
 import { getImportProfiles, getSavingsAccounts } from "@/lib/data";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { buttonClasses } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ImportWizard } from "./ImportWizard";
 
@@ -21,7 +22,7 @@ export default async function ImportarPage() {
           action={
             <a
               href="/balance"
-              className="inline-flex items-center justify-center gap-2 rounded-pill font-semibold min-h-11 px-4 text-[1.05rem] bg-gradient-brand text-white shadow-sm hover:brightness-[0.97] active:brightness-95"
+              className={buttonClasses()}
             >
               Ir a Balance
             </a>

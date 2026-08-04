@@ -3,7 +3,7 @@
 import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/Card";
-import { Button } from "@/components/ui/Button";
+import { Button, buttonClasses } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
 import { Field, Input, Select } from "@/components/ui/Field";
 import { Money } from "@/components/ui/Money";
@@ -553,7 +553,7 @@ export function ImportWizard({ accounts, profiles }: { accounts: SavingsAccount[
             </Button>
             <a
               href="/movimientos"
-              className="inline-flex items-center justify-center flex-1 rounded-pill font-semibold min-h-11 px-4 text-[1.05rem] bg-gradient-brand text-white shadow-sm hover:brightness-[0.97] active:brightness-95"
+              className={buttonClasses({ className: "flex-1" })}
             >
               Ver movimientos
             </a>
