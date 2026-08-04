@@ -1,13 +1,13 @@
 import { getFinanceSummary } from "@/lib/summary";
 import { getSavingsAccounts, getTags } from "@/lib/data";
 import { todayISO } from "@/lib/format";
-import { TIPS } from "@/lib/tips";
+import type { TipSituation } from "@/lib/tips";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { IconBubble } from "@/components/ui/IconBubble";
-import { AccordionItem } from "@/components/ui/Accordion";
 import { Money } from "@/components/ui/Money";
 import { NewSubscriptionForm } from "../suscripciones/NewSubscriptionForm";
+import { TipsList } from "./TipsList";
 import type { IconName } from "@/components/ui/Icon";
 import type { Alert } from "@/lib/summary";
 
@@ -26,6 +26,17 @@ const alertStyle: Record<
 export default async function SugerenciasPage() {
   const [s, accounts, tags] = await Promise.all([getFinanceSummary(), getSavingsAccounts(), getTags()]);
   const today = todayISO();
+
+  // Qué le falta a esta persona, para que el consejo que le sirve hoy salga
+  // primero en vez del orden fijo del archivo (ver lib/tips.ts).
+  const situation: TipSituation = {
+    hasDebt: s.outstandingDebt > 0,
+    hasGoals: s.goals.length > 0,
+    hasSavings: s.totalSaved + s.generalSavings > 0,
+    hasBudget: s.estQuincena > 0,
+    logsExpenses: s.realQuincena > 0,
+    overBudget: s.estQuincena > 0 && s.realQuincena > s.estQuincena,
+  };
 
   return (
     <>
@@ -96,13 +107,7 @@ export default async function SugerenciasPage() {
       {/* Tips generales: colapsados por defecto, no compiten con "Para ti
           ahora" (lo único que de verdad cambia según tus datos). */}
       <h2 className="text-sm font-bold text-ink px-1 mb-2">Aprender</h2>
-      <div className="flex flex-col gap-2">
-        {TIPS.map((t, i) => (
-          <AccordionItem key={i} title={t.title}>
-            {t.body}
-          </AccordionItem>
-        ))}
-      </div>
+      <TipsList situation={situation} />
 
       <p className="text-xs text-muted text-center mt-6 px-4">
         Este contenido es educativo y general. No constituye asesoría de inversión
