@@ -47,10 +47,12 @@ export function DeleteButton({
         return;
       }
       const token = res.undo;
-      toast.show(
-        successMessage,
-        token && undoAction ? () => undoAction(token).then(() => {}) : undefined,
-      );
+      // Se devuelve el ActionResult en vez de tragárselo con `.then(() => {})`:
+      // restaurar puede fallar de verdad (una etiqueta cuyo nombre ya volvió a
+      // ocuparse choca contra el índice único de migration-v29), y el Toast
+      // necesita el resultado para avisar en lugar de cerrarse como si todo
+      // hubiera ido bien.
+      toast.show(successMessage, token && undoAction ? () => undoAction(token) : undefined);
     });
   }
 

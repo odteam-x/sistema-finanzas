@@ -3,18 +3,26 @@
 import { createContext, useCallback, useContext, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Icon } from "./Icon";
+import type { ActionResult } from "@/lib/actions-shared";
 
 const UNDO_WINDOW_MS = 8000;
+
+/** Deshacer puede FALLAR de verdad — restaurar una etiqueta choca contra el
+ *  índice único de migration-v29 si mientras tanto se creó otra con el mismo
+ *  nombre. Por eso el callback puede devolver un ActionResult: antes su tipo
+ *  era `void`, así que el fallo no tenía por dónde salir y el aviso se cerraba
+ *  igual, dejando al usuario convencido de que había deshecho el borrado. */
+type UndoHandler = () => void | ActionResult | Promise<void | ActionResult>;
 
 interface ToastState {
   id: number;
   message: string;
-  onUndo?: () => void | Promise<void>;
+  onUndo?: UndoHandler;
 }
 
 interface ToastApi {
   /** Muestra un aviso; si trae `onUndo`, aparece el botón "Deshacer". */
-  show: (message: string, onUndo?: () => void | Promise<void>) => void;
+  show: (message: string, onUndo?: UndoHandler) => void;
 }
 
 const ToastContext = createContext<ToastApi | null>(null);
@@ -47,7 +55,13 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   async function handleUndo() {
     if (!toast?.onUndo || undoing) return;
     setUndoing(true);
-    await toast.onUndo();
+    const res = await toast.onUndo();
+    // Si falló, el aviso NO se cierra: se reemplaza por el error. Cerrarlo
+    // sería decirle al usuario que se deshizo algo que sigue borrado.
+    if (res && !res.ok) {
+      show(res.error ?? "No se pudo restaurar.");
+      return;
+    }
     dismiss();
   }
 
