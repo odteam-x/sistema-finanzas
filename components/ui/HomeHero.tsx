@@ -39,6 +39,10 @@ interface HomeHeroProps {
   displayName?: string;
   periodLabel: string;
   alertCount: number;
+  /** Lo que le pasa hoy a esta persona, ya resuelto en el servidor (ver
+   *  lib/greetingContext.ts). `null` cuando no hay nada que decir: entonces
+   *  la línea no se pinta en vez de rellenarse con una frase de relleno. */
+  contextLine?: string | null;
 }
 
 function timeGreeting(): string {
@@ -67,6 +71,7 @@ export function HomeHero({
   displayName,
   periodLabel,
   alertCount,
+  contextLine,
 }: HomeHeroProps) {
   const greeting = useSyncExternalStore(subscribeNoop, timeGreeting, () => "Hola");
   // Init perezoso (seguro: en el servidor no hay localStorage y readProfile
@@ -120,6 +125,15 @@ export function HomeHero({
             <h1 className="text-xl font-extrabold text-ink truncate leading-tight">
               {name || "Bienvenido"}
             </h1>
+            {/* Solo aparece cuando hay algo que decir, así que no roba alto de
+                forma permanente. No lleva `truncate`: la frase completa importa
+                más que la altura fija, y en pantalla estrecha preferimos que
+                pase a dos líneas antes que cortarse a la mitad. */}
+            {contextLine && (
+              <p className="text-xs text-primary-fg font-semibold leading-tight mt-0.5">
+                {contextLine}
+              </p>
+            )}
           </div>
         </div>
         <Link

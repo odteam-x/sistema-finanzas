@@ -4,6 +4,7 @@ import { getUserProfile } from "@/lib/data";
 import { runSubscriptionCatchUp } from "@/lib/subscriptions";
 import { runSalaryCatchUp } from "@/lib/salary";
 import { formatDateShort, daysBetween, clampPct } from "@/lib/format";
+import { greetingContext } from "@/lib/greetingContext";
 import { HomeHero } from "@/components/ui/HomeHero";
 import { PendingSalaryNotice } from "@/components/ui/PendingSalaryNotice";
 import { Card } from "@/components/ui/Card";
@@ -79,6 +80,16 @@ export default async function DashboardPage() {
   ]);
   const s = await getFinanceSummary();
 
+  // Hoy cuenta como día disponible: si la quincena cierra hoy todavía queda
+  // 1 día de presupuesto, no 0.
+  const daysLeftInQuincena = daysBetween(s.today, s.quincena.end) + 1;
+  const contextLine = greetingContext({
+    daysToPay: s.daysToPay,
+    estQuincena: s.estQuincena,
+    realQuincena: s.realQuincena,
+    daysLeftInQuincena,
+  });
+
   const budgetPct = clampPct(s.realQuincena, s.estQuincena || 1);
   const overBudget = s.realQuincena > s.estQuincena && s.estQuincena > 0;
 
@@ -113,6 +124,7 @@ export default async function DashboardPage() {
         displayName={profile?.display_name ?? undefined}
         periodLabel={s.quincena.label}
         alertCount={s.alerts.length}
+        contextLine={contextLine}
       />
 
       {/* Primeros pasos, solo mientras falte algo de lo básico. Desaparece
