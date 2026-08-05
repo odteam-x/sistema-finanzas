@@ -7,6 +7,7 @@ import { runSalaryCatchUp } from "@/lib/salary";
 import { formatDateShort, daysBetween, clampPct } from "@/lib/format";
 import { greetingContext } from "@/lib/greetingContext";
 import { orderHomeSections, type HomeSection } from "@/lib/sectionOrder";
+import { orderSituationTiles, type SituationTile } from "@/lib/situationHighlight";
 import { HomeHero } from "@/components/ui/HomeHero";
 import { SectionHead } from "@/components/ui/SectionHead";
 import { PendingSalaryNotice } from "@/components/ui/PendingSalaryNotice";
@@ -21,7 +22,6 @@ import { Icon, type IconName } from "@/components/ui/Icon";
 import { Money } from "@/components/ui/Money";
 import { MoneyValue } from "@/components/ui/MoneyValue";
 import { BarCompare } from "@/components/charts/BarCompare";
-import { GoalsRing } from "@/components/charts/GoalsRing";
 import { NotificationTrigger, type NotificationCandidate } from "@/components/NotificationTrigger";
 import { cn } from "@/lib/cn";
 
@@ -31,6 +31,98 @@ export const metadata = { title: "Inicio · Cachin'" };
  *  lista de props sueltas, porque cada una usa un puñado distinto de campos y
  *  enumerarlos solo duplicaría la forma de FinanceSummary. */
 type Summary = FinanceSummary;
+
+/** Nombre corto de cada dato, para el resumen de la tarjeta colapsada: cerrar
+ *  el Nivel 2 debe decir QUÉ hay dentro, no solo "Ver el resto". */
+const SITUATION_LABEL: Record<SituationTile, string> = {
+  ahorrado: "Ahorrado",
+  adeudado: "Adeudado",
+  proximoPago: "Próximo pago",
+  proximaDeuda: "Próxima deuda",
+};
+
+/** Los dos porcentajes de patrimonio, calculados una vez en la página y
+ *  pasados a los tiles que los dibujan como barra. */
+interface Pcts {
+  ahorrado: number | undefined;
+  adeudado: number | undefined;
+}
+
+/** Los cuatro datos de "Tu situación", en una sola definición.
+ *
+ *  Están acá y no repetidos dos veces porque el mismo dato se pinta grande
+ *  cuando gana el Nivel 1 y pequeño cuando cae al Nivel 2 — lo único que
+ *  cambia es `emphasis`. Duplicar el marcado habría dejado dos verdades que
+ *  mantener sincronizadas. */
+function SituationTile({
+  tile,
+  s,
+  emphasis,
+  pcts,
+}: {
+  tile: SituationTile;
+  s: Summary;
+  emphasis: "hero" | "quiet";
+  pcts: Pcts;
+}) {
+  switch (tile) {
+    case "ahorrado":
+      return (
+        <StatTile
+          emphasis={emphasis}
+          label="Total ahorrado"
+          value={<MoneyValue value={s.totalSaved + s.generalSavings} decimals={false} />}
+          // Suma metas + ahorro general (sin meta asignada) — el anillo de
+          // "Ahorros" solo muestra lo de metas, así que esta cifra puede ser
+          // mayor a propósito, no es un error de cuadre.
+          sub={s.generalSavings > 0 ? "Incluye ahorro sin meta asignada" : undefined}
+          info={
+            <InfoTooltip label="Total ahorrado">
+              Suma el progreso de todas tus metas más el saldo de tus cuentas de ahorro que no
+              están atadas a ninguna meta. El anillo de “Ahorros” solo cuenta la parte de las
+              metas — por eso es menor.
+            </InfoTooltip>
+          }
+          icon="piggy"
+          tone="primary"
+          progress={pcts.ahorrado}
+        />
+      );
+    case "adeudado":
+      return (
+        <StatTile
+          emphasis={emphasis}
+          label="Total adeudado"
+          value={<MoneyValue value={s.outstandingDebt} decimals={false} />}
+          icon="debt"
+          tone={s.outstandingDebt > 0 ? "expense" : "neutral"}
+          progress={pcts.adeudado}
+        />
+      );
+    case "proximoPago":
+      return (
+        <StatTile
+          emphasis={emphasis}
+          label="Próximo pago"
+          value={formatDateShort(s.nextPay)}
+          sub={s.daysToPay === 0 ? "hoy" : `en ${s.daysToPay} días`}
+          icon="clock"
+          tone="info"
+        />
+      );
+    case "proximaDeuda":
+      return (
+        <StatTile
+          emphasis={emphasis}
+          label="Próxima deuda"
+          value={s.nextDue ? formatDateShort(s.nextDue) : "—"}
+          sub={s.nextDueName ? `${s.nextDueName} · ${dueSub(s.daysToDue)}` : dueSub(s.daysToDue)}
+          icon="calendar"
+          tone={s.daysToDue !== null && s.daysToDue < 0 ? "expense" : "warning"}
+        />
+      );
+  }
+}
 
 const alertTone: Record<string, string> = {
   warning: "text-warning",
@@ -94,8 +186,29 @@ export default async function DashboardPage() {
   // no un porcentaje inventado. Con ambos en 0 no hay nada que proporcionar,
   // así que la barra se omite (undefined) en vez de mostrar un 0% falso.
   const patrimonioBase = s.totalSaved + s.generalSavings + s.outstandingDebt;
-  const ahorradoPct = patrimonioBase > 0 ? ((s.totalSaved + s.generalSavings) / patrimonioBase) * 100 : undefined;
-  const adeudadoPct = patrimonioBase > 0 ? (s.outstandingDebt / patrimonioBase) * 100 : undefined;
+  const pcts: Pcts = {
+    ahorrado:
+      patrimonioBase > 0 ? ((s.totalSaved + s.generalSavings) / patrimonioBase) * 100 : undefined,
+    adeudado: patrimonioBase > 0 ? (s.outstandingDebt / patrimonioBase) * 100 : undefined,
+  };
+
+  // Cuál de los cuatro datos de "Tu situación" reclama atención hoy: sube a
+  // tamaño grande y solo, los otros tres se colapsan (ver situationHighlight).
+  const [destacado, ...resto] = orderSituationTiles({
+    daysToDue: s.daysToDue,
+    outstandingDebt: s.outstandingDebt,
+    daysToPay: s.daysToPay,
+    totalSaved: s.totalSaved + s.generalSavings,
+  });
+  // "Adeudado, próximo pago y próxima deuda" — decir qué hay dentro, no solo
+  // "Ver el resto".
+  const resumenSituacion =
+    SITUATION_LABEL[resto[0]] +
+    ", " +
+    resto
+      .slice(1)
+      .map((t) => SITUATION_LABEL[t].toLowerCase())
+      .join(" y ");
 
   // Recordatorios locales al abrir el Inicio (ver NotificationTrigger.tsx):
   // reusa las alertas ya calculadas (deuda por vencer, presupuesto excedido)
@@ -170,54 +283,24 @@ export default async function DashboardPage() {
         </section>
       )}
 
-      {/* Resumen 2x2 en `quiet`: son cuatro cifras de contexto, y al tamaño
-          de monto grande competían de frente con el saldo del hero. */}
+      {/* NIVEL 1 — el dato que reclama atención hoy, a tamaño grande y solo.
+          Antes eran cuatro cifras en rejilla 2×2 con el mismo peso: para saber
+          si había algo urgente había que leerlas todas. Cuál sube lo decide
+          lib/situationHighlight.ts. */}
       <section className="mb-6">
         <SectionHead title="Tu situación" />
-        <div className="grid grid-cols-2 gap-2.5">
-          <StatTile
-            emphasis="quiet"
-            label="Total ahorrado"
-            value={<MoneyValue value={s.totalSaved + s.generalSavings} decimals={false} />}
-            // Suma metas + ahorro general (sin meta asignada) — el anillo de
-            // "Ahorros" más abajo solo muestra lo de metas, así que esta
-            // cifra puede ser mayor a propósito, no es un error de cuadre.
-            sub={s.generalSavings > 0 ? "Incluye ahorro sin meta asignada" : undefined}
-            info={
-              <InfoTooltip label="Total ahorrado">
-                Suma el progreso de todas tus metas más el saldo de tus cuentas de ahorro que no
-                están atadas a ninguna meta. El anillo de “Ahorros”, más abajo, solo cuenta la parte
-                de las metas — por eso es menor.
-              </InfoTooltip>
-            }
-            icon="piggy"
-            tone="primary"
-            progress={ahorradoPct}
-          />
-          <StatTile
-            emphasis="quiet"
-            label="Total adeudado"
-            value={<MoneyValue value={s.outstandingDebt} decimals={false} />}
-            icon="debt"
-            tone={s.outstandingDebt > 0 ? "expense" : "neutral"}
-            progress={adeudadoPct}
-          />
-          <StatTile
-            emphasis="quiet"
-            label="Próximo pago"
-            value={formatDateShort(s.nextPay)}
-            sub={s.daysToPay === 0 ? "hoy" : `en ${s.daysToPay} días`}
-            icon="clock"
-            tone="info"
-          />
-          <StatTile
-            emphasis="quiet"
-            label="Próxima deuda"
-            value={s.nextDue ? formatDateShort(s.nextDue) : "—"}
-            sub={s.nextDueName ? `${s.nextDueName} · ${dueSub(s.daysToDue)}` : dueSub(s.daysToDue)}
-            icon="calendar"
-            tone={s.daysToDue !== null && s.daysToDue < 0 ? "expense" : "warning"}
-          />
+        <SituationTile tile={destacado} s={s} emphasis="hero" pcts={pcts} />
+
+        {/* NIVEL 2 — los otros tres, detrás de un toque. El resumen de una
+            línea evita que cerrar la tarjeta esconda el dato. */}
+        <div className="mt-3">
+          <CollapsibleCard title="Ver el resto" summary={resumenSituacion}>
+            <div className="grid grid-cols-2 gap-2.5">
+              {resto.map((t) => (
+                <SituationTile key={t} tile={t} s={s} emphasis="quiet" pcts={pcts} />
+              ))}
+            </div>
+          </CollapsibleCard>
         </div>
       </section>
 
@@ -294,38 +377,41 @@ function MovimientosSection({ s }: { s: Summary }) {
             </div>
           </div>
         ) : (
-          <ul className="flex flex-col gap-3.5">
-            {s.recentMovements.map((m) => {
-              const isDep = m.kind === "deposito";
-              return (
-                <li key={m.id} className="flex items-center gap-3">
-                  <IconBubble
-                    icon={isDep ? "arrowDownLeft" : "arrowUpRight"}
-                    tone={isDep ? "income" : "expense"}
-                    size="sm"
-                  />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold text-ink truncate">
-                      {m.note ?? (isDep ? "Ingreso" : "Gasto")}
-                    </p>
-                    <p className="text-xs text-muted">{formatDateShort(m.date)}</p>
-                  </div>
-                  {/* El monto es lo que se escanea en una lista de dinero:
-                      a la derecha, en negrita y tabular, con el color que
-                      dice la dirección sin tener que leer el signo. */}
-                  <p
-                    className={cn(
-                      "text-sm font-bold tabular shrink-0",
-                      isDep ? "text-income" : "text-expense",
-                    )}
-                  >
-                    {isDep ? "+" : "−"}
-                    <Money value={Number(m.amount)} />
+          /* NIVEL 3: /movimientos tiene el historial entero con filtros y
+             búsqueda. Repetir tres filas acá era duplicar esa pantalla en la
+             que menos espacio hay. Queda el último, que es lo único que
+             responde "¿se registró lo que acabo de hacer?". */
+          (() => {
+            const m = s.recentMovements[0];
+            const isDep = m.kind === "deposito";
+            return (
+              <div className="flex items-center gap-3">
+                <IconBubble
+                  icon={isDep ? "arrowDownLeft" : "arrowUpRight"}
+                  tone={isDep ? "income" : "expense"}
+                  size="sm"
+                />
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold text-ink truncate">
+                    {m.note ?? (isDep ? "Ingreso" : "Gasto")}
                   </p>
-                </li>
-              );
-            })}
-          </ul>
+                  <p className="text-xs text-muted">Lo último · {formatDateShort(m.date)}</p>
+                </div>
+                {/* El monto es lo que se escanea en una lista de dinero: a la
+                    derecha, en negrita y tabular, con el color que dice la
+                    dirección sin tener que leer el signo. */}
+                <p
+                  className={cn(
+                    "text-sm font-bold tabular shrink-0",
+                    isDep ? "text-income" : "text-expense",
+                  )}
+                >
+                  {isDep ? "+" : "−"}
+                  <Money value={Number(m.amount)} />
+                </p>
+              </div>
+            );
+          })()
         )}
       </Card>
     </section>
@@ -337,24 +423,30 @@ function GastosSection({ s }: { s: Summary }) {
   const overBudget = s.realQuincena > s.estQuincena && s.estQuincena > 0;
 
   return (
+    /* NIVEL 2: la barra de presupuesto ya se resume en una línea, y el
+       desglose de tres barras es detalle — no la primera lectura del Inicio.
+       Quien quiera el detalle completo tiene /presupuesto a un toque. */
     <section className="mb-6">
-      <SectionHead title="Gastos de la quincena" href="/presupuesto" linkLabel="Ver" />
-      <Card>
+      <CollapsibleCard
+        title="Gastos de la quincena"
+        summary={
+          <>
+            <span className={cn("font-bold tabular", overBudget ? "text-expense" : "text-ink")}>
+              <Money value={s.realQuincena} decimals={false} />
+            </span>{" "}
+            de{" "}
+            <span className="font-bold text-ink tabular">
+              <Money value={s.estQuincena} decimals={false} />
+            </span>
+          </>
+        }
+        action={
+          <Link href="/presupuesto" className="text-sm font-semibold text-primary-fg">
+            Ver
+          </Link>
+        }
+      >
         <div className="mb-5">
-          <div className="flex items-end justify-between gap-3 mb-2">
-            <span className="text-sm text-muted">
-              Gastado{" "}
-              <span className={cn("font-bold tabular", overBudget ? "text-expense" : "text-ink")}>
-                <Money value={s.realQuincena} decimals={false} />
-              </span>
-            </span>
-            <span className="text-sm text-muted">
-              de{" "}
-              <span className="font-bold text-ink tabular">
-                <Money value={s.estQuincena} decimals={false} />
-              </span>
-            </span>
-          </div>
           <ProgressBar value={budgetPct} tone={overBudget ? "danger" : "primary"} />
         </div>
         <BarCompare
@@ -364,30 +456,44 @@ function GastosSection({ s }: { s: Summary }) {
             { name: "Cuotas del periodo", value: s.cuotasPeriodo, tone: "warning" },
           ]}
         />
-      </Card>
+      </CollapsibleCard>
     </section>
   );
 }
 
+/* NIVEL 3: Ahorros tiene su propia pantalla con el anillo, cada meta y su
+   progreso. Repetir el anillo entero acá era duplicar contenido en la pantalla
+   que menos espacio tiene. Quedan dos líneas: cuánto llevas y de cuánto. */
 function AhorrosSection({ s }: { s: Summary }) {
+  if (s.goals.length === 0) return null;
+  const pct = s.totalTarget > 0 ? Math.round((s.totalSaved / s.totalTarget) * 100) : 0;
+
   return (
-    <>
-      {s.goals.length > 0 && (
-        <section className="mb-6">
-          <SectionHead title="Ahorros" href="/metas" linkLabel="Ver todos" />
-          <Card>
-            {/* Solo lo aportado a metas — distinto del "Total ahorrado" de
-                arriba, que además suma el ahorro general sin meta. */}
-            <GoalsRing saved={s.totalSaved} target={s.totalTarget} />
+    <section className="mb-6">
+      <SectionHead title="Ahorros" href="/metas" linkLabel="Ver todos" />
+      <Card className="flex items-center gap-3">
+        <IconBubble icon="piggy" tone="brand" />
+        <div className="min-w-0 flex-1">
+          <p className="text-sm text-ink">
+            <span className="font-bold tabular">
+              <Money value={s.totalSaved} decimals={false} />
+            </span>{" "}
+            <span className="text-muted">
+              de <Money value={s.totalTarget} decimals={false} /> en{" "}
+              {s.goals.length} {s.goals.length === 1 ? "meta" : "metas"}
+            </span>
+          </p>
+          <p className="text-xs text-muted">
+            {pct}% del objetivo
             {s.generalSavings > 0 && (
-              <p className="mt-3 text-xs text-muted text-center">
-                Este anillo es solo lo asignado a metas — tienes además{" "}
-                <Money value={s.generalSavings} decimals={false} /> en ahorro sin meta.
-              </p>
+              <>
+                {" · "}
+                <Money value={s.generalSavings} decimals={false} /> sin meta asignada
+              </>
             )}
-          </Card>
-        </section>
-      )}
-    </>
+          </p>
+        </div>
+      </Card>
+    </section>
   );
 }
