@@ -5,7 +5,17 @@ import { AuthShell } from "./AuthShell";
 import { AuthForm } from "./AuthForm";
 import { login } from "./actions";
 
-export const metadata = { title: "Entrar · Cachin'" };
+/* Open Graph SOLO acá. /login es la única ruta pública de la app: el resto
+   vive detrás del gate del proxy, nadie las comparte y el SEO de buscadores no
+   aplica. Poner OG en rutas privadas sería trabajo que nadie llega a ver. */
+export const metadata = {
+  title: "Entrar · Cachin'",
+  openGraph: {
+    title: "Cachin'",
+    description: "Tus finanzas personales, en RD$ y por quincena.",
+    images: [{ url: "/og.png", width: 1200, height: 630 }],
+  },
+};
 
 /** Los enlaces de correo vencen y son de un solo uso; abrirlos dos veces es
  *  el caso normal, no un fallo. Se explica acá en vez de dejar al usuario en

@@ -61,4 +61,17 @@ const icoBuffers = await Promise.all(
 );
 await writeFile(path.join(root, "app", "favicon.ico"), await pngToIco(icoBuffers));
 
-console.log("✓ Iconos generados en public/icons y app/favicon.ico");
+// 5) Imagen de Open Graph (1200x630) — SOLO para /login, la unica ruta
+//    publica. Las rutas privadas no llevan OG: nadie las comparte y el SEO
+//    de buscadores no aplica detras de un login.
+const OG_BG = "#127478"; // --color-primary
+const ogLogo = await sharp(SRC)
+  .resize(260, 260, { fit: "contain", background: transparent })
+  .png()
+  .toBuffer();
+await sharp({ create: { width: 1200, height: 630, channels: 4, background: OG_BG } })
+  .composite([{ input: ogLogo, top: 185, left: 470 }])
+  .png()
+  .toFile(path.join(root, "public", "og.png"));
+
+console.log("✓ Iconos generados en public/icons, app/favicon.ico y public/og.png");
