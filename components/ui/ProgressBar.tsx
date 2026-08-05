@@ -3,7 +3,9 @@ import { cn } from "@/lib/cn";
 interface ProgressBarProps {
   value: number; // 0-100
   className?: string;
-  tone?: "primary" | "warning" | "danger";
+  /** `achievement` es el unico tono celebratorio y solo se usa en Ahorros
+   *  (ver el token en globals.css). En Deudas esta prohibido. */
+  tone?: "primary" | "warning" | "danger" | "achievement";
   label?: string;
 }
 
@@ -11,6 +13,7 @@ const tones = {
   primary: "bg-primary",
   warning: "bg-warning",
   danger: "bg-danger",
+  achievement: "bg-achievement",
 };
 
 export function ProgressBar({
@@ -30,8 +33,14 @@ export function ProgressBar({
       aria-label={label}
     >
       <div
-        className={cn("h-full rounded-pill transition-[width] duration-500", tones[tone])}
-        style={{ width: `${pct}%` }}
+        /* La barra se LLENA, no salta: la transicion va en style y no en una
+           clase para consumir los tokens de duracion y curva directamente. Los
+           500ms que tenia quedaban fuera de las tres duraciones del sistema. */
+        className={cn("h-full rounded-pill", tones[tone])}
+        style={{
+          width: `${pct}%`,
+          transition: "width var(--dur-pantalla) var(--ease-entrada)",
+        }}
       />
     </div>
   );

@@ -18,7 +18,8 @@ import { SectionHead } from "@/components/ui/SectionHead";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ProgressBar } from "@/components/ui/ProgressBar";
-import { Badge } from "@/components/ui/Badge";
+import { GoalAchieved, type AchievedGoal } from "@/components/ui/GoalAchieved";
+import { Icon } from "@/components/ui/Icon";
 import { Field, Input, MoneyInput, Select } from "@/components/ui/Field";
 import { DateField } from "@/components/ui/DateField";
 import { FormModal } from "@/components/ui/FormModal";
@@ -114,8 +115,17 @@ export default async function MetasPage() {
   const generalSavingsTotal = generalSavings.reduce((s, a) => s + accountBalance(a.id), 0);
   const savedOverall = totalSaved + generalSavingsTotal;
 
+  /* Metas completas. El overlay decide cuál celebrar comparando contra las ya
+     celebradas en el dispositivo, así que da igual por qué vía se completó
+     —un aporte, el saldo de la cuenta vinculada o el pago de una deuda atada. */
+  const completed: AchievedGoal[] = goals
+    .filter((g) => progressOf(g).total >= Number(g.target_amount))
+    .map((g) => ({ id: g.id, name: g.name, target: Number(g.target_amount) }));
+
   return (
     <>
+      <GoalAchieved completed={completed} />
+
       <PageHeader
         title="Ahorros"
         subtitle="Ahorra en general o para una meta"
@@ -290,7 +300,11 @@ export default async function MetasPage() {
                       </p>
                     )}
                   </div>
-                  {done && <Badge tone="success">Lograda</Badge>}
+                  {done && (
+                    <span className="grid place-items-center size-9 shrink-0 rounded-pill bg-achievement-soft text-achievement">
+                      <Icon name="goal" size={18} filled aria-label="Meta lograda" />
+                    </span>
+                  )}
                 </div>
 
                 {/* R14: de dónde viene el progreso — aportes vs. pago de
@@ -329,7 +343,10 @@ export default async function MetasPage() {
                       de <Money value={Number(g.target_amount)} decimals={false} />
                     </span>
                   </div>
-                  <ProgressBar value={pct} tone={done ? "primary" : "primary"} />
+                  {/* El tono de logro, uno de los dos unicos sitios donde se permite. Antes
+                      esto era `done ? "primary" : "primary"`, un ternario que no hacia
+                      nada. */}
+                  <ProgressBar value={pct} tone={done ? "achievement" : "primary"} />
                   <div className="flex items-center justify-between mt-1">
                     {perQuincena != null ? (
                       <p className="text-xs text-muted">

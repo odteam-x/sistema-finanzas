@@ -40,7 +40,7 @@ export function GoalsRing({ saved, target, size = 108 }: GoalsRingProps) {
           strokeDasharray={`${len} ${circ - len}`}
           strokeLinecap="round"
           transform={`rotate(-90 ${cx} ${cy})`}
-          style={{ transition: "stroke-dasharray 0.6s ease" }}
+          style={{ transition: "stroke-dasharray var(--dur-pantalla) var(--ease-entrada)" }}
         />
         <text x={cx} y={cy + 5} textAnchor="middle" className="fill-ink" style={{ fontSize: 17, fontWeight: 800 }}>
           {Math.round(pct)}%

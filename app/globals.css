@@ -181,6 +181,18 @@
   /* Radios grandes del lenguaje e-wallet. `hero` es el bloque superior
      (esquinas inferiores), `card` las tarjetas, `tile` los cuadrados del
      grid y los stat tiles. */
+  /* MOVIMIENTO. Tres duraciones y tres curvas, no más: el movimiento comunica
+     jerarquía, no decora, y para eso basta con distinguir "micro" (un color
+     que cambia), "elemento" (algo que se abre o se cierra) y "pantalla" (algo
+     que la ocupa entera). El splash de apertura es la única excepción y tiene
+     su propia duración, definida donde se usa.
+
+     `linear` está fuera a propósito: nada físico arranca y frena a velocidad
+     constante, y en una interfaz se nota como algo mecánico. */
+  --ease-entrada: cubic-bezier(0, 0, 0.2, 1); /* ease-out: entra y frena */
+  --ease-salida: cubic-bezier(0.4, 0, 1, 1); /* ease-in: arranca y se va */
+  --ease-transformar: cubic-bezier(0.4, 0, 0.2, 1); /* mover, escalar */
+
   --radius-hero: 28px;
   --radius-card: 24px;
   --radius-tile: 20px;
@@ -198,6 +210,14 @@
 
 :root {
   color-scheme: light;
+
+  /* Las tres duraciones. Van acá y no en @theme porque @theme poda lo que
+     ningún utility usa, y estas se consumen desde CSS y desde `style`, no
+     desde clases. Máximo absoluto 600ms; el splash de apertura es la única
+     excepción y lleva la suya donde se usa. */
+  --dur-micro: 150ms; /* un color que cambia, un toggle */
+  --dur-elemento: 250ms; /* algo que se abre, se cierra o se llena */
+  --dur-pantalla: 400ms; /* algo que ocupa la pantalla entera */
 
   /* Extremos del gradiente de marca. Son tokens propios (no reusan
      primary/primary-active directamente) porque el extremo claro tiene que
