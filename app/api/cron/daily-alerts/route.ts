@@ -3,11 +3,18 @@
 // service_role (sin sesión que dé RLS) y protegerse con CRON_SECRET para
 // que nadie más pueda invocarlo desde afuera.
 //
-// Alcance de esta pasada: deudas de pago único y suscripciones activas que
-// vencen en los próximos 3 días — el resto de recordatorios (cuotas,
-// presupuesto cerca del límite) ya los cubre el aviso local al abrir la app
-// (NotificationTrigger.tsx) y el push inmediato al registrar un gasto (ver
-// addExpense en presupuesto/actions.ts).
+// Alcance: deudas de pago único, CUOTAS de deuda y suscripciones activas que
+// vencen en los próximos 3 días.
+//
+// Las cuotas se excluían antes con el argumento de que ya las cubría el aviso
+// local al abrir la app. Dos motivos por los que no era cierto: ese aviso solo
+// dispara cuando ABRES la app —o sea que te enteras del vencimiento justo
+// cuando ya entraste a mirar, que es cuando menos falta hace—, y encima usaba
+// `new Notification()`, que Safari no implementa: en iPhone no salía nada.
+//
+// Con las cuotas fuera, una cuenta con deudas a plazos y sin suscripciones no
+// recibía un solo push nunca. Eso se leía como "las notificaciones no
+// funcionan" cuando en realidad no había nada que enviar.
 import { createServiceRoleClient } from "@/lib/supabase/serviceRole";
 import { sendPushToUser } from "@/lib/webpush";
 import { todayISO, addDaysISO, formatDateShort } from "@/lib/format";
@@ -38,7 +45,7 @@ export async function GET(request: Request) {
 
   let notified = 0;
   for (const userId of userIds) {
-    const [{ data: debts }, { data: subscriptions }] = await Promise.all([
+    const [{ data: debts }, { data: installments }, { data: subscriptions }] = await Promise.all([
       supabase
         .from("debts")
         .select("name, due_date")
@@ -47,6 +54,17 @@ export async function GET(request: Request) {
         .neq("status", "pagada")
         .is("deleted_at", null)
         .not("due_date", "is", null)
+        .gte("due_date", today)
+        .lte("due_date", horizon),
+      // Las cuotas viven en otra tabla y no traen user_id propio: se filtran
+      // por la deuda padre, que sí lo tiene. `debts!inner` fuerza el join, así
+      // que una cuota de una deuda borrada suavemente no se cuela.
+      supabase
+        .from("debt_installments")
+        .select("due_date, debts!inner(name, user_id, deleted_at)")
+        .eq("paid", false)
+        .eq("debts.user_id", userId)
+        .is("debts.deleted_at", null)
         .gte("due_date", today)
         .lte("due_date", horizon),
       supabase
@@ -61,6 +79,10 @@ export async function GET(request: Request) {
 
     const items = [
       ...(debts ?? []).map((d) => `${d.name} (${formatDateShort(d.due_date as string)})`),
+      ...(installments ?? []).map((i) => {
+        const padre = i.debts as unknown as { name: string } | null;
+        return `${padre?.name ?? "Cuota"} (${formatDateShort(i.due_date as string)})`;
+      }),
       ...(subscriptions ?? []).map((s) => `${s.name} (${formatDateShort(s.next_charge_date as string)})`),
     ];
     if (items.length === 0) continue;
