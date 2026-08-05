@@ -5,10 +5,13 @@ import { cn } from "@/lib/cn";
 
 export const Tabs = TabsPrimitive.Root;
 
+/** Píldoras, no pestañas de escritorio. `glass` se cae: esa clase ya no existe
+ *  en globals.css —el sistema pasó a superficies sólidas— así que llevaba
+ *  tiempo sin hacer nada, y este era su último uso en toda la app. */
 export function TabsList({ className, ...props }: React.ComponentProps<typeof TabsPrimitive.List>) {
   return (
     <TabsPrimitive.List
-      className={cn("glass inline-flex gap-1 rounded-tile p-1", className)}
+      className={cn("card inline-flex gap-1 rounded-pill p-1", className)}
       {...props}
     />
   );
@@ -21,8 +24,12 @@ export function TabsTrigger({
   return (
     <TabsPrimitive.Trigger
       className={cn(
-        "rounded-tile px-4 py-2 text-sm font-semibold text-muted cursor-pointer transition-colors",
-        "data-[state=active]:bg-primary data-[state=active]:text-white",
+        // min-h-11: con py-2 sobre texto de 16px quedaba en 40px, por debajo
+        // del mínimo táctil de 44.
+        "rounded-pill min-h-11 px-4 text-sm font-semibold text-muted cursor-pointer transition-colors",
+        // text-on-brand y no text-white: es el token que ya define qué va
+        // encima del relleno de marca, y responde al modo.
+        "data-[state=active]:bg-primary data-[state=active]:text-on-brand",
         className,
       )}
       {...props}

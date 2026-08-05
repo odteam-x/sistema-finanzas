@@ -10,6 +10,7 @@ import { todayISO, toISODate, clampPct } from "@/lib/format";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { SectionHead } from "@/components/ui/SectionHead";
 import { Card } from "@/components/ui/Card";
+import { GroupedList, GroupedListRow } from "@/components/ui/GroupedList";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { Field, Input, Select, MoneyInput } from "@/components/ui/Field";
@@ -191,16 +192,18 @@ export default async function ConfiguracionPage() {
           action={<NewTagForm triggerLabel="Crear etiqueta" />}
         />
       ) : (
-        <ul className="flex flex-col gap-2">
+        <GroupedList>
           {tags.map((t) => {
             const limit = t.monthly_limit != null ? Number(t.monthly_limit) : null;
             const spent = spentByTag.get(t.id) ?? 0;
             const pct = limit ? clampPct(spent, limit) : 0;
             const over = limit != null && spent > limit;
             return (
-              <li key={t.id}>
-                <Card className="py-3">
-                  <div className="flex items-center gap-3">
+              /* La fila deja de ser tarjeta y pasa a ser fila: el bloque con
+                 la barra de límite se apila debajo, así que la fila envuelve
+                 en columna en vez de ir toda en línea. */
+              <GroupedListRow key={t.id} className="flex-col items-stretch gap-0">
+                <div className="flex items-center gap-3">
                     <IconBubble icon="budget" tone="neutral" />
                     <div className="min-w-0 flex-1">
                       <p className="font-semibold text-ink truncate">{t.name}</p>
@@ -251,11 +254,10 @@ export default async function ConfiguracionPage() {
                       <ProgressBar value={pct} tone={over ? "danger" : pct >= 80 ? "warning" : "primary"} />
                     </div>
                   )}
-                </Card>
-              </li>
+              </GroupedListRow>
             );
           })}
-        </ul>
+        </GroupedList>
       )}
 
       {tags.length > 0 && (
@@ -277,23 +279,21 @@ export default async function ConfiguracionPage() {
               action={<NewRuleForm tags={tags} triggerLabel="Crear regla" />}
             />
           ) : (
-            <ul className="flex flex-col gap-2 mb-4">
+            <GroupedList className="mb-4">
               {rules.map((r) => (
-                <li key={r.id}>
-                  <Card className="py-3 flex items-center gap-3">
-                    <IconBubble icon="budget" tone="neutral" />
-                    <p className="min-w-0 flex-1 text-sm text-ink truncate">
-                      Si la nota contiene <span className="font-semibold">“{r.keyword}”</span> → {tagName(r.tag_id)}
-                    </p>
-                    <DeleteButton
-                      action={deleteCategorizationRule.bind(null, r.id)}
-                      title="¿Eliminar regla?"
-                      message="Los gastos ya registrados no cambian."
-                    />
-                  </Card>
-                </li>
+                <GroupedListRow key={r.id}>
+                  <IconBubble icon="budget" tone="neutral" />
+                  <p className="min-w-0 flex-1 text-sm text-ink truncate">
+                    Si la nota contiene <span className="font-semibold">“{r.keyword}”</span> → {tagName(r.tag_id)}
+                  </p>
+                  <DeleteButton
+                    action={deleteCategorizationRule.bind(null, r.id)}
+                    title="¿Eliminar regla?"
+                    message="Los gastos ya registrados no cambian."
+                  />
+                </GroupedListRow>
               ))}
-            </ul>
+            </GroupedList>
           )}
         </>
       )}
