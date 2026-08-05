@@ -56,7 +56,14 @@ export default async function AppLayout({
                 o sea que remontaba el árbol entero en cada navegación y le
                 sumaba 220ms de fundido a algo que ya tarda. La navegación
                 debe sentirse inmediata, no coreografiada. */}
-            <main className="flex-1 min-w-0 w-full max-w-3xl mx-auto px-4 sm:px-6 pb-28 lg:pb-10 print:pb-0 print:max-w-none">
+            {/* max-w-md (448px), no max-w-3xl (768px): la app es de teléfono
+                —el manifest la fija en portrait— y estirar el contenido hasta
+                768px en un monitor no daba más información, solo filas más
+                largas que recorrer con la vista. El margen lateral se queda
+                fijo en 16px; el sm:px-6 (24px) que había contradecía la escala
+                de espaciado. `print:max-w-none` sigue liberando el ancho al
+                imprimir, que es donde sí hace falta. */}
+            <main className="flex-1 min-w-0 w-full max-w-md mx-auto px-4 pb-28 lg:pb-10 print:pb-0 print:max-w-none">
               {children}
             </main>
             <div className="print:hidden">
