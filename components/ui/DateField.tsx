@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Modal } from "./Modal";
 import { Icon } from "./Icon";
 import { baseControl } from "./Field";
 import { cn } from "@/lib/cn";
 import { monthGrid } from "@/lib/calendar";
-import { formatDateLong, parseISODate, todayISO } from "@/lib/format";
+import { formatDateLong, parseISODate, toISODate, todayISO } from "@/lib/format";
 
 const WEEKDAYS = ["L", "M", "M", "J", "V", "S", "D"];
 
@@ -75,6 +75,11 @@ export function DateField({
     return { year: base.getFullYear(), month: base.getMonth() };
   });
 
+  // La rejilla, para buscar el boton de un dia sin recorrer el documento
+  // entero, y el dia al que hay que ir tras cambiar de mes.
+  const gridRef = useRef<HTMLDivElement>(null);
+  const pendienteRef = useRef<string | null>(null);
+
   const today = todayISO();
   const weeks = monthGrid(view.year, view.month);
 
@@ -96,6 +101,59 @@ export function DateField({
     const d = new Date(view.year, view.month + delta, 1, 12);
     setView({ year: d.getFullYear(), month: d.getMonth() });
   }
+
+  /* Navegación por teclado sobre la rejilla.
+   *
+   *  Con Tab solo se podía recorrer día a día: llegar del 1 al 28 eran 27
+   *  pulsaciones. Las flechas se mueven como en un calendario de verdad
+   *  —±1 día en horizontal, ±7 en vertical— y cruzan de mes solas cuando te
+   *  sales por un borde, que es justo lo que hace falta para elegir una fecha
+   *  del mes que viene sin tocar los botones de navegación.
+   *
+   *  El foco se mueve buscando el botón por su fecha en el DOM: mantener un
+   *  índice en estado obligaría a sincronizarlo con la rejilla cada vez que
+   *  cambia el mes, y la rejilla ya sabe qué día tiene cada celda. */
+  function enfocarDia(iso: string): boolean {
+    const el = gridRef.current?.querySelector<HTMLButtonElement>(`[data-dia="${iso}"]`);
+    el?.focus();
+    return Boolean(el);
+  }
+
+  function onGridKeyDown(e: React.KeyboardEvent<HTMLButtonElement>, iso: string) {
+    const saltos: Record<string, number> = {
+      ArrowLeft: -1,
+      ArrowRight: 1,
+      ArrowUp: -7,
+      ArrowDown: 7,
+    };
+    const salto = saltos[e.key];
+    if (salto === undefined) return;
+    e.preventDefault();
+
+    const d = parseISODate(iso);
+    d.setDate(d.getDate() + salto);
+    const destino = toISODate(d);
+
+    // Dentro del mes visible el botón ya existe: se enfoca en el acto.
+    if (enfocarDia(destino)) return;
+
+    /* Fuera del mes hay que navegar primero. El foco NO se difiere con
+       requestAnimationFrame —que no dispara si la pestaña no compone
+       fotogramas, y entonces la tecla se pierde en silencio— sino con un ref
+       que el efecto de abajo consume en cuanto React pinta la rejilla nueva. */
+    pendienteRef.current = destino;
+    setView({ year: d.getFullYear(), month: d.getMonth() });
+  }
+
+  // Mueve el foco al día pendiente después de que la rejilla del mes nuevo ya
+  // está en el DOM. El ref se limpia siempre, para no robar el foco en los
+  // renders siguientes.
+  useEffect(() => {
+    const destino = pendienteRef.current;
+    if (!destino) return;
+    pendienteRef.current = null;
+    enfocarDia(destino);
+  }, [view]);
 
   return (
     <>
@@ -155,7 +213,7 @@ export function DateField({
           ))}
         </div>
 
-        <div className="flex flex-col gap-1">
+        <div ref={gridRef} className="flex flex-col gap-1">
           {weeks.map((week, wi) => (
             <div key={wi} className="grid grid-cols-7 gap-1">
               {week.map((iso, di) => {
@@ -169,6 +227,8 @@ export function DateField({
                     onClick={() => commit(iso)}
                     aria-label={formatDateLong(iso)}
                     aria-current={selected ? "date" : undefined}
+                    data-dia={iso}
+                    onKeyDown={(e) => onGridKeyDown(e, iso)}
                     className={cn(
                       "grid place-items-center aspect-square rounded-tile text-sm tabular cursor-pointer transition-colors active:scale-[0.97]",
                       selected

@@ -63,7 +63,7 @@ export function Sidebar({ email }: { email: string | null }) {
 
         {SECONDARY_GROUPS.map((g) => (
           <div key={g.group} className="flex flex-col gap-0.5">
-            <p className="px-3 pt-3 pb-1 text-[0.7rem] font-bold uppercase tracking-wide text-subtle">
+            <p className="px-3 pt-3 pb-1 text-xs font-bold uppercase tracking-wide text-subtle">
               {g.label}
             </p>
             {g.routes.map(navLink)}

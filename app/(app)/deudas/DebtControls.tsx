@@ -108,7 +108,7 @@ export function InstallmentRow({
           <span className="text-muted"> · {formatDateShort(i.due_date)}</span>
         </span>
         {!i.paid && overdue && (
-          <span className="text-[0.775rem] font-bold text-danger shrink-0">vencida</span>
+          <span className="text-xs font-bold text-danger shrink-0">vencida</span>
         )}
         <span
           className={cn(

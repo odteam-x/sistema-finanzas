@@ -34,7 +34,7 @@ export function InfoTooltip({
           aria-haspopup="dialog"
           className={cn(
             "relative grid place-items-center size-5 shrink-0 rounded-pill",
-            "border border-current/40 text-[0.7rem] font-bold leading-none text-on-tint",
+            "border border-current/40 text-xs font-bold leading-none text-on-tint",
             "before:absolute before:-inset-2.5 before:content-['']",
             "hover:bg-surface-sunken hover:text-ink transition-colors cursor-pointer",
             className,
