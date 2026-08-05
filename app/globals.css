@@ -77,6 +77,27 @@
   --color-info: #5c7690;
   --color-info-soft: #e6ebee;
 
+  /* LOGRO. No es un estado más: es el único tono celebratorio del sistema y
+     está restringido a DOS sitios —la pantalla de éxito de una meta y el ícono
+     de una meta al 100%—. Fuera de Ahorros no se usa, y en Deudas está
+     prohibido: saldar una deuda se confirma con calma, no con la energía de
+     completar un ahorro.
+
+     El valor de la especificación era #b8873a y NO pasaba: 2.74:1 sobre su
+     propio -soft, muy por debajo de AA. Se bajó solo la luminosidad (47.5% →
+     35.5%) conservando matiz y saturación —H 37°, S 52%—, que es lo que pedía
+     la especificación al fallar. Verificado contra los tres fondos reales
+     donde cae: 4.53:1 sobre -soft, 5.30:1 sobre la superficie, 4.84:1 sobre el
+     fondo de página.
+
+     OJO al comprobarlo en el bundle: Tailwind v4 PODA los tokens de @theme que
+     ningún utility usa, así que mientras nada diga bg-achievement/text-
+     achievement estos dos no aparecen en el CSS compilado. No es que falten:
+     entran solos en cuanto se usan. El bloque de [data-mode="dark"] de abajo sí
+     sale siempre, porque es CSS plano y no pasa por esa poda. */
+  --color-achievement: #89652b;
+  --color-achievement-soft: #f7ecd9;
+
   /* Semánticos de DIRECCIÓN DEL DINERO — distintos de los de estado a
      propósito: "entra/sale dinero" no es "bien/mal" (un gasto planificado no
      es un error). Antes esto se resolvía ad hoc y distinto en cada pantalla:
@@ -244,6 +265,12 @@
      fondo oscuro es prácticamente ilegible. */
   --color-info: #8aa4bd;
   --color-info-soft: #232d38;
+
+  /* Logro en oscuro: los valores de la especificación pasan tal cual —5.53:1
+     sobre su -soft y 7.67:1 sobre la superficie—, así que no se tocan. Solo el
+     valor claro hubo que corregirlo (ver la nota de arriba). */
+  --color-achievement: #d4a355;
+  --color-achievement-soft: #3d3120;
 
   --color-income: #2fb5b9;
   --color-expense: #dd9079;
