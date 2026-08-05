@@ -108,7 +108,8 @@ export function DateField({
         aria-label={ariaLabel}
         className={cn(
           baseControl,
-          "flex items-center justify-between gap-2 text-left cursor-pointer disabled:opacity-50",
+          "flex items-center justify-between gap-2 text-left cursor-pointer active:scale-[0.97]",
+          "disabled:opacity-50 disabled:cursor-not-allowed",
           !current && "text-muted",
           className,
         )}
@@ -169,7 +170,7 @@ export function DateField({
                     aria-label={formatDateLong(iso)}
                     aria-current={selected ? "date" : undefined}
                     className={cn(
-                      "grid place-items-center aspect-square rounded-tile text-sm tabular cursor-pointer transition-colors",
+                      "grid place-items-center aspect-square rounded-tile text-sm tabular cursor-pointer transition-colors active:scale-[0.97]",
                       selected
                         ? "bg-primary text-on-brand font-bold"
                         : "text-ink hover:bg-surface-sunken",

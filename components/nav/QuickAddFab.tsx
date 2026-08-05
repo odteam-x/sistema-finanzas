@@ -23,7 +23,7 @@ function QuickRow({
   return (
     <button
       onClick={onClick}
-      className="flex items-center gap-3 w-full p-2.5 rounded-tile hover:bg-surface-sunken active:scale-[0.98] transition-colors text-left cursor-pointer"
+      className="flex items-center gap-3 w-full p-2.5 rounded-tile hover:bg-surface-sunken active:scale-[0.97] transition-colors text-left cursor-pointer"
     >
       <IconBubble icon={icon} tone={tone} />
       <div className="min-w-0">
@@ -54,7 +54,7 @@ export function QuickAddFab({ accounts }: { accounts: SavingsAccount[] }) {
       <button
         onClick={() => setSheetOpen(true)}
         aria-label="Agregar"
-        className="absolute left-1/2 -translate-x-1/2 -top-5 grid place-items-center size-14 rounded-pill bg-gradient-brand text-on-brand shadow-fab cursor-pointer active:scale-95 transition-transform"
+        className="absolute left-1/2 -translate-x-1/2 -top-5 grid place-items-center size-14 rounded-pill bg-gradient-brand text-on-brand shadow-fab cursor-pointer active:scale-[0.97] transition-transform"
       >
         <Icon name="plus" size={26} />
       </button>

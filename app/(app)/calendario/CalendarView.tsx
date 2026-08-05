@@ -123,7 +123,7 @@ export function CalendarView({ year, month, exceptions, events, today }: Props) 
                   key={di}
                   onClick={() => setSelected(iso)}
                   className={cn(
-                    "relative aspect-square rounded-tile flex items-center justify-center text-sm font-semibold transition-[filter,transform] cursor-pointer hover:brightness-95 active:scale-90",
+                    "relative aspect-square rounded-tile flex items-center justify-center text-sm font-semibold transition-[filter,transform] cursor-pointer hover:brightness-95 active:scale-[0.97]",
                     isOverride ? "bg-primary text-white" : cellStyle[status],
                     isToday && "ring-2 ring-primary ring-offset-1 ring-offset-transparent",
                   )}

@@ -78,7 +78,7 @@ export function Button({
 }: ButtonProps) {
   return (
     <motion.button
-      whileTap={{ scale: 0.96 }}
+      whileTap={{ scale: 0.97 }}
       transition={{ type: "spring", stiffness: 500, damping: 30 }}
       className={buttonClasses({ variant, size, full, className })}
       disabled={disabled || loading}

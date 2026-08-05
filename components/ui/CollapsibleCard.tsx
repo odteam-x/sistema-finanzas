@@ -38,7 +38,11 @@ export function CollapsibleCard({
       <div className="flex items-center gap-2">
         <button
           onClick={() => setOpen((v) => !v)}
-          className="flex items-center gap-2 min-w-0 flex-1 min-h-11 -my-1 text-left cursor-pointer"
+          /* Con la divulgación progresiva del Inicio este disparador pasó de
+             ser un caso suelto a ser el control que más se toca de la app: sin
+             hover ni feedback al presionar no parecía tocable. */
+          className="flex items-center gap-2 min-w-0 flex-1 min-h-11 -my-1 text-left cursor-pointer
+                     transition-colors hover:text-primary-fg active:scale-[0.97]"
           aria-expanded={open}
         >
           <Icon

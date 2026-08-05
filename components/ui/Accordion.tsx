@@ -18,7 +18,7 @@ export function AccordionItem({ title, children, onOpen }: AccordionItemProps) {
       className="group card rounded-tile"
       onToggle={onOpen ? (e) => e.currentTarget.open && onOpen() : undefined}
     >
-      <summary className="flex items-center justify-between gap-3 p-3.5 cursor-pointer list-none font-semibold text-sm text-ink [&::-webkit-details-marker]:hidden">
+      <summary className="flex items-center justify-between gap-3 p-3.5 min-h-11 cursor-pointer list-none font-semibold text-sm text-ink transition-colors hover:text-primary-fg [&::-webkit-details-marker]:hidden">
         {title}
         <Icon
           name="chevronDown"

@@ -143,7 +143,7 @@ export function HomeHero({
               ? `Avisos: ${alertCount} ${alertCount === 1 ? "pendiente" : "pendientes"}`
               : "Avisos"
           }
-          className="relative grid place-items-center size-11 shrink-0 rounded-pill bg-surface border border-line text-ink shadow-card active:scale-95 transition-transform"
+          className="relative grid place-items-center size-11 shrink-0 rounded-pill bg-surface border border-line text-ink shadow-card active:scale-[0.97] transition-transform"
         >
           <Icon name="bell" size={20} />
           {alertCount > 0 && (
@@ -189,7 +189,7 @@ export function HomeHero({
             <DropdownMenu>
               <DropdownMenuTrigger
                 aria-label={`Cuenta mostrada: ${selected?.name}. Cambiar`}
-                className="shrink-0 max-w-[46%] inline-flex items-center gap-1.5 rounded-pill border border-[var(--color-on-brand-well)] px-3.5 min-h-11 text-xs font-semibold text-on-brand-muted cursor-pointer active:scale-95 transition-transform"
+                className="shrink-0 max-w-[46%] inline-flex items-center gap-1.5 rounded-pill border border-[var(--color-on-brand-well)] px-3.5 min-h-11 text-xs font-semibold text-on-brand-muted cursor-pointer active:scale-[0.97] transition-transform"
               >
                 <span className="min-w-0 flex flex-col items-start leading-tight">
                   <span className="truncate max-w-full">
@@ -300,7 +300,7 @@ function QuickAction({
     </>
   );
   const className =
-    "flex flex-col items-center gap-1 cursor-pointer active:scale-95 transition-transform";
+    "flex flex-col items-center gap-1 cursor-pointer active:scale-[0.97] transition-transform";
 
   return href ? (
     <Link href={href} className={className}>

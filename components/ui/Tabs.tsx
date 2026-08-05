@@ -26,7 +26,8 @@ export function TabsTrigger({
       className={cn(
         // min-h-11: con py-2 sobre texto de 16px quedaba en 40px, por debajo
         // del mínimo táctil de 44.
-        "rounded-pill min-h-11 px-4 text-sm font-semibold text-muted cursor-pointer transition-colors",
+        "rounded-pill min-h-11 px-4 text-sm font-semibold text-muted cursor-pointer",
+        "transition-colors hover:text-ink active:scale-[0.97]",
         // text-on-brand y no text-white: es el token que ya define qué va
         // encima del relleno de marca, y responde al modo.
         "data-[state=active]:bg-primary data-[state=active]:text-on-brand",

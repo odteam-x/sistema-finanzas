@@ -38,7 +38,7 @@ export function ThemeButton({ variant, onNavigate }: ThemeButtonProps) {
     return (
       <button
         onClick={openPanel}
-        className="flex w-full items-center gap-2.5 px-3 py-2.5 rounded-tile text-sm font-semibold text-muted hover:bg-surface-sunken transition-colors cursor-pointer active:scale-[0.98]"
+        className="flex w-full items-center gap-2.5 px-3 py-2.5 rounded-tile text-sm font-semibold text-muted hover:bg-surface-sunken transition-colors cursor-pointer active:scale-[0.97]"
       >
         <Icon name="palette" size={19} />
         Personalizar
