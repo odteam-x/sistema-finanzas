@@ -19,7 +19,7 @@ export function AddIncrementButton({ debtId, today }: { debtId: string; today: s
     <FormModal
       title="Agregar monto a la deuda"
       action={addDebtIncrement}
-      submitLabel="Agregar"
+      submitLabel="Agregar a la deuda"
       trigger="icon"
       triggerIcon="plus"
       triggerAriaLabel="Agregar monto a esta deuda"

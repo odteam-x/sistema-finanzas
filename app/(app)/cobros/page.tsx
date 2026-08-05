@@ -51,7 +51,7 @@ function EditReceivableForm({ rec }: { rec: Receivable }) {
     <FormModal
       title="Editar registro"
       action={updateReceivable}
-      submitLabel="Guardar"
+      submitLabel="Guardar cobro"
       trigger="icon"
       triggerIcon="edit"
       triggerAriaLabel={`Editar ${rec.name}`}

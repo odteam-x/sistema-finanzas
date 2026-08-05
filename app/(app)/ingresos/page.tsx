@@ -65,7 +65,7 @@ function NewSalaryForm({
     <FormModal
       title="Registrar ingreso"
       action={addSalary}
-      submitLabel="Registrar"
+      submitLabel="Registrar ingreso"
       triggerLabel={triggerLabel}
       trigger={trigger}
     >

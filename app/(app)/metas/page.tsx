@@ -194,7 +194,7 @@ export default async function MetasPage() {
                     <FormModal
                       title={`Editar “${a.name}”`}
                       action={updateAccount}
-                      submitLabel="Guardar"
+                      submitLabel="Guardar cuenta"
                       trigger="icon"
                       triggerIcon="edit"
                       triggerAriaLabel={`Editar ${a.name}`}
@@ -453,7 +453,7 @@ export default async function MetasPage() {
                   <FormModal
                     title="Editar meta"
                     action={updateGoal}
-                    submitLabel="Guardar"
+                    submitLabel="Guardar meta"
                     trigger="icon"
                     triggerIcon="edit"
                     triggerAriaLabel={`Editar ${g.name}`}

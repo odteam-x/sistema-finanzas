@@ -28,7 +28,7 @@ export function NewSubscriptionForm({
     <FormModal
       title="Nueva suscripción"
       action={addSubscription}
-      submitLabel="Agregar"
+      submitLabel="Agregar suscripción"
       triggerLabel={triggerLabel}
       trigger={trigger}
     >

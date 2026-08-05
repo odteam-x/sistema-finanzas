@@ -140,7 +140,7 @@ export function QuickForms({
       <FormModal
         title="Registrar gasto"
         action={submitGasto}
-        submitLabel="Registrar"
+        submitLabel="Registrar gasto"
         receipt={gastoReceipt}
         hideTrigger
         open={active === "gasto"}
@@ -172,7 +172,7 @@ export function QuickForms({
       <FormModal
         title="Registrar ingreso"
         action={submitIngreso}
-        submitLabel="Registrar"
+        submitLabel="Registrar ingreso"
         receipt={ingresoReceipt}
         hideTrigger
         open={active === "ingreso"}
@@ -220,7 +220,7 @@ export function QuickForms({
       <FormModal
         title="Nuevo movimiento"
         action={submitMovimiento}
-        submitLabel="Registrar"
+        submitLabel="Registrar movimiento"
         receipt={movimientoReceipt}
         hideTrigger
         open={active === "movimiento"}

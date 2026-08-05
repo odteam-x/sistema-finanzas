@@ -123,7 +123,7 @@ export function InstallmentRow({
         <FormModal
           title="Editar cuota"
           action={updateInstallment}
-          submitLabel="Guardar"
+          submitLabel="Guardar cuota"
           trigger="icon"
           triggerIcon="edit"
           triggerAriaLabel={`Editar cuota ${i.seq}`}

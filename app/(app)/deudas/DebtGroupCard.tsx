@@ -62,7 +62,7 @@ function EditDebtForm({ debt, creditors }: { debt: Debt; creditors: Creditor[] }
     <FormModal
       title="Editar deuda"
       action={updateDebt}
-      submitLabel="Guardar"
+      submitLabel="Guardar deuda"
       trigger="icon"
       triggerIcon="edit"
       triggerAriaLabel={`Editar ${debt.name}`}

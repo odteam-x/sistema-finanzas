@@ -268,7 +268,7 @@ export default async function BalancePage() {
                       <FormModal
                         title="Editar cuenta"
                         action={updateAccount}
-                        submitLabel="Guardar"
+                        submitLabel="Guardar cuenta"
                         trigger="icon"
                         triggerIcon="edit"
                         triggerAriaLabel={`Editar ${a.name}`}

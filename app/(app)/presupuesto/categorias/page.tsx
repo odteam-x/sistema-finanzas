@@ -34,7 +34,7 @@ function NewCategoryForm({
     <FormModal
       title="Nueva categoría"
       action={addCategory}
-      submitLabel="Agregar"
+      submitLabel="Agregar categoría"
       triggerLabel={triggerLabel}
       trigger={trigger}
     >
@@ -159,7 +159,7 @@ export default async function PresupuestoCategoriasPage() {
                     <FormModal
                       title="Editar categoría"
                       action={updateCategory}
-                      submitLabel="Guardar"
+                      submitLabel="Guardar categoría"
                       trigger="icon"
                       triggerIcon="edit"
                       triggerAriaLabel={`Editar ${c.name}`}

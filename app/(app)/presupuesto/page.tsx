@@ -65,7 +65,7 @@ function NewExpenseForm({
     <FormModal
       title="Registrar gasto"
       action={addExpense}
-      submitLabel="Registrar"
+      submitLabel="Registrar gasto"
       triggerLabel={triggerLabel}
       trigger={trigger}
       triggerIcon={triggerIcon}

@@ -59,7 +59,7 @@ function NewMovementForm({
     <FormModal
       title="Nuevo movimiento"
       action={addMovement}
-      submitLabel="Registrar"
+      submitLabel="Registrar movimiento"
       triggerLabel={triggerLabel}
       trigger={trigger}
     >

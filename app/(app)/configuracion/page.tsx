@@ -55,7 +55,7 @@ function NewTagForm({
     <FormModal
       title="Nueva etiqueta"
       action={addTag}
-      submitLabel="Agregar"
+      submitLabel="Agregar etiqueta"
       trigger={trigger}
       triggerIcon={triggerIcon}
       triggerLabel={triggerLabel}
@@ -92,7 +92,7 @@ function NewRuleForm({
     <FormModal
       title="Nueva regla"
       action={addCategorizationRule}
-      submitLabel="Agregar"
+      submitLabel="Agregar regla"
       trigger={trigger}
       triggerIcon={triggerIcon}
       triggerLabel={triggerLabel}
@@ -216,7 +216,7 @@ export default async function ConfiguracionPage() {
                     <FormModal
                       title="Editar etiqueta"
                       action={updateTag}
-                      submitLabel="Guardar"
+                      submitLabel="Guardar etiqueta"
                       trigger="icon"
                       triggerIcon="edit"
                       triggerAriaLabel={`Editar ${t.name}`}

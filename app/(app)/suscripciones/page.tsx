@@ -92,7 +92,7 @@ export default async function SuscripcionesPage() {
                 <FormModal
                   title="Editar suscripción"
                   action={updateSubscription}
-                  submitLabel="Guardar"
+                  submitLabel="Guardar suscripción"
                   trigger="icon"
                   triggerIcon="edit"
                   triggerAriaLabel={`Editar ${s.name}`}
