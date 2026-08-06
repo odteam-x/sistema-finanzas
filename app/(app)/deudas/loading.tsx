@@ -4,8 +4,9 @@ import { PageSkeleton } from "@/components/ui/Skeleton";
 // que sin este limite de Suspense la navegacion se queda en la pantalla
 // anterior hasta que responde la base y parece que no paso nada al tocar.
 //
-// tiles=2: total adeudado y cuota del mes. Que el esqueleto tenga la misma forma que
-// la pagina real evita el salto de layout al llegar los datos.
+// La forma tiene que ser la de la pagina real, o el esqueleto deja de ser una
+// promesa y pasa a ser una pantalla distinta que dura medio segundo:
+// hero de total adeudado + un tile quiet de proximo vencimiento.
 export default function Loading() {
-  return <PageSkeleton tiles={2} />;
+  return <PageSkeleton hero tiles={1} stackedTiles />;
 }
