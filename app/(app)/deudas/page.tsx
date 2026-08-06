@@ -67,7 +67,19 @@ export default async function DeudasPage() {
       <PageHeader
         title="Deudas"
         subtitle="Acreedores, cuotas y vencimientos"
-        action={<AddDebtForm compact accounts={accounts} creditors={creditors} />}
+        /* ZONA DEL PULGAR. La esquina superior derecha es el punto más lejano
+           de un teléfono sostenido con una mano, y ahí estaba una acción que
+           el botón flotante ya ofrece a un dedo de distancia ("Nueva deuda").
+           Duplicar algo en el peor sitio no da una segunda oportunidad: da un
+           blanco imposible. En móvil se retira y manda el FAB.
+
+           En pantalla grande sí se queda: ahí el FAB no existe (toda la barra
+           inferior es lg:hidden) y este botón es la única entrada. */
+        action={
+          <span className="hidden lg:block">
+            <AddDebtForm compact accounts={accounts} creditors={creditors} />
+          </span>
+        }
       />
 
       {/* "Total adeudado" competía con una FECHA del mismo peso tipográfico

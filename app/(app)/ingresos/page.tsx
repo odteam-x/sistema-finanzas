@@ -192,15 +192,21 @@ export default async function IngresosPage({
       <PageHeader
         title="Ingresos"
         subtitle="Tu sueldo e ingresos extra"
+        /* Se retira del móvil por la misma razón que en Deudas: la esquina
+           superior derecha es lo más lejos que llega el pulgar, y "Registrar
+           ingreso" ya está en el botón flotante. En pantalla grande se queda,
+           porque ahí no hay FAB. */
         action={
-          <NewSalaryForm
-            settings={settings}
-            tags={tags}
-            accounts={accounts}
-            today={today}
-            triggerLabel="Nuevo"
-            trigger="pill"
-          />
+          <span className="hidden lg:block">
+            <NewSalaryForm
+              settings={settings}
+              tags={tags}
+              accounts={accounts}
+              today={today}
+              triggerLabel="Nuevo"
+              trigger="pill"
+            />
+          </span>
         }
       />
 
