@@ -105,6 +105,7 @@ function SituationTile({
           emphasis={emphasis}
           label="Próximo pago"
           value={formatDateShort(s.nextPay)}
+          valueKind="date"
           sub={s.daysToPay === 0 ? "hoy" : `en ${s.daysToPay} días`}
           icon="clock"
           tone="info"
@@ -116,6 +117,7 @@ function SituationTile({
           emphasis={emphasis}
           label="Próxima deuda"
           value={s.nextDue ? formatDateShort(s.nextDue) : "—"}
+          valueKind="date"
           sub={s.nextDueName ? `${s.nextDueName} · ${dueSub(s.daysToDue)}` : dueSub(s.daysToDue)}
           icon="calendar"
           tone={s.daysToDue !== null && s.daysToDue < 0 ? "expense" : "warning"}

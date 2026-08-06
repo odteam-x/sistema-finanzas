@@ -19,6 +19,9 @@ interface StatTileProps {
   info?: React.ReactNode;
   tone?: Tone;
   emphasis?: Emphasis;
+  /** El valor NO es un monto (una fecha, una cuenta). Baja un escalon de la
+   *  escala para no competir con el dinero. Ver emphasisDate. */
+  valueKind?: "money" | "date";
   className?: string;
   /** 0-100. Cuando se pasa, dibuja una barra fina bajo la cifra — para
    *  cuando el número tiene un techo real que darle contexto (ej. cuánto es
@@ -86,6 +89,26 @@ const emphasisValue: Record<Emphasis, string> = {
   quiet: "money-sm",
 };
 
+// LO QUE NO ES DINERO NO SE PINTA COMO DINERO.
+//
+// Medido en el Inicio con datos reales: "Próxima deuda" mostraba la fecha
+// "6 ago" a 28px y peso 800 — exactamente el mismo tamaño y peso que el
+// balance total del hero. Un día y un monto compitiendo por ser lo primero
+// que lees, y el día ganaba por estar más abajo y más aislado.
+//
+// Es el mismo error que ya se corrigió una vez dentro de Deudas ("Total
+// adeudado competía con una FECHA del mismo peso tipográfico"), pero vivía
+// también en el Inicio, donde importa más.
+//
+// Una fecha baja un escalón entero de la escala. Sigue siendo el valor del
+// tile —no se esconde— pero deja de disputarle el primer vistazo a la única
+// cifra que sí es dinero.
+const emphasisDate: Record<Emphasis, string> = {
+  hero: "money-md",
+  normal: "money-sm",
+  quiet: "text-base",
+};
+
 const emphasisPad: Record<Emphasis, string> = {
   hero: "p-5 sm:p-6",
   normal: "p-4",
@@ -100,6 +123,7 @@ export function StatTile({
   info,
   tone = "primary",
   emphasis = "normal",
+  valueKind = "money",
   className,
   progress,
 }: StatTileProps) {
@@ -129,7 +153,7 @@ export function StatTile({
       <p
         className={cn(
           "mt-1.5 font-extrabold tracking-tight tabular",
-          emphasisValue[emphasis],
+          valueKind === "date" ? emphasisDate[emphasis] : emphasisValue[emphasis],
           toneValue[tone],
         )}
       >

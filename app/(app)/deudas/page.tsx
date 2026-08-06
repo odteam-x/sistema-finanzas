@@ -111,6 +111,7 @@ export default async function DeudasPage() {
           emphasis="quiet"
           label="Próximo vencimiento"
           value={nextDue ? formatDateShort(nextDue) : "—"}
+          valueKind="date"
           sub={
             nextDue
               ? (() => {
