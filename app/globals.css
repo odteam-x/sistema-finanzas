@@ -2,7 +2,8 @@
 
 /* ---------------------------------------------------------------------------
    Design tokens — Cachin'
-   Una sola marca (teal), light + dark — ver [data-mode="dark"] más abajo.
+   Una sola marca (índigo profundo + acento ámbar), light + dark — ver
+   [data-mode="dark"] más abajo.
 
    Rediseño "Mobile E-Wallet": el sistema es de SUPERFICIES SÓLIDAS. No hay
    backdrop-filter en ningún lado. Lo que antes se separaba por vidrio (nav,
@@ -11,144 +12,105 @@
    mientras se migran los últimos componentes; no añadir usos nuevos.
 --------------------------------------------------------------------------- */
 @theme {
-  /* Fondo base de la app (detrás de las tarjetas). */
-  --color-bg: #eef6f6;
+  /* Fondo base: violáceo muy claro, no gris neutro. La app debe sentirse
+     diseñada, no ensamblada — el fondo comparte familia con el primario. */
+  --color-bg: #F7F6FB;
 
-  /* Marca. Verificado con checker de contraste real (WCAG):
-     primary vs blanco 5.53:1 y primary-active vs blanco 9.71:1 (AA normal en
-     ambos) — son los dos extremos del gradiente, así que el texto blanco pasa
-     AA en TODO el recorrido, no solo en un punto. `accent` queda FUERA del
-     gradiente a propósito: blanco sobre accent da 3.66:1, que no pasa AA
-     normal; accent se reserva a rellenos y barras, nunca a fondo de texto. */
-  --color-primary: #127478;
-  --color-primary-hover: #0f5f63;
-  --color-primary-active: #0c4c4f;
-  --color-primary-soft: #dceeee;
-  --color-accent: #1d9498;
+  /* Marca: índigo profundo. Se retira el teal por completo — era el territorio
+     de confort de todo el sector, y de ahí venía la sensación de que todas las
+     apps de finanzas se ven igual. El índigo ocupa el mismo lugar psicológico
+     de confianza con personalidad propia.
+     Blanco encima: 11.22:1 en el extremo oscuro y 6.68:1 en el claro, así que
+     el texto blanco pasa AA en TODO el gradiente, no solo en un punto. */
+  --color-primary: #3A2E7E;
+  --color-primary-hover: #31276B;
+  --color-primary-active: #281F57;
+  --color-primary-soft: #E8E5F7;
+  --color-primary-fg: #3A2E7E;
 
-  /* Teal COMO TEXTO sobre una superficie (enlaces "Ver todos", montos
-     destacados). En claro coincide con primary; en oscuro NO puede: primary
-     sobre la superficie oscura da 3.34:1 y falla AA. El override de dark usa
-     un teal más luminoso (5.39:1). Sin este token, cada enlace teal de la app
-     era ilegible en modo oscuro. */
-  --color-primary-fg: #127478;
+  /* Los DOS extremos del gradiente de marca (hero). Van aparte de
+     --color-primary a propósito: en claro coinciden con él, pero en oscuro no
+     pueden. Ahí --color-primary es #8B7BE8 —claro, porque tiene que leerse
+     COMO TEXTO sobre una superficie oscura— y ese mismo valor de FONDO deja el
+     blanco en 3.44:1 y el label en 2.36:1. Un token no puede cumplir las dos
+     funciones a la vez, así que son dos. */
+  --color-primary-grad-start: #3A2E7E;
+  --color-primary-grad-end: #5B4BB8;
 
-  /* Contenido SOBRE el gradiente de marca (hero). El gradiente tiene dos
-     extremos, así que todo lo que va encima se verifica contra el más claro:
-     - on-brand: blanco, 5.53:1 (claro) / 6.72:1 (oscuro).
-     - on-brand-muted: el label secundario. NO es blanco con opacidad — una
-       alfa sobre un gradiente da un contraste distinto en cada punto. Es un
-       blanco teñido fijo: 4.65:1 (claro) / 5.15:1 (oscuro).
-     - on-brand-well: pozo sólido para chips e íconos que se apoyan sobre el
-       gradiente. Reemplaza a los `bg-white/15..25`, que dependían de qué
-       tono del gradiente les tocara debajo. */
-  --color-on-brand: #ffffff;
-  --color-on-brand-muted: #dcefef;
-  --color-on-brand-well: #0a4245;
+  /* Acento ámbar: 2.27:1 contra blanco, así que NUNCA lleva texto encima.
+     Exclusivo de rellenos, barras, bordes e iconos. Es lo que desbloquea el
+     nivel intermedio de urgencia —"atención", entre lo normal y lo urgente—
+     que con el teal no existía: todo era normal o peligro. */
+  --color-accent: #E0A03C;
 
-  /* Neutros: gris real (R=G=B), no teal apagado. El teal queda reservado a
-     marca/CTAs.
-     `muted` era #727272, verificado contra BLANCO (4.81:1) — pero la mitad
-     del texto secundario de la app no vive sobre blanco: vive sobre el fondo
-     de página (#eef6f6, teñido) o sobre la superficie hundida, donde caía a
-     4.39 y 4.30 y fallaba AA. El valor nuevo se verificó contra el peor de
-     los tres fondos reales (4.76:1).
-     `subtle` queda solo para texto deshabilitado, que WCAG 1.4.3 exime; los
-     placeholders, que NO están exentos, pasaron a usar `muted`. */
-  --color-ink: #212121;
-  --color-muted: #6b6b6b;
-  --color-subtle: #848484;
+  /* Contenido sobre el gradiente de marca. */
+  --color-on-brand: #FFFFFF;
+  --color-on-brand-muted: #DDD8F5;
+  --color-on-brand-well: #241C52;
 
-  /* Texto secundario SOBRE UN TINTE (labels de StatTile, filas teñidas).
-     `muted` se verificó contra blanco (4.81:1), pero los tintes son más
-     oscuros que el blanco y ahí cae a 3.89:1 — falla AA. No hay margen para
-     arreglarlo aclarando los tintes: muted sobre blanco puro ya está a
-     4.81, así que ningún fondo real le da 4.5 con holgura. La solución es
-     un tono propio, verificado contra el PEOR de los seis tintes (5.41:1). */
-  --color-on-tint: #5c5c5c;
+  /* Neutros con temperatura violácea sutil: ni gris puro ni teal apagado.
+     `subtle` queda solo para texto deshabilitado, que WCAG 1.4.3 exime. */
+  --color-ink: #1A1826;
+  --color-muted: #5E5A73;
+  --color-subtle: #8B87A0;
 
-  /* Semánticos de ESTADO: fijos en ambos modos (verde=bien, rojo=mal). */
-  --color-danger: #d2503f;
-  --color-danger-soft: #fae2de;
-  --color-warning: #b87213;
-  --color-warning-soft: #faebd6;
-  --color-success: #2f8558;
-  --color-success-soft: #dff0e6;
-  --color-info: #5c7690;
-  --color-info-soft: #e6ebee;
+  /* Texto secundario SOBRE UN TINTE. Verificado contra el peor de los tintes
+     reales, no contra blanco: 6.74:1 sobre tint-brand. */
+  --color-on-tint: #4F4B63;
 
-  /* LOGRO. No es un estado más: es el único tono celebratorio del sistema y
-     está restringido a DOS sitios —la pantalla de éxito de una meta y el ícono
-     de una meta al 100%—. Fuera de Ahorros no se usa, y en Deudas está
-     prohibido: saldar una deuda se confirma con calma, no con la energía de
-     completar un ahorro.
+  /* Semánticos de ESTADO.
+     `warning` es el único de la especificación que hubo que corregir: #A8710F
+     daba 4.17:1 sobre blanco, por debajo de AA. Se bajó solo la luminosidad
+     —matiz 38° y saturación 84% intactos— hasta 4.58:1. */
+  --color-danger: #C4403C;
+  --color-danger-soft: #FBE5E4;
+  --color-warning: #9F6B0E;
+  --color-warning-soft: #FBEEDA;
+  --color-success: #1C6B5A;
+  --color-success-soft: #DFF0EB;
+  --color-info: #4A5B87;
+  --color-info-soft: #E7EAF3;
 
-     El valor de la especificación era #b8873a y NO pasaba: 2.74:1 sobre su
-     propio -soft, muy por debajo de AA. Se bajó solo la luminosidad (47.5% →
-     35.5%) conservando matiz y saturación —H 37°, S 52%—, que es lo que pedía
-     la especificación al fallar. Verificado contra los tres fondos reales
-     donde cae: 4.53:1 sobre -soft, 5.30:1 sobre la superficie, 4.84:1 sobre el
-     fondo de página.
+  /* LOGRO. Sigue restringido a DOS sitios —pantalla de éxito de una meta e
+     ícono de meta al 100%— y prohibido en Deudas.
+     OJO al comprobarlo en el bundle: Tailwind v4 poda los tokens de @theme que
+     ningún utility usa, así que no aparecen hasta que algo los usa. */
+  --color-achievement: #89652B;
+  --color-achievement-soft: #F7ECD9;
 
-     OJO al comprobarlo en el bundle: Tailwind v4 PODA los tokens de @theme que
-     ningún utility usa, así que mientras nada diga bg-achievement/text-
-     achievement estos dos no aparecen en el CSS compilado. No es que falten:
-     entran solos en cuanto se usan. El bloque de [data-mode="dark"] de abajo sí
-     sale siempre, porque es CSS plano y no pasa por esa poda. */
-  --color-achievement: #89652b;
-  --color-achievement-soft: #f7ecd9;
+  /* Dirección del dinero: dos tonos, nunca tres. No son verde y rojo —
+     "entra/sale" no es "bien/mal", un gasto planificado no es un error.
+     Verde azulado profundo para lo que entra, rosa arcilla para lo que sale. */
+  --color-income: #1C6B5A;
+  --color-expense: #B4514E;
 
-  /* Semánticos de DIRECCIÓN DEL DINERO — distintos de los de estado a
-     propósito: "entra/sale dinero" no es "bien/mal" (un gasto planificado no
-     es un error). Antes esto se resolvía ad hoc y distinto en cada pantalla:
-     `primary` en Reportes, `neutral` en Movimientos e Inicio.
-     NO son verde y rojo. En una app cuya marca ES teal, un verde al lado del
-     teal no se lee como "otro significado" sino como un teal mal calibrado, y
-     mete un tercer tono en compe­tencia. Así que el dinero que ENTRA usa el
-     propio teal de marca —entrar dinero es lo bueno, y lo bueno de esta app ya
-     es teal— y el que SALE usa un terracota de arcilla, que es el complemento
-     armónico del teal, no una alarma. Dos tonos en total, no tres.
-     Verificados sobre los tres fondos donde caen (blanco, su tinte y el fondo
-     de página): el peor caso es 4.80:1, todos AA. */
-  --color-income: #0f6467;
-  --color-expense: #a04d38;
+  /* Superficies. Todas OPACAS: no hay vidrio en el sistema, la separación
+     viene del color real de la superficie. Prohibido backdrop-filter. */
+  --color-surface: #FFFFFF;
+  --color-surface-raised: #FFFFFF;
+  --color-surface-sunken: #F0EEF8;
+  --color-surface-nav: #FFFFFF;
+  --color-surface-modal: #FFFFFF;
+  --color-surface-sheet: #FFFFFF;
 
-  /* Superficies. Todas OPACAS. Tres niveles: la página (bg), la tarjeta
-     (surface), y lo que se eleva sobre la tarjeta (raised) o se hunde en ella
-     (sunken: tracks de barras, filas internas, celdas). */
-  --color-surface: #ffffff;
-  --color-surface-raised: #ffffff;
-  --color-surface-sunken: #eef3f3;
-  --color-surface-nav: #ffffff;
-  --color-surface-modal: #ffffff;
-  --color-surface-sheet: #ffffff;
+  /* Líneas. `line` separa sin pesar; `line-strong` delimita un control. */
+  --color-line: #E6E3F0;
+  --color-line-strong: #BFB9D4;
 
-  /* Líneas. `line` separa sin pesar (filas de una lista). `line-strong` es
-     para bordes que SÍ delimitan un control (botón secundario, input) —
-     ahí el relleno propio del control es el indicador principal, la línea
-     solo lo remata. */
-  --color-line: #e2ebeb;
-  --color-line-strong: #b9cccc;
-
-  /* Tintes SÓLIDOS para tiles e IconBubble. Reemplazan a los `-soft` con
-     alpha: sobre una tarjeta clara se veían igual, pero sobre una oscura el
-     resultado dependía de qué hubiera debajo. */
-  --color-tint-brand: #dceeee;
-  /* El tinte de ingreso es el mismo de marca: no hay una familia verde que
-     sostener. Lo que distingue un tile de ingreso de uno neutro es la flecha
-     y la etiqueta, no un color propio. */
-  --color-tint-income: #dceeee;
-  --color-tint-expense: #f7e6e0;
-  /* Mismo valor que --color-danger-soft: el tinte SÓLIDO de "peligro" para
-     tiles/IconBubble, distinto del de expense (que es un tono más naranja
-     de arcilla, no una alarma). */
-  --color-tint-danger: #fae2de;
-  --color-tint-warning: #faebd6;
-  --color-tint-info: #e6ebee;
-  --color-tint-neutral: #eaeaea;
+  /* Tintes SÓLIDOS para tiles e IconBubble. Los cuatro últimos no venían en la
+     especificación pero existen y se usan; se recalculan a la familia nueva en
+     vez de borrarlos, que habría roto IconBubble y StatTile. */
+  --color-tint-brand: #E8E5F7;
+  --color-tint-income: #DFF0EB;
+  --color-tint-expense: #F9E7E6;
+  --color-tint-achievement: #F7ECD9;
+  --color-tint-danger: #FBE5E4;
+  --color-tint-warning: #FBEEDA;
+  --color-tint-info: #E7EAF3;
+  --color-tint-neutral: #EEECF4;
 
   /* Relleno de ícono "neutral" (IconBubble). Alias histórico de tint-neutral. */
-  --color-neutral-soft: #eaeaea;
+  --color-neutral-soft: #EEECF4;
 
   --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, -apple-system,
     "Segoe UI", Roboto, sans-serif;
@@ -178,9 +140,6 @@
   --text-5xl: 3.5rem;     /* 56px */
   --text-5xl--line-height: 1.05;
 
-  /* Radios grandes del lenguaje e-wallet. `hero` es el bloque superior
-     (esquinas inferiores), `card` las tarjetas, `tile` los cuadrados del
-     grid y los stat tiles. */
   /* MOVIMIENTO. Tres duraciones y tres curvas, no más: el movimiento comunica
      jerarquía, no decora, y para eso basta con distinguir "micro" (un color
      que cambia), "elemento" (algo que se abre o se cierra) y "pantalla" (algo
@@ -193,6 +152,9 @@
   --ease-salida: cubic-bezier(0.4, 0, 1, 1); /* ease-in: arranca y se va */
   --ease-transformar: cubic-bezier(0.4, 0, 0.2, 1); /* mover, escalar */
 
+  /* Radios grandes del lenguaje e-wallet. `hero` es el bloque superior
+     (esquinas inferiores), `card` las tarjetas, `tile` los cuadrados del
+     grid y los stat tiles. */
   --radius-hero: 28px;
   --radius-card: 24px;
   --radius-tile: 20px;
@@ -219,17 +181,13 @@
   --dur-elemento: 250ms; /* algo que se abre, se cierra o se llena */
   --dur-pantalla: 400ms; /* algo que ocupa la pantalla entera */
 
-  /* Extremos del gradiente de marca. Son tokens propios (no reusan
-     primary/primary-active directamente) porque el extremo claro tiene que
-     ser MÁS OSCURO en modo oscuro: con el `primary` de dark (#148185) ni el
-     blanco puro llega a 4.5:1, así que un label secundario encima no podría
-     pasar AA por más que se ajuste su color. Ver el override de abajo. */
-  --brand-grad-from: #0c4c4f;
-  --brand-grad-to: #127478;
+  /* --text-scale: lo multiplica todo (ver la regla de html mas abajo). Es la
+     escala de texto que elige el usuario; 1 es el valor por defecto. */
+  --text-scale: 1;
 
   /* Tinte de las sombras (ver --shadow-* arriba). */
-  --elev-tint: rgba(31, 42, 35, 0.06);
-  --elev-tint-strong: rgba(31, 42, 35, 0.22);
+  --elev-tint: rgba(26, 24, 38, 0.06);
+  --elev-tint-strong: rgba(26, 24, 38, 0.22);
 
   /* Inputs: superficie propia, distinta de la tarjeta que los contiene — así
      un input dentro de una tarjeta oscura se lee "elevado" y nunca queda
@@ -237,94 +195,122 @@
      control; el borde solo lo remata (por eso no necesita llegar a 3:1). */
   --input-bg: #ffffff;
   --input-bg-focus: #ffffff;
-  --input-border: #cbdada;
+  --input-border: #CFC9E0;
 }
 
 /* ---------------------------------------------------------------------------
-   Modo oscuro — [data-mode="dark"] en <html>. El teal de acá NO es el claro
+   Modo oscuro — [data-mode="dark"] en <html>. El índigo de acá NO es el claro
    invertido: es un poco más vívido (dark mode "sube de luminosidad") pero
    dentro del rango que sigue pasando AA con texto blanco en AMBOS extremos
    del gradiente (8.67:1 y 4.66:1 verificados).
 --------------------------------------------------------------------------- */
 [data-mode="dark"] {
   color-scheme: dark;
-  --color-bg: #0a1213;
 
-  --color-ink: #f0f0f0;
-  --color-muted: #a9a9a9;
-  --color-subtle: #828282;
-  /* En oscuro los tintes son más OSCUROS que la superficie, así que el
-     mismo gris de `muted` ya pasa con holgura (5.27:1 en el peor tinte). */
-  --color-on-tint: #a9a9a9;
+  /* El fondo oscuro es VIOLÁCEO, no gris. Es lo que separa una identidad
+     propia de un modo oscuro genérico, y es el modo principal de esta app: el
+     uso real es casi todo en oscuro, así que se diseña acá primero y el claro
+     es la comprobación posterior. */
+  --color-bg: #14121F;
 
-  --color-primary: #148185;
-  --color-primary-hover: #106669;
-  --color-primary-active: #0d5457;
-  --color-primary-soft: #123638;
-  --color-accent: #1b9599;
-  /* Ver la nota de --color-primary-fg arriba: primary sobre la superficie
-     oscura da 3.34:1 (falla). Este da 5.39:1. */
-  --color-primary-fg: #25a8ac;
+  /* Superficies. En oscuro se distinguen por LUMINANCIA, no por sombra: sobre
+     fondo oscuro una sombra apenas se ve. Lo que se eleva, se aclara.
+     `raised` venía en #262236 y daba 1.09:1 contra `surface` —una diferencia
+     que no se percibe—, así que se aclaró a #2E2941 (1.21:1) para que la
+     regla se cumpla de verdad. */
+  --color-surface: #1E1B2E;
+  --color-surface-raised: #2E2941;
+  --color-surface-sunken: #272338;
+  --color-surface-nav: #1E1B2E;
+  --color-surface-modal: #262236;
+  --color-surface-sheet: #262236;
 
-  /* El extremo claro del gradiente baja a primary-hover: con #148185 el
-     blanco solo llega a 4.66:1 y no queda margen para un label secundario.
-     Con #106669 el blanco da 6.72:1 y el label teñido 5.15:1 — los dos AA. */
-  --brand-grad-from: #0d5457;
-  --brand-grad-to: #106669;
-  --color-on-brand: #ffffff;
-  --color-on-brand-muted: #cfe6e6;
-  --color-on-brand-well: #072e30;
+  /* El primario oscuro NO puede ser el mismo: #3A2E7E sobre una superficie
+     oscura es ilegible. Pero `--color-primary` es un RELLENO —el día
+     seleccionado del calendario, la casilla marcada— y encima lleva texto
+     blanco, así que tiene que cumplir dos cosas a la vez: 4.5:1 con el blanco
+     y 3:1 contra la superficie para que el propio relleno se distinga.
+     El #8B7BE8 de la especificación solo cumplía la segunda (blanco a 3.44:1);
+     #6B5BC8 cumple las dos (5.31 y 3.16) — es la única ventana que existe con
+     este matiz. El papel de TEXTO sobre superficie lo cubre `primary-fg`
+     aparte, a 6.79:1.
+     hover y active OSCURECEN, no aclaran: aclarar aquí bajaría el contraste
+     con el blanco por debajo de AA. */
+  --color-primary: #6B5BC8;
+  --color-primary-hover: #5947C2;
+  --color-primary-active: #4C3BB0;
+  --color-primary-soft: #2A2445;
+  --color-primary-fg: #A79AEE;
 
-  --color-danger: #e8705c;
-  --color-danger-soft: #3a2a25;
-  --color-warning: #dfa043;
-  --color-warning-soft: #3b2f1a;
-  --color-success: #52b788;
-  --color-success-soft: #1e3a2c;
-  /* En claro este token no se declaraba en dark y heredaba #5c7690, que sobre
-     fondo oscuro es prácticamente ilegible. */
-  --color-info: #8aa4bd;
-  --color-info-soft: #232d38;
+  /* Gradiente del hero en oscuro. Los valores de la especificación
+     (#8B7BE8 → #6B5BC8) fallaban en tres de los cuatro pares; se bajó solo la
+     luminosidad, matiz 249° y saturación intactos. Ahora: blanco 10.76 y 6.69,
+     label 7.38 y 4.58. */
+  --color-primary-grad-start: #3421AB;
+  --color-primary-grad-end: #5A48C2;
 
-  /* Logro en oscuro: los valores de la especificación pasan tal cual —5.53:1
-     sobre su -soft y 7.67:1 sobre la superficie—, así que no se tocan. Solo el
-     valor claro hubo que corregirlo (ver la nota de arriba). */
-  --color-achievement: #d4a355;
-  --color-achievement-soft: #3d3120;
+  --color-accent: #F0B860;
 
-  --color-income: #2fb5b9;
-  --color-expense: #dd9079;
+  --color-on-brand: #FFFFFF;
+  --color-on-brand-muted: #D8D2F0;
+  --color-on-brand-well: #16122B;
 
-  --color-surface: #1c2622;
-  --color-surface-raised: #212d28;
-  --color-surface-sunken: #151d1a;
-  --color-surface-nav: #141d1a;
-  --color-surface-modal: #212d28;
-  --color-surface-sheet: #1c2622;
+  --color-ink: #EDEBF5;
+  --color-muted: #A5A0BC;
+  --color-subtle: #7A7590;
+  --color-on-tint: #B8B3CC;
 
-  --color-line: #2b3833;
-  --color-line-strong: #48584f;
+  --color-income: #4FBF9F;
+  --color-expense: #E88A85;
 
-  --color-tint-brand: #123638;
-  --color-tint-income: #123638;
-  --color-tint-expense: #382a25;
-  --color-tint-danger: #3a2a25;
-  --color-tint-warning: #3b2f1a;
-  --color-tint-info: #232d38;
-  --color-tint-neutral: #313131;
-  --color-neutral-soft: #313131;
+  --color-danger: #E8756F;
+  --color-danger-soft: #3A2220;
+  --color-warning: #D9A045;
+  --color-warning-soft: #35291A;
+  --color-success: #4FBF9F;
+  --color-success-soft: #1B3730;
+  --color-info: #8B9DC7;
+  --color-info-soft: #232838;
+
+  --color-achievement: #E8B860;
+  --color-achievement-soft: #3D3120;
+
+  --color-line: #2E2A42;
+  --color-line-strong: #423C5C;
+
+  --color-tint-brand: #2A2445;
+  --color-tint-income: #1B3730;
+  --color-tint-expense: #3A2220;
+  --color-tint-achievement: #3D3120;
+  --color-tint-danger: #3A2220;
+  --color-tint-warning: #35291A;
+  --color-tint-info: #232838;
+  --color-tint-neutral: #2E2A42;
+  --color-neutral-soft: #2E2A42;
 
   --elev-tint: rgba(0, 0, 0, 0.4);
   --elev-tint-strong: rgba(0, 0, 0, 0.6);
 
-  --input-bg: #26332d;
-  --input-bg-focus: #2c3b34;
-  --input-border: #46564e;
+  /* Campos de formulario, en la familia violacea del resto. */
+  --input-bg: #262236;
+  --input-bg-focus: #2E2941;
+  --input-border: #423C5C;
 }
 
 html {
   min-height: 100%;
   background-color: var(--color-bg);
+
+  /* ESCALA DE TEXTO. Multiplicar el font-size raiz escala TODA la tipografia
+     de una vez, porque la escala del sistema ya esta en rem — y de regalo
+     escalan tambien los objetivos tactiles (min-h-11 = 2.75rem) y el ancho del
+     contenedor (max-w-md = 28rem), que es justo lo que hace falta: con texto
+     grande, mas ancho disponible es lo que evita que las cifras se partan.
+
+     No se usa un <meta viewport> escalable ni el zoom del navegador: eso
+     rompe el layout de la PWA. Lo unico que NO escala es la parte vw de los
+     clamp() de money-*, asi que esas cifras crecen algo menos que lineal. */
+  font-size: calc(100% * var(--text-scale));
 }
 
 /* Exportar PDF (Reportes): window.print() reusa el HTML ya renderizado en vez
@@ -336,20 +322,21 @@ html {
   [data-mode="dark"] {
     color-scheme: light;
     --color-bg: #ffffff;
-    --color-ink: #212121;
-    --color-muted: #6b6b6b;
-    --color-subtle: #848484;
-    --color-on-tint: #5c5c5c;
-    --color-primary-fg: #127478;
-    --brand-grad-from: #0c4c4f;
-    --brand-grad-to: #127478;
-    --color-on-brand-muted: #dcefef;
-    --color-on-brand-well: #0a4245;
+    --color-ink: #1a1826;
+    --color-muted: #5e5a73;
+    --color-subtle: #8b87a0;
+    --color-on-tint: #4f4b63;
+    --color-primary: #3a2e7e;
+    --color-primary-fg: #3a2e7e;
+    --color-primary-grad-start: #3a2e7e;
+    --color-primary-grad-end: #5b4bb8;
+    --color-on-brand-muted: #ddd8f5;
+    --color-on-brand-well: #241c52;
     --color-surface: #ffffff;
     --color-surface-raised: #ffffff;
-    --color-surface-sunken: #f2f5f5;
-    --color-line: #d3dede;
-    --color-line-strong: #b9cccc;
+    --color-surface-sunken: #f3f1f9;
+    --color-line: #e6e3f0;
+    --color-line-strong: #bfb9d4;
     --elev-tint: transparent;
     --elev-tint-strong: transparent;
   }
@@ -404,105 +391,67 @@ body {
 }
 
 /* ---------------------------------------------------------------------------
-   Marca: gradiente teal OSCURO → MEDIO. La dirección importa para el
-   contraste, no solo para el gusto: el extremo oscuro (9.71:1 con blanco)
-   queda arriba, donde viven el avatar, la campana y el label; el medio
-   (5.53:1, también AA normal) queda abajo, bajo la cifra grande. Los
-   semánticos (danger/warning/info) siguen planos: son estados, no secciones.
+   Marca: gradiente índigo, 135°. Sale de --color-primary-grad-start y
+   --color-primary-grad-end, así que redefinir esos dos por modo o por sección
+   cambia el gradiente entero sin tocar esta regla.
 
-   ANTES ESTO DECÍA que el teal era "el único elemento saturado por pantalla".
-   Ya no: cada sección con bloque hero tiene su propio tono (ver .tone-* más
-   abajo). Sigue habiendo UNO por pantalla — lo que cambia es que no siempre
-   es el mismo. La regla real nunca fue "solo teal" sino "un solo bloque
-   saturado", y esa se mantiene.
+   Sigue habiendo UN solo bloque saturado por pantalla — lo que cambia según la
+   sección es el matiz, no la cantidad. Los semánticos (danger/warning/info)
+   siguen planos: son estados, no secciones.
 --------------------------------------------------------------------------- */
 .bg-gradient-brand {
   background-image: linear-gradient(
-    160deg,
-    var(--brand-grad-from) 0%,
-    var(--brand-grad-to) 100%
+    135deg,
+    var(--color-primary-grad-start) 0%,
+    var(--color-primary-grad-end) 100%
   );
 }
+
 /* ---------------------------------------------------------------------------
-   Tono por sección. Cada clase REDEFINE los cuatro tokens del hero en su
-   propio subárbol, así que el marcado no cambia: el bloque sigue usando
-   `bg-gradient-brand`, `text-on-brand-muted` y `bg-on-brand-well` como
-   siempre, y solo hereda otros valores. Sin esto harían falta cinco juegos
-   de clases nuevas y tocar cada hero por dentro.
+   Tono por sección. Cada clase redefine los CUATRO tokens del hero en su
+   subárbol, así que el marcado no cambia: el bloque sigue usando
+   `bg-gradient-brand`, `text-on-brand-muted` y `bg-on-brand-well`.
 
-   Los cuatro valores de cada tono están DERIVADOS, no elegidos a ojo: se
-   oscureció cada matiz hasta cumplir el mismo baremo que el teal, y se
-   verificaron los tres pares que llevan texto encima.
+   La especificación solo pedía pisar los dos del gradiente. No alcanza: con
+   solo eso el label secundario hereda el #DDD8F5 de marca y falla en LOS CINCO
+   tonos (2.80 a 4.05:1). Es la misma lección de la Fase 20 — lo que manda no
+   es el blanco sobre el fondo, es el label. Por eso cada tono trae también su
+   `on-brand-muted` y su `on-brand-well`, derivados de su propio matiz.
 
-   El que manda NO es el blanco sobre el fondo, es el label secundario: con un
-   gris neutro ni el propio teal llegaba a 4.5:1. Por eso cada tono lleva su
-   `--color-on-brand-muted` teñido de su matiz, igual que el teal lleva el
-   suyo, y el extremo claro se fijó en ~6:1 con blanco para que ese label
-   quepa con holgura. El objetivo del label es 4.7 y no 4.5 a propósito:
-   clavarlo en el mínimo deja el diseño a merced de que alguien retoque un
-   matiz un pelo y lo tumbe por debajo sin darse cuenta.
-
-   Inicio no tiene clase: se queda con el teal de marca, que es el de la app.
-   Presupuesto tampoco entra — no tiene bloque hero, es plano por diseño.
+   Los extremos claros se fijaron en ~6:1 con blanco para que el label quepa
+   por encima de 4.7:1. Dos de la especificación no llegaban a AA y se
+   corrigieron bajando SOLO la luminosidad: ingresos #2E9179 (3.86) y deudas
+   #B86A52 (4.02).
 --------------------------------------------------------------------------- */
-.tone-balance {
-  --brand-grad-from: #3a4a5a;
-  --brand-grad-to: #4f657c;
-  --color-on-brand-muted: #dee4e9;
-  --color-on-brand-well: #435669;
-}
 .tone-ingresos {
-  --brand-grad-from: #1d5237;
-  --brand-grad-to: #276f4a;
-  --color-on-brand-muted: #d5e7de;
-  --color-on-brand-well: #225f3f;
+  --color-primary-grad-start: #1c6b5a;
+  --color-primary-grad-end: #236e5c;
+  --color-on-brand-muted: #d9e6e2;
+  --color-on-brand-well: #1e5e4f;
 }
 .tone-metas {
-  --brand-grad-from: #563e73;
-  --brand-grad-to: #75549b;
-  --color-on-brand-muted: #e8e1ef;
-  --color-on-brand-well: #634884;
+  --color-primary-grad-start: #6b3a8e;
+  --color-primary-grad-end: #8448ab;
+  --color-on-brand-muted: #ebe1f1;
+  --color-on-brand-well: #703d91;
 }
 .tone-reportes {
-  --brand-grad-from: #733728;
-  --brand-grad-to: #9d4b37;
-  --color-on-brand-muted: #efe1dd;
-  --color-on-brand-well: #86402f;
+  --color-primary-grad-start: #2e4a7e;
+  --color-primary-grad-end: #41629c;
+  --color-on-brand-muted: #dde3ed;
+  --color-on-brand-well: #385486;
 }
 .tone-calc {
-  --brand-grad-from: #47494d;
-  --brand-grad-to: #606369;
-  --color-on-brand-muted: #e3e4e5;
-  --color-on-brand-well: #515459;
+  --color-primary-grad-start: #4a4458;
+  --color-primary-grad-end: #665f7a;
+  --color-on-brand-muted: #e4e3e8;
+  --color-on-brand-well: #575168;
 }
-
-/* En oscuro los extremos bajan, por el mismo motivo que el teal: el modo
-   oscuro sube la luminosidad percibida y el label secundario se quedaría sin
-   margen. Aquí el extremo claro se fija en ~7:1 con blanco. */
-[data-mode="dark"] .tone-balance {
-  --brand-grad-from: #354352;
-  --brand-grad-to: #475b6f;
-  --color-on-brand-muted: #ccd5dd;
-}
-[data-mode="dark"] .tone-ingresos {
-  --brand-grad-from: #1b4b32;
-  --brand-grad-to: #236442;
-  --color-on-brand-muted: #bfd9cb;
-}
-[data-mode="dark"] .tone-metas {
-  --brand-grad-from: #4e3868;
-  --brand-grad-to: #684b8b;
-  --color-on-brand-muted: #d9cfe5;
-}
-[data-mode="dark"] .tone-reportes {
-  --brand-grad-from: #683225;
-  --brand-grad-to: #8c4331;
-  --color-on-brand-muted: #e5cec8;
-}
-[data-mode="dark"] .tone-calc {
-  --brand-grad-from: #404246;
-  --brand-grad-to: #56595e;
-  --color-on-brand-muted: #d3d4d6;
+.tone-deudas {
+  --color-primary-grad-start: #8e4a3a;
+  --color-primary-grad-end: #93513c;
+  --color-on-brand-muted: #ece1dd;
+  --color-on-brand-well: #7e4533;
 }
 
 .bg-gradient-danger {

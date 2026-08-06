@@ -181,7 +181,7 @@ export default async function BalancePage() {
       />
 
       {/* Total */}
-      <div className="tone-balance bg-gradient-brand rounded-card p-4 sm:p-5 mb-4 flex items-center justify-between gap-3 overflow-hidden shadow-hero">
+      <div className="bg-gradient-brand rounded-card p-4 sm:p-5 mb-4 flex items-center justify-between gap-3 overflow-hidden shadow-hero">
         <div className="min-w-0">
           <p className="text-sm font-medium text-on-brand-muted">Total en cuentas</p>
           <MoneyValue value={totalSaved} className="block money-lg font-extrabold text-on-brand mt-1" />
