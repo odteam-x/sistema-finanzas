@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { parseAmount, type ActionResult } from "@/lib/actions-shared";
 import { softDeleteRows, type UndoableResult } from "@/lib/softDelete";
 import { normalizeKeyword } from "@/lib/categorize";
+import { TEXT_SCALES, type TextScale } from "@/lib/textScale";
 
 
 /** El límite mensual es opcional: un campo vacío guarda NULL (sin límite). */
@@ -25,6 +26,28 @@ export async function saveDisplayName(formData: FormData): Promise<ActionResult>
     .upsert({ user_id: user.id, display_name });
   if (error) return { ok: false, error: "No se pudo guardar el nombre." };
   revalidateEverything();
+  return { ok: true };
+}
+
+/** Copia la escala de texto en la cuenta. El dispositivo ya la aplicó y la
+ *  guardó en localStorage de forma síncrona antes de llamar acá — esto solo la
+ *  propaga al resto de dispositivos, así que si falla la red no se deshace
+ *  nada de lo que el usuario acaba de ver.
+ *
+ *  No hay revalidateEverything(): la escala la aplica el cliente sobre el
+ *  documento, ninguna pantalla renderizada en servidor depende de ella, y
+ *  revalidar la app entera por un cambio de tamaño de letra sería tirar toda
+ *  la caché para nada. */
+export async function saveTextScale(scale: number): Promise<ActionResult> {
+  const user = await requireUser();
+  if (!TEXT_SCALES.includes(scale as TextScale)) {
+    return { ok: false, error: "Escala no válida." };
+  }
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("user_profile")
+    .upsert({ user_id: user.id, text_scale: scale });
+  if (error) return { ok: false, error: "No se pudo guardar en la cuenta." };
   return { ok: true };
 }
 

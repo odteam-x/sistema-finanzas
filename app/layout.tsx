@@ -4,6 +4,7 @@ import "./globals.css";
 import { PWARegister } from "@/components/PWARegister";
 import { SplashScreen } from "@/components/SplashScreen";
 import { THEME_INIT_SCRIPT } from "@/lib/theme";
+import { TEXT_SCALE_INIT_SCRIPT } from "@/lib/textScale";
 
 // Outfit: geométrica y con más carácter que Plus Jakarta Sans — la spec de
 // Fase 5 pedía Satoshi/General Sans (Fontshare, requieren alojar los
@@ -67,8 +68,12 @@ export default function RootLayout({
   return (
     <html lang="es" className={`${outfit.variable} h-full antialiased`} suppressHydrationWarning>
       <head>
-        {/* Aplica el tema guardado antes del primer pintado (evita flash). */}
+        {/* Aplican el tema y la escala de texto guardados antes del primer
+            pintado (evitan el flash). El de la escala importa aún más que el
+            del tema: un salto de tamaño de letra al hidratar mueve TODO el
+            layout, no solo los colores. */}
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+        <script dangerouslySetInnerHTML={{ __html: TEXT_SCALE_INIT_SCRIPT }} />
       </head>
       {/* Se retiró ClickSpark (la chispa en cada toque): era un canvas a
           pantalla completa que se limpiaba y redibujaba en cada frame tras

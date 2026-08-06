@@ -12,6 +12,20 @@
    mientras se migran los últimos componentes; no añadir usos nuevos.
 --------------------------------------------------------------------------- */
 @theme {
+  /* SUELO DE LA UNIDAD DE ESPACIADO. Tailwind la trae en 0.25rem, y todo lo
+     que mide en el sistema sale de ahí: min-h-11 es calc(--spacing * 11), o
+     sea 44px — el objetivo táctil mínimo.
+
+     Al escalar el texto esa unidad escala con él, que es justo lo que se
+     quiere al AGRANDAR (a 1.3 los botones pasan a 57px). Pero al ENCOGER pasa
+     lo contrario: a 0.9 el mismo min-h-11 caía a 39.6px y dejaba todos los
+     botones por debajo del mínimo. Medido en el navegador, no deducido.
+
+     El max() corta esa mitad: el espaciado crece con el texto pero nunca baja
+     del valor a escala 1. "Pequeño" significa más texto por línea, no botones
+     más difíciles de acertar. */
+  --spacing: max(0.25rem, 4px);
+
   /* Fondo base: violáceo muy claro, no gris neutro. La app debe sentirse
      diseñada, no ensamblada — el fondo comparte familia con el primario. */
   --color-bg: #F7F6FB;

@@ -339,6 +339,12 @@ export interface UserProfileRow {
   personal_code: string | null;
   /** Asignarlo no lo activa — hace falta un paso explícito (ver 15.2). */
   personal_code_active: boolean;
+  /** Escala de texto (0.9 | 1 | 1.15 | 1.3), v32. Viaja con la CUENTA porque es
+   *  accesibilidad: quien necesita texto grande lo necesita en todos sus
+   *  dispositivos, no solo donde lo configuró. Puede llegar `undefined` en el
+   *  hueco entre desplegar el código y correr la migración; quien lo consume
+   *  valida con isTextScale() en vez de confiar en el tipo. */
+  text_scale: number;
 }
 
 export type CsvDateFormat = "YYYY-MM-DD" | "DD/MM/YYYY" | "MM/DD/YYYY";

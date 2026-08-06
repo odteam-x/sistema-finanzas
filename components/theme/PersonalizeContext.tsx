@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { PersonalizeModal } from "./PersonalizeModal";
 import { applyTheme, readTheme } from "@/lib/theme";
+import { hasStoredTextScale, isTextScale, writeTextScale } from "@/lib/textScale";
 
 interface PersonalizeContextValue {
   open: () => void;
@@ -16,8 +17,32 @@ const PersonalizeContext = createContext<PersonalizeContextValue | null>(null);
  * sheet "Más" de móvil). Así el modal sobrevive aunque quien lo abrió deje
  * de existir un instante después (ver bug: se cerraba solo).
  */
-export function PersonalizeProvider({ children }: { children: React.ReactNode }) {
+export function PersonalizeProvider({
+  children,
+  accountTextScale,
+}: {
+  children: React.ReactNode;
+  /** La escala guardada en la CUENTA (user_profile.text_scale, v32). Sirve
+   *  para sembrar un dispositivo nuevo; en uno que ya eligió, manda lo local. */
+  accountTextScale?: number;
+}) {
   const [open, setOpen] = useState(false);
+
+  // Siembra desde la cuenta. Solo si este dispositivo no ha elegido NUNCA:
+  // `hasStoredTextScale` distingue "el usuario eligió Normal aquí" de "no hay
+  // nada guardado", que con un simple `=== 1` serían indistinguibles y harían
+  // que la cuenta pisara una elección local deliberada.
+  //
+  // Corre después del primer pintado, así que en un dispositivo nuevo con
+  // escala grande hay un salto de tamaño. Es inevitable: el valor está en la
+  // base y el primer pintado ocurre antes de poder leerla. Pasa una sola vez
+  // por dispositivo — a partir de ahí lo aplica el script de arranque.
+  useEffect(() => {
+    if (accountTextScale === undefined) return;
+    if (hasStoredTextScale()) return;
+    if (!isTextScale(accountTextScale)) return;
+    writeTextScale(accountTextScale);
+  }, [accountTextScale]);
 
   // Modo "Automático": si el sistema cambia de claro a oscuro (o viceversa)
   // con la app abierta, re-aplicar sin recargar. Reaplicar siempre es

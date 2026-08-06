@@ -37,7 +37,7 @@ export default async function AppLayout({
   const email = user.email ?? null;
 
   return (
-    <PersonalizeProvider>
+    <PersonalizeProvider accountTextScale={profile?.text_scale}>
       <ToastProvider>
         {/* El re-bloqueo por inactividad solo aplica si el código está activo;
             es estado de la CUENTA, así que llega del servidor y no de
