@@ -169,7 +169,11 @@ export function HomeHero({
             <MoneyValue
               value={total}
               decimals={false}
-              className="block money-lg font-extrabold text-on-brand tabular mt-0.5"
+              /* money-hero, como los otros cinco heroes. Se quedó en money-lg
+                 al unificar la escala y producía lo contrario de lo buscado:
+                 el balance del INICIO —la cifra que más se mira de toda la
+                 app— salía más pequeño que el neto del período en Reportes. */
+              className="block money-hero font-extrabold text-on-brand tabular mt-0.5"
             />
             <p className="mt-1 text-xs text-on-brand-muted">
               Quincena {periodLabel}
