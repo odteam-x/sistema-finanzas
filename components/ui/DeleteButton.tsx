@@ -38,6 +38,11 @@ export function DeleteButton({
   const [pending, startTransition] = useTransition();
   const toast = useToast();
 
+  // Se puede deshacer si quien lo usa pasó cómo hacerlo. No hace falta una
+  // prop nueva: la reversibilidad ya estaba declarada en cada sitio, solo que
+  // la confirmación no la miraba.
+  const reversible = Boolean(undoAction);
+
   function confirm() {
     startTransition(async () => {
       const res = await action();
@@ -66,13 +71,34 @@ export function DeleteButton({
         <Icon name="trash" size={18} />
       </button>
 
+      {/* CONFIRMACIÓN PROPORCIONAL. Antes las diecinueve confirmaciones de la
+          app tenían exactamente el mismo peso: el mismo modal, el mismo botón
+          rojo de alarma. Eliminar una etiqueta —que se restaura de un toque—
+          pedía lo mismo que eliminar una deuda con todas sus cuotas.
+
+          Cuando todo grita igual, nada avisa: se aprende a tocar "Eliminar"
+          sin leer, y entonces la confirmación no protege de nada justo el día
+          que hace falta.
+
+          La diferencia ya estaba en los datos y no se usaba: `undoAction` es
+          exactamente la señal de si esto se puede deshacer. Con deshacer, el
+          botón va en primario y el texto lo dice; sin deshacer, se queda el
+          rojo y la advertencia de que es definitivo. */}
       <Modal open={open} onClose={() => setOpen(false)} title={title}>
         <p className="text-sm text-muted -mt-1">{message}</p>
+        {!reversible && (
+          <p className="text-sm font-semibold text-danger mt-2">Esto no se puede deshacer.</p>
+        )}
         <div className="mt-5 flex gap-2">
           <Button variant="secondary" onClick={() => setOpen(false)} full>
             Cancelar
           </Button>
-          <Button variant="danger" onClick={confirm} loading={pending} full>
+          <Button
+            variant={reversible ? "primary" : "danger"}
+            onClick={confirm}
+            loading={pending}
+            full
+          >
             {label}
           </Button>
         </div>
