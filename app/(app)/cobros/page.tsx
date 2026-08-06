@@ -23,7 +23,7 @@ import { Field, Input, MoneyInput } from "@/components/ui/Field";
 import { DateField } from "@/components/ui/DateField";
 import { FormModal } from "@/components/ui/FormModal";
 import { NewReceivableForm } from "./NewReceivableForm";
-import { ReceivableInstallmentRow, ReceivableCollectedToggle } from "./ReceivableControls";
+import { ReceivableInstallmentList, ReceivableCollectedToggle } from "./ReceivableControls";
 import { deleteReceivable, updateReceivable } from "./actions";
 import type { Receivable, ReceivableKind, ReceivableStatus } from "@/lib/types";
 
@@ -298,16 +298,11 @@ export default async function CobrosPage({
                         Cuotas cobradas: {paidCount}/{ins.length}
                         {r.frequency ? ` · ${r.frequency}` : ""}
                       </p>
-                      <div className="flex flex-col divide-y divide-line">
-                        {ins.map((i) => (
-                          <ReceivableInstallmentRow
-                            key={i.id}
-                            installment={i}
-                            overdue={daysBetween(today, i.due_date) < 0}
-                            accounts={accounts}
-                          />
-                        ))}
-                      </div>
+                      <ReceivableInstallmentList
+                        installments={ins}
+                        today={today}
+                        accounts={accounts}
+                      />
                     </div>
                   ) : (
                     <div className="mt-3">

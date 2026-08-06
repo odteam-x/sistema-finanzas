@@ -152,3 +152,61 @@ export function ReceivableCollectedToggle({
     </>
   );
 }
+
+/** Las cuotas de un cobro, colapsadas a lo accionable. Gemelo de
+ *  InstallmentList (deudas/DebtControls.tsx) — misma pared de filas idénticas,
+ *  mismo criterio: se ve lo vencido y lo próximo, el resto a un toque.
+ *
+ *  No se comparte un solo componente entre las dos pantallas porque las filas
+ *  son distintas de verdad: una marca "pagada" y descuenta de una cuenta, la
+ *  otra marca "cobrada" y suma. Compartirlo obligaría a parametrizar la fila
+ *  entera para ahorrar quince líneas de envoltorio. */
+export function ReceivableInstallmentList({
+  installments,
+  today,
+  accounts,
+}: {
+  installments: ReceivableInstallment[];
+  today: string;
+  accounts: SavingsAccount[];
+}) {
+  const [abierto, setAbierto] = useState(false);
+
+  const esVencida = (i: ReceivableInstallment) => !i.paid && i.due_date < today;
+  const vencidas = installments.filter(esVencida);
+  const proxima = installments.find((i) => !i.paid && !esVencida(i));
+
+  const destacadas = [...vencidas, ...(proxima ? [proxima] : [])];
+  const colapsable = installments.length > 3 && destacadas.length < installments.length;
+  const visibles = !colapsable || abierto ? installments : destacadas;
+
+  return (
+    <>
+      <div className="flex flex-col divide-y divide-line">
+        {visibles.map((i) => (
+          <ReceivableInstallmentRow
+            key={i.id}
+            installment={i}
+            overdue={esVencida(i)}
+            accounts={accounts}
+          />
+        ))}
+      </div>
+
+      {colapsable && (
+        <button
+          onClick={() => setAbierto((v) => !v)}
+          aria-expanded={abierto}
+          className="mt-1 flex items-center gap-1 min-h-11 text-xs font-semibold text-primary-fg cursor-pointer"
+        >
+          <Icon
+            name="chevronDown"
+            size={15}
+            className={cn("transition-transform", abierto && "rotate-180")}
+          />
+          {abierto ? "Ver solo lo pendiente" : `Ver las ${installments.length} cuotas`}
+        </button>
+      )}
+    </>
+  );
+}
