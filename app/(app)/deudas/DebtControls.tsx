@@ -190,3 +190,74 @@ export function DebtPaidToggle({
     </>
   );
 }
+
+/** Las cuotas de una deuda, colapsadas a lo que hay que hacer.
+ *
+ *  Una deuda a 12 cuotas pintaba doce filas idénticas, y una tarjeta de
+ *  acreedor con dos deudas así se convertía en una pared de veinticuatro. Para
+ *  encontrar la que toca pagar había que recorrerlas con la vista una por una,
+ *  y lo demás —lo ya pagado, lo que vence en agosto— es historial, no algo que
+ *  se pueda hacer hoy.
+ *
+ *  Se muestra lo ACCIONABLE: lo vencido, que es urgente, y la siguiente cuota,
+ *  que es lo próximo. El resto queda a un toque de distancia, con la cuenta
+ *  visible en el propio botón para que se sepa qué hay debajo antes de abrirlo.
+ *
+ *  Con 3 cuotas o menos no colapsa nada: esconder tres filas detrás de un botón
+ *  añade un toque para ahorrar dos líneas. */
+export function InstallmentList({
+  installments,
+  today,
+  accounts,
+}: {
+  installments: DebtInstallment[];
+  today: string;
+  accounts: SavingsAccount[];
+}) {
+  const [abierto, setAbierto] = useState(false);
+
+  const esVencida = (i: DebtInstallment) => !i.paid && i.due_date < today;
+  const vencidas = installments.filter(esVencida);
+  // La próxima es la primera sin pagar que NO está vencida. `installments` ya
+  // llega ordenada por `seq` desde la consulta, que para una deuda a cuotas es
+  // el mismo orden que la fecha.
+  const proxima = installments.find((i) => !i.paid && !esVencida(i));
+
+  const destacadas = [...vencidas, ...(proxima ? [proxima] : [])];
+  const colapsable = installments.length > 3 && destacadas.length < installments.length;
+  const visibles = !colapsable || abierto ? installments : destacadas;
+
+  return (
+    <>
+      <div className="flex flex-col divide-y divide-line">
+        {visibles.map((i) => (
+          <InstallmentRow
+            key={i.id}
+            installment={i}
+            overdue={esVencida(i)}
+            accounts={accounts}
+          />
+        ))}
+      </div>
+
+      {colapsable && (
+        <button
+          onClick={() => setAbierto((v) => !v)}
+          aria-expanded={abierto}
+          className="mt-1 flex items-center gap-1 min-h-11 text-xs font-semibold text-primary-fg cursor-pointer"
+        >
+          {/* No hay `chevronUp` en el set: se gira el de abajo, que además da
+              la transición de apertura gratis. */}
+          <Icon
+            name="chevronDown"
+            size={15}
+            className={cn("transition-transform", abierto && "rotate-180")}
+          />
+          {abierto
+            ? "Ver solo lo pendiente"
+            : `Ver las ${installments.length} cuotas`}
+        </button>
+      )}
+    </>
+  );
+}

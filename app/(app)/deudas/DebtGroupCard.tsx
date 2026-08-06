@@ -4,12 +4,12 @@
 // desincronizaran a la primera corrección.
 //
 // Sigue siendo un componente de SERVIDOR: compone piezas de cliente
-// (FormModal, DeleteButton, InstallmentRow) y les pasa server actions, igual
+// (FormModal, DeleteButton, InstallmentList) y les pasa server actions, igual
 // que hacía dentro de page.tsx. No necesita una prop `readOnly` para el
 // historial: cada deuda ya decide sola con `settled` si muestra editar y
 // aumentar o el botón de reabrir.
 import { isSettled, outstandingOfDebt, totalOfDebt } from "@/lib/debts";
-import { formatDateLong, daysBetween } from "@/lib/format";
+import { formatDateLong } from "@/lib/format";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { DeleteButton } from "@/components/ui/DeleteButton";
@@ -18,7 +18,7 @@ import { Money } from "@/components/ui/Money";
 import { Field, Input, MoneyInput, Select } from "@/components/ui/Field";
 import { DateField } from "@/components/ui/DateField";
 import { FormModal } from "@/components/ui/FormModal";
-import { InstallmentRow, DebtPaidToggle } from "./DebtControls";
+import { InstallmentList, DebtPaidToggle } from "./DebtControls";
 import { AddIncrementButton, IncrementHistory, ReopenDebtButton } from "./DebtActions";
 import { deleteDebt, updateDebt } from "./actions";
 import type {
@@ -226,16 +226,7 @@ export function DebtGroupCard({
                     Cuotas pagadas: {paidCount}/{ins.length}
                     {d.frequency ? ` · ${d.frequency}` : ""}
                   </p>
-                  <div className="flex flex-col divide-y divide-line">
-                    {ins.map((i) => (
-                      <InstallmentRow
-                        key={i.id}
-                        installment={i}
-                        overdue={daysBetween(today, i.due_date) < 0}
-                        accounts={accounts}
-                      />
-                    ))}
-                  </div>
+                  <InstallmentList installments={ins} today={today} accounts={accounts} />
                 </div>
               ) : (
                 <div className="mt-2">
