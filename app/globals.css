@@ -497,14 +497,22 @@ body {
   stroke: none;
 }
 
-/* Números tabulares para montos y tablas. overflow-wrap es un último recurso
-   (un monto como "-RD$12,450.00" no tiene espacios donde partirse) — los
-   tamaños fluidos de abajo ya evitan que se necesite, encogiendo el número
-   en vez de cortarlo. */
+/* Números tabulares para montos y tablas: todos los dígitos ocupan lo mismo,
+   así que dos cifras alineadas en una columna se comparan de un vistazo. */
 .tabular {
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum";
-  overflow-wrap: anywhere;
+
+  /* UNA CIFRA NO SE PARTE. Aquí había `overflow-wrap: anywhere`, puesto para
+     que un monto largo no desbordara su caja. El precio era peor que el
+     problema: en las tarjetas de cuenta, RD$1,000.00 se rompía por la coma y
+     quedaba "RD$1,00" en una línea y "0.00" en la siguiente. Se lee como mil
+     pesos partidos en uno y cero — o sea, un número que no existe.
+
+     Desbordar es honesto; partir un número miente. Y desbordar casi nunca pasa:
+     las cifras grandes usan las clases money-* , que ya encogen la fuente con
+     clamp() en pantallas angostas. */
+  white-space: nowrap;
 }
 
 /* Tamaños fluidos para montos: el número se encoge en pantallas angostas en
