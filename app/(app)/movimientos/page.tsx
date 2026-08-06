@@ -233,23 +233,36 @@ export default async function MovimientosPage({
               quedan debajo, más chicos. */}
           {(stats?.cantidad ?? visible.length) > 0 && (
             <section className="mb-6">
-              <StatTile
-                emphasis="hero"
-                // El label dice SOBRE QUÉ se calculó: "Neto · todo" no decía
-                // si eran los 34 movimientos de la lista o los de todo el año.
-                label={`Neto de ${alcance}`}
-                value={
-                  <>
+              {/* HERO DE MARCA, no un tile teñido.
+                  Medido en la pantalla real: este bloque era una tarjeta verde
+                  (tint-income) de 204px de alto, y debajo iban otra verde y una
+                  roja de 89px — casi 300px de verde y rojo antes de llegar a la
+                  lista. Movimientos era la ÚNICA pantalla principal que no
+                  abría con el índigo, y el verde ya no pertenece a la identidad:
+                  la marca es índigo y ámbar desde la Fase 26.
+
+                  El color de dirección del dinero no se pierde: sigue en el
+                  signo, en el ícono y en los dos totales de abajo, que es donde
+                  significa algo. Un fondo entero teñido no dice "entró más de
+                  lo que salió", solo grita. */}
+              <div className="bg-gradient-brand rounded-card p-4 sm:p-5 flex items-center justify-between gap-3 overflow-hidden shadow-hero">
+                <div className="min-w-0">
+                  {/* El label dice SOBRE QUÉ se calculó: "Neto · todo" no decía
+                      si eran los 34 movimientos de la lista o los del año. */}
+                  <p className="text-sm font-medium text-on-brand-muted">Neto de {alcance}</p>
+                  <p className="money-hero font-extrabold text-on-brand tabular mt-1">
                     {total >= 0 ? "+" : "−"}
                     <Money value={Math.abs(total)} decimals={false} />
-                  </>
-                }
-                sub={`${stats?.cantidad ?? visible.length} ${
-                  (stats?.cantidad ?? visible.length) === 1 ? "movimiento" : "movimientos"
-                }`}
-                icon={total >= 0 ? "trendUp" : "trendDown"}
-                tone={total >= 0 ? "income" : "expense"}
-              />
+                  </p>
+                  <p className="text-xs text-on-brand-muted mt-1">
+                    {stats?.cantidad ?? visible.length}{" "}
+                    {(stats?.cantidad ?? visible.length) === 1 ? "movimiento" : "movimientos"}
+                  </p>
+                </div>
+                <span className="grid place-items-center size-14 rounded-pill bg-on-brand-well text-on-brand shrink-0">
+                  <Icon name={total >= 0 ? "trendUp" : "trendDown"} size={28} />
+                </span>
+              </div>
               <div className="grid grid-cols-2 gap-2.5 mt-2.5">
                 <StatTile
                   emphasis="quiet"
