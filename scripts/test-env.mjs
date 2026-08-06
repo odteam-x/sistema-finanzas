@@ -131,10 +131,38 @@ async function entrar() {
   );
 }
 
+/** Datos de prueba con la forma que hace falta para AUDITAR, no para demostrar.
+ *
+ *  Cada pieza está elegida para llevar una pantalla a su caso interesante:
+ *    · 3 cuentas   → el umbral del carrusel de Balance (apila hasta 3)
+ *    · 22 gastos   → el anillo de presupuesto entra en la zona ámbar
+ *    · 12 cuotas   → el colapso de Deudas, con una vencida y una próxima
+ *    · 2 suscripciones a 2 y 9 días → los tres niveles de urgencia del Inicio
+ *
+ *  OJO CON EL LEDGER. Un gasto o un sueldo sin su movimiento espejo deja la
+ *  base incoherente y las pantallas mienten: la primera vez que se sembró sin
+ *  espejos, el saldo salía en cero y parecía un fallo de la app. Los espejos se
+ *  crean aquí igual que los crea addExpense() — retiro con source_ref_id
+ *  apuntando al gasto. */
+async function sembrar() {
+  const u = (await buscarUsuario())?.id;
+  if (!u) {
+    console.error("No existe el usuario de prueba. Corre `crear` primero.");
+    process.exit(1);
+  }
+  // El SQL no se ejecuta desde aquí: la clave service_role del cliente JS
+  // habla con PostgREST, que no acepta DDL ni bloques DO. Va por el editor SQL
+  // de Supabase, y este comando da lo único que cambia entre corridas.
+  console.log("Pega scripts/seed-test-data.sql en el editor SQL de Supabase,");
+  console.log("sustituyendo el user_id de la primera línea por:");
+  console.log("");
+  console.log("  " + u);
+}
+
 const cmd = process.argv[2];
-const acciones = { crear, entrar, enlace, borrar };
+const acciones = { crear, entrar, enlace, sembrar, borrar };
 if (!acciones[cmd]) {
-  console.error("Uso: node scripts/test-env.mjs crear|entrar|enlace|borrar");
+  console.error("Uso: node scripts/test-env.mjs crear|entrar|enlace|sembrar|borrar");
   process.exit(1);
 }
 await acciones[cmd]();
