@@ -33,7 +33,10 @@ export function InfoTooltip({
           aria-label={`Cómo se calcula: ${label}`}
           aria-haspopup="dialog"
           className={cn(
-            "relative grid place-items-center size-5 shrink-0 rounded-pill",
+            // touch-target ya pone position:relative. El "?" se queda en 20x20
+            // a proposito —acompana a una etiqueta, no compite con ella— y solo
+            // crece la zona de toque hasta 44.
+            "touch-target grid place-items-center size-5 shrink-0 rounded-pill",
             "border border-current/40 text-xs font-bold leading-none text-on-tint",
             "before:absolute before:-inset-2.5 before:content-['']",
             "hover:bg-surface-sunken hover:text-ink transition-colors cursor-pointer",

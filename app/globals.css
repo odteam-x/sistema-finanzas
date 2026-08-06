@@ -497,6 +497,38 @@ body {
   stroke: none;
 }
 
+/* ÁREA TÁCTIL SIN CAMBIAR EL TAMAÑO VISUAL.
+
+   Medido en las 14 pantallas con datos reales: el botón "Volver" mide 36x36 y
+   aparece en 13 de ellas; el "?" de ayuda mide 20x20. Los dos por debajo de los
+   44px que pide Apple, y el segundo menos de la mitad.
+
+   Agrandarlos de verdad los volvería piezas pesadas: el "?" tiene que ser
+   discreto —acompaña a una etiqueta, no compite con ella— y el chevron de
+   volver no debe pesar más que el título que tiene al lado.
+
+   Este pseudo-elemento extiende SOLO la zona sensible al toque, centrada sobre
+   el control. No ocupa espacio en el layout (position:absolute), así que nada
+   se mueve, y no se ve. El elemento necesita position:relative.
+
+   Los objetivos se miden en rem para que crezcan con la escala de texto, igual
+   que el resto del sistema. */
+.touch-target {
+  position: relative;
+}
+
+.touch-target::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  translate: -50% -50%;
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  width: 100%;
+  height: 100%;
+}
+
 /* Números tabulares para montos y tablas: todos los dígitos ocupan lo mismo,
    así que dos cifras alineadas en una columna se comparan de un vistazo. */
 .tabular {
