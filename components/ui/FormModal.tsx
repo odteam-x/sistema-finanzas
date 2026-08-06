@@ -36,6 +36,8 @@ interface FormModalProps {
    *  llegar al servidor. Se recibe ya resuelto para no duplicar aquí la
    *  detección de red. */
   receipt?: (formData: FormData, queued: boolean) => ReceiptData;
+  /** Pone el cursor en el primer campo al abrir, en vez de en la X. Ver Modal. */
+  focusFirstField?: boolean;
 }
 
 export function FormModal({
@@ -54,6 +56,7 @@ export function FormModal({
   open: controlledOpen,
   onOpenChange,
   receipt,
+  focusFirstField,
 }: FormModalProps) {
   const [internalOpen, setInternalOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -147,7 +150,15 @@ export function FormModal({
       {/* El recibo reemplaza el contenido del MISMO modal: no hay una
           segunda capa que abrir ni un cierre-y-reapertura que se vea como
           un parpadeo. */}
-      <Modal open={open} onClose={close} title={done ? done.title : title}>
+      {/* `&& !done`: cuando el modal ya muestra el recibo no queda campo que
+          enfocar, y robarle el foco a la nada dejaría el lector de pantalla
+          sin punto de partida. */}
+      <Modal
+        open={open}
+        onClose={close}
+        title={done ? done.title : title}
+        focusFirstField={focusFirstField && !done}
+      >
         {done ? (
           <Receipt data={done} onDone={close} />
         ) : (

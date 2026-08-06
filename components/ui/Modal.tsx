@@ -13,6 +13,9 @@ interface ModalProps {
   footer?: React.ReactNode;
   /** Diálogo más angosto (ej. detalle de un día del calendario). */
   compact?: boolean;
+  /** Pone el cursor en el primer campo de texto al abrir, en vez de en la X.
+   *  Solo para formularios de captura rápida — ver el comentario de abajo. */
+  focusFirstField?: boolean;
 }
 
 /**
@@ -25,8 +28,35 @@ interface ModalProps {
  * cambia, así que los ~15 sitios que usan Modal (vía FormModal,
  * DeleteButton, CalendarView, PersonalizeModal) no necesitan tocarse.
  */
-export function Modal({ open, onClose, title, children, footer, compact }: ModalProps) {
+export function Modal({
+  open,
+  onClose,
+  title,
+  children,
+  footer,
+  compact,
+  focusFirstField,
+}: ModalProps) {
   const dragControls = useDragControls();
+
+  /* Radix enfoca el primer elemento tabulable del diálogo, y en este layout
+     ese elemento es la X de cerrar: está antes que `children` en el DOM. Para
+     un formulario de captura rápida eso significa abrir el teclado a mano
+     antes de poder escribir nada.
+
+     Se redirige al primer campo de TEXTO (no a un <select>, que en móvil
+     abriría un selector encima del formulario recién abierto). `preventScroll`
+     porque el diálogo acaba de animar su entrada y un scroll automático en
+     medio se ve como un tirón. */
+  function focusFirstInput(e: Event) {
+    const root = e.currentTarget as HTMLElement | null;
+    const first = root?.querySelector<HTMLInputElement>(
+      'input:not([type="hidden"]):not([disabled])',
+    );
+    if (!first) return;
+    e.preventDefault();
+    first.focus({ preventScroll: true });
+  }
 
   return (
     <Dialog.Root open={open} onOpenChange={(next) => !next && onClose()}>
@@ -45,7 +75,12 @@ export function Modal({ open, onClose, title, children, footer, compact }: Modal
                 />
               </Dialog.Overlay>
 
-              <Dialog.Content asChild forceMount aria-describedby={undefined}>
+              <Dialog.Content
+                asChild
+                forceMount
+                aria-describedby={undefined}
+                onOpenAutoFocus={focusFirstField ? focusFirstInput : undefined}
+              >
                 <motion.div
                   drag="y"
                   dragControls={dragControls}

@@ -21,6 +21,8 @@ export type QuickForm = "gasto" | "ingreso" | "movimiento" | "deuda" | null;
 export interface QuickAccount {
   id: string;
   name: string;
+  /** La cuenta marcada como predeterminada, si el usuario marcó alguna. */
+  is_default?: boolean;
 }
 
 // Los 3 formularios "sobre la marcha" pasan por la cola offline-first
@@ -91,6 +93,18 @@ export function QuickForms({
   };
   const accountName = (id: string) => accounts.find((a) => a.id === id)?.name;
 
+  // Cuenta preseleccionada en "Registrar gasto". Solo si el usuario marcó una
+  // como predeterminada: se respeta una decisión que ya tomó, no se inventa
+  // una por él. Sin cuenta predeterminada sigue arrancando en "Sin asociar",
+  // igual que antes.
+  //
+  // Importa porque cambia lo que se escribe en el ledger: un gasto asociado a
+  // una cuenta le baja el saldo, y uno sin asociar no. Preseleccionar la
+  // predeterminada es lo que hace que el registro rápido cuadre con la
+  // realidad — el dinero siempre sale de algún sitio — sin obligar a elegirlo
+  // cada vez. Sigue pudiendo cambiarse a "Sin asociar" en el mismo campo.
+  const defaultAccountId = accounts.find((a) => a.is_default)?.id ?? "";
+
   const gastoReceipt = (fd: FormData, queued: boolean): ReceiptData => ({
     title: "Gasto registrado",
     amount: `−${formatDOP(parseAmount(fd.get("amount")) ?? 0)}`,
@@ -145,6 +159,13 @@ export function QuickForms({
         hideTrigger
         open={active === "gasto"}
         onOpenChange={close}
+        /* Registrar un gasto es LA acción recurrente de la app y se hace de
+           pie, en la calle, con una mano. El cursor entra directo en el monto
+           —con teclado numérico, que MoneyInput ya trae por inputMode— así que
+           la secuencia queda: abrir, teclear, confirmar. Sin esto había que
+           tocar el campo primero, porque el foco caía en la X de cerrar.
+           Solo en este formulario: es el único con esa frecuencia de uso. */
+        focusFirstField
       >
         <Field label="Monto" htmlFor={`${idPrefix}-exp-amount`} required>
           <MoneyInput id={`${idPrefix}-exp-amount`} name="amount" required />
@@ -154,7 +175,11 @@ export function QuickForms({
         </Field>
         {accounts.length > 0 && (
           <Field label="Cuenta" htmlFor={`${idPrefix}-exp-account`} hint="De dónde sale el dinero.">
-            <Select id={`${idPrefix}-exp-account`} name="account_id" defaultValue="">
+            <Select
+              id={`${idPrefix}-exp-account`}
+              name="account_id"
+              defaultValue={defaultAccountId}
+            >
               <option value="">Sin asociar</option>
               {accounts.map((a) => (
                 <option key={a.id} value={a.id}>
