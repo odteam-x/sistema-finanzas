@@ -27,9 +27,30 @@ const transparent = { r: 0, g: 0, b: 0, alpha: 0 };
 // para que todas las piezas partan del mismo encuadre exacto.
 const trimmed = await sharp(SRC).trim().png().toBuffer();
 
-/** La cartera a `size`, con su color original y fondo transparente. */
-const mark = (size) =>
-  sharp(trimmed).resize(size, size, { fit: "contain", background: transparent }).png().toBuffer();
+/** La cartera a `size`, en el color de marca y con fondo transparente.
+ *
+ *  El PNG de origen tiene la cartera en TEAL, que era la marca hasta la Fase
+ *  26. Se recolorea aquí en vez de editar el archivo de origen: así el
+ *  original se conserva intacto en Imagenes/ y volver atrás es cambiar una
+ *  constante.
+ *
+ *  Se recolorea por MASCARA, no tocando los píxeles teal uno a uno: se toma la
+ *  silueta (el canal alfa) y se rellena de índigo. Reemplazar por color
+ *  dejaría un borde teal en los píxeles del antialias, que son mezcla de teal
+ *  y transparente — un halo del color viejo alrededor de toda la figura. */
+const mark = async (size) =>
+  sharp({ create: { width: size, height: size, channels: 4, background: PLATE } })
+    .composite([
+      {
+        input: await sharp(trimmed)
+          .resize(size, size, { fit: "contain", background: transparent })
+          .png()
+          .toBuffer(),
+        blend: "dest-in",
+      },
+    ])
+    .png()
+    .toBuffer();
 
 /** La misma silueta, pero en blanco sólido. Es la que va sobre la placa: la
  *  cartera a color sobre índigo se pierde, ya pasó una vez con el maskable
@@ -38,7 +59,15 @@ const markWhite = async (size) =>
   sharp({ create: { width: size, height: size, channels: 4, background: { r: 255, g: 255, b: 255, alpha: 1 } } })
     // `dest-in` conserva el destino (el blanco) solo donde la fuente es opaca:
     // el resultado es la silueta de la cartera rellena de blanco.
-    .composite([{ input: await mark(size), blend: "dest-in" }])
+    .composite([
+      {
+        input: await sharp(trimmed)
+          .resize(size, size, { fit: "contain", background: transparent })
+          .png()
+          .toBuffer(),
+        blend: "dest-in",
+      },
+    ])
     .png()
     .toBuffer();
 
