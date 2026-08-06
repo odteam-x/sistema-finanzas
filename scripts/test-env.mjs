@@ -107,10 +107,14 @@ async function borrar() {
   console.log("Borrado " + CORREO + " y todos sus datos.");
 }
 
-// `enlace` devuelve una URL en el dominio de Supabase, y el navegador integrado
-// no sale de localhost sin aprobación. `entrar` da el paso intermedio desde
-// Node —que no tiene esa restricción— siguiendo la redirección a mano: se queda
-// con el `code` y devuelve una URL de localhost lista para abrir.
+// `enlace` devuelve la URL de Supabase, que redirige al navegador con los
+// tokens en el FRAGMENTO (#access_token=...) — y un fragmento no viaja al
+// servidor, así que la sesión nunca llega a cuajar. Además el navegador
+// integrado no sale de localhost sin aprobación.
+//
+// `entrar` se salta las dos cosas: `generateLink` ya devuelve el `hashed_token`
+// suelto, así que se arma directamente la URL local que el callback entiende.
+// Un solo salto, todo en localhost, y el token sigue siendo de un solo uso.
 async function entrar() {
   if (!(await buscarUsuario())) await crear();
   const { data, error } = await admin.auth.admin.generateLink({
@@ -119,13 +123,12 @@ async function entrar() {
     options: { redirectTo: BASE + "/auth/callback" },
   });
   if (error) throw error;
-  const r = await fetch(data.properties.action_link, { redirect: "manual" });
-  const destino = r.headers.get("location");
-  if (!destino) {
-    console.error("Supabase no redirigió (" + r.status + "). El token pudo caducar.");
-    process.exit(1);
-  }
-  console.log(destino);
+  console.log(
+    BASE +
+      "/auth/callback?token_hash=" +
+      encodeURIComponent(data.properties.hashed_token) +
+      "&type=magiclink",
+  );
 }
 
 const cmd = process.argv[2];
