@@ -51,8 +51,8 @@ export const viewport: Viewport = {
   // start_url— y el fondo de página en el resto. Se declara por esquema para
   // que el modo oscuro no arranque con una franja clara.
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#0c4c4f" },
-    { media: "(prefers-color-scheme: dark)", color: "#0d5457" },
+    { media: "(prefers-color-scheme: light)", color: "#3A2E7E" },
+    { media: "(prefers-color-scheme: dark)", color: "#3421AB" },
   ],
   width: "device-width",
   initialScale: 1,
