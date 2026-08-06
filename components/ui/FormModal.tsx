@@ -124,7 +124,11 @@ export function FormModal({
       {!hideTrigger && trigger === "link" && (
         <button
           onClick={openModal}
-          className="inline-flex items-center gap-1 text-sm font-semibold text-primary-fg hover:text-primary-fg cursor-pointer"
+          /* touch-target: este disparador se ve como un enlace, pero abre un
+             formulario — es un botón con aspecto discreto, y medía 24px. Sube
+             solo la zona sensible: si creciera de verdad dejaría de ser la
+             acción secundaria que su sitio en la fila promete. */
+          className="touch-target inline-flex items-center gap-1 text-sm font-semibold text-primary-fg hover:text-primary-fg cursor-pointer"
         >
           <Icon name={triggerIcon} size={16} />
           {triggerLabel}

@@ -148,7 +148,7 @@ export function PayoutCalculator({ gross, nextPay, daysUntilNextPay, items, late
                 : "Falta decir cuándo cobras para saber qué se te viene encima."}
             </p>
             {!nextPay && (
-              <Link href="/ingresos" className="text-sm font-semibold text-primary-fg">
+              <Link href="/ingresos" className="touch-target text-sm font-semibold text-primary-fg">
                 Configurar en Ingresos
               </Link>
             )}

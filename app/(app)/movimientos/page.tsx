@@ -337,7 +337,7 @@ export default async function MovimientosPage({
           title="Sin resultados"
           message="Ningún movimiento coincide con este filtro."
           action={
-            <Link href="/movimientos" className="text-sm font-semibold text-primary-fg">
+            <Link href="/movimientos" className="touch-target text-sm font-semibold text-primary-fg">
               Quitar filtros
             </Link>
           }

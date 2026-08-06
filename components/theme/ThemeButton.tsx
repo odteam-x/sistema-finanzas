@@ -50,7 +50,7 @@ export function ThemeButton({ variant, onNavigate }: ThemeButtonProps) {
     return (
       <button
         onClick={openPanel}
-        className="flex w-full items-center justify-between gap-3 py-1 cursor-pointer text-left"
+        className="flex w-full items-center justify-between gap-3 min-h-11 cursor-pointer text-left"
       >
         <span className="flex items-center gap-2.5 text-sm font-semibold text-ink">
           <Icon name="palette" size={18} className="text-muted" />

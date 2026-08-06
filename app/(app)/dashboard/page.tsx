@@ -350,7 +350,7 @@ function CompromisosSection({ s }: { s: Summary }) {
             title="Compromisos próximos"
             summary={`${s.upcomingCommitments.length} pendientes · el más próximo: ${s.upcomingCommitments[0].name}`}
             action={
-              <Link href="/calendario" className="text-sm font-semibold text-primary-fg">
+              <Link href="/calendario" className="touch-target text-sm font-semibold text-primary-fg">
                 Calendario
               </Link>
             }
@@ -395,7 +395,7 @@ function MovimientosSection({ s }: { s: Summary }) {
             <IconBubble icon="movements" tone="neutral" />
             <div className="min-w-0 flex-1">
               <p className="text-sm text-muted">Aún no has registrado movimientos.</p>
-              <Link href="/movimientos" className="text-sm font-semibold text-primary-fg">
+              <Link href="/movimientos" className="touch-target text-sm font-semibold text-primary-fg">
                 Registrar el primero
               </Link>
             </div>
@@ -465,7 +465,7 @@ function GastosSection({ s }: { s: Summary }) {
           </>
         }
         action={
-          <Link href="/presupuesto" className="text-sm font-semibold text-primary-fg">
+          <Link href="/presupuesto" className="touch-target text-sm font-semibold text-primary-fg">
             Ver
           </Link>
         }

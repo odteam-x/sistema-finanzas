@@ -166,7 +166,7 @@ export function SecuritySettings({
             setShowForm(true);
             setNotice(null);
           }}
-          className="text-sm font-semibold text-primary-fg text-left cursor-pointer"
+          className="touch-target text-sm font-semibold text-primary-fg text-left cursor-pointer"
         >
           {hasCode ? "Cambiar código personal" : "Asignar código personal"}
         </button>

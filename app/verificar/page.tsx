@@ -45,7 +45,7 @@ export default async function VerificarPage() {
         </Card>
 
         <div className="mt-4 text-center">
-          <Link href="/verificar/recuperar" className="text-sm font-semibold text-primary-fg">
+          <Link href="/verificar/recuperar" className="touch-target text-sm font-semibold text-primary-fg">
             ¿Olvidaste tu código?
           </Link>
         </div>

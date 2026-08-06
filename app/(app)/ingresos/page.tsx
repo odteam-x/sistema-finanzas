@@ -11,6 +11,7 @@ import { nextPayDateFrom, fixedPayDays } from "@/lib/periods";
 import { groupByDate } from "@/lib/group";
 import { RANGE_LABEL, parseRangePreset, rangeBounds, type RangePreset } from "@/lib/range";
 import { SearchBar } from "@/components/ui/SearchBar";
+import { FilterMenu } from "@/components/ui/FilterMenu";
 import { SectionHead } from "@/components/ui/SectionHead";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
@@ -23,12 +24,6 @@ import { FormModal } from "@/components/ui/FormModal";
 import { DeleteButton } from "@/components/ui/DeleteButton";
 import { IconBubble } from "@/components/ui/IconBubble";
 import { Icon } from "@/components/ui/Icon";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/DropdownMenu";
 import { MoneyValue } from "@/components/ui/MoneyValue";
 import { Money } from "@/components/ui/Money";
 import { addSalary, deleteSalary, saveSalarySettings } from "./actions";
@@ -360,24 +355,24 @@ export default async function IngresosPage({
       {/* Historial */}
       <SectionHead
         title="Historial de ingresos"
+        /* FilterMenu en vez de un DropdownMenu armado a mano: Movimientos,
+           Cobros e Historial de deudas ya filtran así, y esta pantalla era la
+           única con su propia versión. Además su disparador medía 34px de alto,
+           por debajo del mínimo táctil. */
         action={
           tags.length > 0 && salaries.length > 0 ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger className="card inline-flex items-center gap-1.5 rounded-tile px-3 py-1.5 text-xs font-semibold text-ink cursor-pointer">
-                <Icon name="chevronDown" size={12} />
-                {tagFilter ? (tags.find((t) => t.id === tagFilter)?.name ?? "Filtrar") : "Todos"}
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem asChild>
-                  <Link href={hrefFor({ tag: undefined })}>Todos</Link>
-                </DropdownMenuItem>
-                {tags.map((t) => (
-                  <DropdownMenuItem key={t.id} asChild>
-                    <Link href={hrefFor({ tag: t.id })}>{t.name}</Link>
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <FilterMenu
+              label="Etiqueta"
+              value={tagFilter ? (tags.find((t) => t.id === tagFilter)?.name ?? "Filtrar") : "Todos"}
+              options={[
+                { label: "Todos", href: hrefFor({ tag: undefined }), active: !tagFilter },
+                ...tags.map((t) => ({
+                  label: t.name,
+                  href: hrefFor({ tag: t.id }),
+                  active: tagFilter === t.id,
+                })),
+              ]}
+            />
           ) : undefined
         }
       />
@@ -386,19 +381,20 @@ export default async function IngresosPage({
         <div className="flex flex-col gap-2 mb-3">
           <SearchBar placeholder="Buscar por nota o etiqueta…" />
           <div className="flex items-center justify-between gap-2 flex-wrap">
-            <div className="card inline-flex gap-1 rounded-tile p-1">
-              {(Object.keys(RANGE_LABEL) as RangePreset[]).map((r) => (
-                <Link
-                  key={r}
-                  href={hrefFor({ range: r })}
-                  className={`rounded-tile px-2.5 py-1 text-xs font-semibold transition-colors ${
-                    r === range ? "bg-primary text-on-brand" : "text-muted"
-                  }`}
-                >
-                  {RANGE_LABEL[r]}
-                </Link>
-              ))}
-            </div>
+            {/* Era una tira de enlaces escrita a mano, con las opciones de
+                rango a 28px de alto. Las otras tres pantallas que filtran por
+                rango —Movimientos, Cobros e Historial— usan FilterMenu, así que
+                el mismo filtro se veía y se tocaba de dos formas distintas
+                según dónde estuvieras. */}
+            <FilterMenu
+              label="Rango"
+              value={RANGE_LABEL[range]}
+              options={(Object.keys(RANGE_LABEL) as RangePreset[]).map((r) => ({
+                label: RANGE_LABEL[r],
+                href: hrefFor({ range: r }),
+                active: r === range,
+              }))}
+            />
             {visibleSalaries.length > 0 && (
               <p className="text-xs text-muted px-1">
                 {visibleSalaries.length} · Total{" "}
@@ -431,7 +427,7 @@ export default async function IngresosPage({
           title="Sin resultados"
           message="Ningún ingreso coincide con este filtro."
           action={
-            <Link href="/ingresos" className="text-sm font-semibold text-primary-fg">
+            <Link href="/ingresos" className="touch-target text-sm font-semibold text-primary-fg">
               Quitar filtros
             </Link>
           }

@@ -126,7 +126,7 @@ export default async function CalendarioPage({
           <Link
             href={prevHref}
             aria-label="Mes anterior"
-            className="grid place-items-center size-10 rounded-pill hover:bg-surface-sunken text-ink cursor-pointer"
+            className="touch-target grid place-items-center size-10 rounded-pill hover:bg-surface-sunken text-ink cursor-pointer"
           >
             <Icon name="chevronLeft" size={22} />
           </Link>
@@ -136,7 +136,7 @@ export default async function CalendarioPage({
           <Link
             href={nextHref}
             aria-label="Mes siguiente"
-            className="grid place-items-center size-10 rounded-pill hover:bg-surface-sunken text-ink cursor-pointer"
+            className="touch-target grid place-items-center size-10 rounded-pill hover:bg-surface-sunken text-ink cursor-pointer"
           >
             <Icon name="chevronRight" size={22} />
           </Link>

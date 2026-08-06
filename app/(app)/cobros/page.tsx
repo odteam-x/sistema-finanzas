@@ -237,7 +237,7 @@ export default async function CobrosPage({
           title="Sin resultados"
           message="Ningún registro coincide con este filtro."
           action={
-            <Link href="/cobros" className="text-sm font-semibold text-primary-fg">
+            <Link href="/cobros" className="touch-target text-sm font-semibold text-primary-fg">
               Quitar filtros
             </Link>
           }

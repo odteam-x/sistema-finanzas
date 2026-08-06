@@ -30,7 +30,7 @@ export default async function RecuperarCodigoPage() {
         </Card>
 
         <div className="mt-4 text-center">
-          <Link href="/verificar" className="text-sm font-semibold text-primary-fg">
+          <Link href="/verificar" className="touch-target text-sm font-semibold text-primary-fg">
             Volver
           </Link>
         </div>

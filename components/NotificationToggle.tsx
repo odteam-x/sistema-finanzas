@@ -55,7 +55,7 @@ export function NotificationToggle() {
       <button
         onClick={request}
         disabled={permission !== "default"}
-        className="flex w-full items-center justify-between gap-3 py-1 cursor-pointer text-left disabled:cursor-default"
+        className="flex w-full items-center justify-between gap-3 min-h-11 cursor-pointer text-left disabled:cursor-default"
       >
         <span className="flex items-center gap-2.5 text-sm font-semibold text-ink">
           <Icon name="bell" size={18} className="text-muted" />

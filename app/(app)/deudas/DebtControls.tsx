@@ -91,7 +91,7 @@ export function InstallmentRow({
       <button
         onClick={toggle}
         disabled={pending}
-        className="flex items-center gap-2.5 flex-1 min-w-0 py-0.5 text-left cursor-pointer disabled:opacity-60"
+        className="flex items-center gap-2.5 flex-1 min-w-0 min-h-11 text-left cursor-pointer disabled:opacity-60"
       >
         <span
           className={cn(

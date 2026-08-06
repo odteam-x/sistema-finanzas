@@ -44,7 +44,16 @@ export function SectionHead({
       </div>
       {action ??
         (href && (
-          <Link href={href} className="text-sm font-semibold text-primary-fg shrink-0">
+          /* touch-target: medido en las 14 pantallas, estos enlaces salen entre
+             20 y 24px de alto. La exención de WCAG 2.5.8 para enlaces en línea
+             NO aplica: no van dentro de una frase, son un control suelto al
+             final de una fila, y se tocan igual que un botón.
+             Sube solo la zona sensible; el texto no cambia de tamaño ni de
+             peso, que es lo que lo mantiene subordinado al título. */
+          <Link
+            href={href}
+            className="touch-target text-sm font-semibold text-primary-fg shrink-0"
+          >
             {linkLabel}
           </Link>
         ))}

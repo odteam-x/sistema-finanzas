@@ -312,7 +312,7 @@ export default async function PresupuestoPage({
             </>
           }
           action={
-            <Link href="/suscripciones" className="text-sm font-semibold text-primary-fg">
+            <Link href="/suscripciones" className="touch-target text-sm font-semibold text-primary-fg">
               Gestionar
             </Link>
           }
@@ -388,7 +388,7 @@ export default async function PresupuestoPage({
           title="Sin resultados"
           message="Ningún gasto coincide con este filtro."
           action={
-            <Link href="/presupuesto" className="text-sm font-semibold text-primary-fg">
+            <Link href="/presupuesto" className="touch-target text-sm font-semibold text-primary-fg">
               Quitar filtros
             </Link>
           }

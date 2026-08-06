@@ -39,7 +39,7 @@ export function AuthShell({
         {links && links.length > 0 && (
           <div className="mt-4 flex flex-col items-center gap-2">
             {links.map((l) => (
-              <Link key={l.href} href={l.href} className="text-sm font-semibold text-primary-fg">
+              <Link key={l.href} href={l.href} className="touch-target text-sm font-semibold text-primary-fg">
                 {l.label}
               </Link>
             ))}

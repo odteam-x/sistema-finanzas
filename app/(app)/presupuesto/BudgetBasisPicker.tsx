@@ -86,7 +86,7 @@ export function BudgetBasisPicker({
     <>
       <button
         onClick={openModal}
-        className="inline-flex items-center gap-1 text-sm font-semibold text-primary-fg cursor-pointer"
+        className="touch-target inline-flex items-center gap-1 text-sm font-semibold text-primary-fg cursor-pointer"
       >
         <Icon name="edit" size={16} />
         {mode === "personalizado" ? `${days} días elegidos` : "Ajustar días"}
