@@ -22,19 +22,33 @@ export function BudgetRing({ spent, budget, size = 108 }: BudgetRingProps) {
   const pct = unset ? 0 : clampPct(spent, budget);
   const remaining = budget - spent;
 
+  // NIVEL INTERMEDIO. Antes solo habia dos estados —dentro del presupuesto o
+  // excedido— y el salto ocurria al 100%, cuando ya no queda nada que hacer.
+  // El 80% es el punto donde todavia se puede corregir: quedan cuatro pesos de
+  // cada veinte y aun se puede frenar. Avisar ahi es lo unico que sirve; a las
+  // 100 el aviso solo informa de un hecho consumado.
+  //
+  // Es el color que la paleta anterior no tenia: con el teal todo era normal o
+  // peligro, sin nada en medio.
+  const near = !unset && !over && pct >= 80;
+
   const stroke = 12;
   const r = (size - stroke) / 2;
   const cx = size / 2;
   const cy = size / 2;
   const circ = 2 * Math.PI * r;
   const len = (pct / 100) * circ;
-  // El trazo del anillo es forma, no texto: puede usar el color saturado.
-  // La CIFRA de abajo no — ahí va el token legible sobre superficie.
+  // El trazo del anillo es FORMA, no texto: puede llevar el ámbar saturado
+  // (--color-accent), que a 2.27:1 sobre blanco nunca podría llevar texto
+  // encima. La cifra de abajo usa el ámbar LEGIBLE (--color-warning, 4.58:1).
+  // Es el mismo aviso en dos sitios, con el token que corresponde a cada uno.
   const ringColor = unset
     ? "var(--color-line-strong)"
     : over
       ? "var(--color-expense)"
-      : "var(--color-primary)";
+      : near
+        ? "var(--color-accent)"
+        : "var(--color-primary)";
 
   return (
     <div className="flex items-center gap-4">
@@ -44,7 +58,9 @@ export function BudgetRing({ spent, budget, size = 108 }: BudgetRingProps) {
         viewBox={`0 0 ${size} ${size}`}
         role="img"
         aria-label={
-          unset ? "Sin presupuesto configurado" : `${Math.round(pct)}% del presupuesto usado`
+          unset
+            ? "Sin presupuesto configurado"
+            : `${Math.round(pct)}% del presupuesto usado${near ? ", te queda poco" : ""}`
         }
         className="shrink-0"
       >
@@ -70,11 +86,17 @@ export function BudgetRing({ spent, budget, size = 108 }: BudgetRingProps) {
           para que nada más de esa pantalla compita con ella. */}
       <div className="min-w-0">
         <p className="text-sm font-medium text-muted">
-          {unset ? "Gastado esta quincena" : over ? "Excedido" : "Te queda esta quincena"}
+          {unset
+            ? "Gastado esta quincena"
+            : over
+              ? "Excedido"
+              : near
+                ? "Te queda poco esta quincena"
+                : "Te queda esta quincena"}
         </p>
         <p
           className={`money-lg font-extrabold tabular ${
-            unset ? "text-ink" : over ? "text-expense" : "text-primary-fg"
+            unset ? "text-ink" : over ? "text-expense" : near ? "text-warning" : "text-primary-fg"
           }`}
         >
           {/* Sin presupuesto, la única cifra honesta es lo gastado: un

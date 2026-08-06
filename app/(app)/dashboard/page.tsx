@@ -146,6 +146,26 @@ function commitmentSub(days: number): string {
   return `En ${days} días`;
 }
 
+/** Tres niveles de urgencia para el "en X días" de un compromiso, no dos.
+ *
+ *  Este texto iba SIEMPRE en gris: un pago que vence mañana y uno que vence en
+ *  tres semanas se leían igual, y la única forma de distinguirlos era leer el
+ *  número. El color es lo que se ve sin leer.
+ *
+ *  · vencido            → rojo. Ya pasó, no hay margen.
+ *  · en 3 días o menos  → ÁMBAR. Todavía se puede mover dinero para llegar.
+ *  · más allá           → gris. Es contexto, no un aviso.
+ *
+ *  Los 3 días son los del ciclo real de esta app: entre quincena y quincena hay
+ *  15, así que tres días es el margen en que aún cabe reaccionar sin cobrar.
+ *  Va en `--color-warning` (4.58:1) y no en `--color-accent` (2.27:1): esto es
+ *  TEXTO. El ámbar saturado se queda para rellenos y trazos. */
+function commitmentUrgency(days: number): string {
+  if (days < 0) return "text-expense font-semibold";
+  if (days <= 3) return "text-warning font-semibold";
+  return "text-muted";
+}
+
 export default async function DashboardPage() {
   // getUserProfile() no depende de nada que el catch-up escriba (perfil de
   // usuario, no ledger) — corre en paralelo con él en vez de esperar a que
@@ -343,7 +363,9 @@ function CompromisosSection({ s }: { s: Summary }) {
                   />
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-semibold text-ink truncate">{c.name}</p>
-                    <p className="text-xs text-muted">{commitmentSub(daysBetween(s.today, c.date))}</p>
+                    <p className={cn("text-xs", commitmentUrgency(daysBetween(s.today, c.date)))}>
+                      {commitmentSub(daysBetween(s.today, c.date))}
+                    </p>
                   </div>
                   <p className="text-sm font-bold text-ink tabular shrink-0">
                     <Money value={c.amount} decimals={false} />
