@@ -12,7 +12,7 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { StatTile } from "@/components/ui/StatTile";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Icon } from "@/components/ui/Icon";
-import { Money } from "@/components/ui/Money";
+import { MoneyValue } from "@/components/ui/MoneyValue";
 import { AddDebtForm } from "./AddDebtForm";
 import { DebtGroupCard } from "./DebtGroupCard";
 
@@ -75,13 +75,26 @@ export default async function DeudasPage() {
           importantes. El monto manda a ancho completo; el vencimiento pasa a
           contexto. */}
       <div className="mb-5 flex flex-col gap-2.5">
-        <StatTile
-          emphasis="hero"
-          label="Total adeudado"
-          value={<Money value={outstanding} decimals={false} />}
-          icon="debt"
-          tone={outstanding > 0 ? "expense" : "neutral"}
-        />
+        {/* Deudas era la única de las cinco secciones con tono propio que
+            seguía sin hero: su cifra iba en un StatTile `hero`, que es una
+            tarjeta de superficie, mientras Ingresos, Metas, Reportes y
+            Calculadora abrían con el bloque saturado. Ahora abre igual, en
+            terracota — un rojo apagado, no de alarma: deber dinero no es una
+            emergencia, y el rojo de peligro se reserva para lo vencido.
+            El de logro sigue prohibido en esta pantalla. */}
+        <div className="tone-deudas bg-gradient-brand rounded-card p-4 sm:p-5 flex items-center justify-between gap-3 overflow-hidden shadow-hero">
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-on-brand-muted">Total adeudado</p>
+            <MoneyValue
+              value={outstanding}
+              decimals={false}
+              className="block money-lg font-extrabold text-on-brand mt-1"
+            />
+          </div>
+          <span className="grid place-items-center size-14 rounded-pill bg-on-brand-well text-on-brand shrink-0">
+            <Icon name="debt" size={28} />
+          </span>
+        </div>
         <StatTile
           emphasis="quiet"
           label="Próximo vencimiento"
