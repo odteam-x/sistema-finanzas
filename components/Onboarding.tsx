@@ -55,44 +55,81 @@ export function Onboarding({
   hasExpenses: boolean;
   hasSalarySettings: boolean;
 }) {
+  const pasos = [
+    {
+      icon: "bank" as const,
+      title: "Crea tu primera cuenta",
+      description:
+        "Efectivo, banco, lo que uses. Todo gasto o ingreso sale o entra de una cuenta, así que este paso va primero.",
+      done: hasAccounts,
+      action: <NewAccountForm accounts={[]} triggerLabel="Crear cuenta" />,
+    },
+    {
+      icon: "budget" as const,
+      title: "Registra un gasto",
+      description:
+        "Con el botón + de abajo. Tu promedio de gasto por día se calcula de lo que registres, no de un presupuesto que tengas que inventar.",
+      done: hasExpenses,
+      action: undefined,
+    },
+    {
+      icon: "wallet" as const,
+      title: "Dinos cuándo cobras",
+      description:
+        "Para que el ingreso se registre solo cada quincena y sepamos cuánto falta para el próximo.",
+      done: hasSalarySettings,
+      action: (
+        <Link
+          href="/ingresos"
+          className="inline-flex items-center gap-1.5 rounded-pill border border-line-strong px-3.5 min-h-11 text-sm font-semibold text-ink hover:bg-surface-sunken transition-colors"
+        >
+          <Icon name="wallet" size={16} />
+          Configurar
+        </Link>
+      ),
+    },
+  ];
+
+  const pendientes = pasos.filter((p) => !p.done);
+  const hechos = pasos.length - pendientes.length;
+
+  // Con todo hecho no queda nada que enseñar. El Inicio es para ver cómo estás,
+  // no para felicitarte por haber terminado de configurar.
+  if (pendientes.length === 0) return null;
+
   return (
     <Card className="mb-6">
       <div className="mb-3">
         <h2 className="font-bold text-ink">Empecemos</h2>
         <p className="text-xs text-muted mt-0.5">
-          Tres pasos para que los números de esta pantalla signifiquen algo.
+          {hechos === 0
+            ? "Tres pasos para que los números de esta pantalla signifiquen algo."
+            : `${hechos} de ${pasos.length} listos. ${
+                pendientes.length === 1 ? "Queda este:" : "Quedan estos:"
+              }`}
         </p>
       </div>
 
+      {/* Solo se listan los pasos PENDIENTES.
+          Medido en la app con datos reales: con dos de tres hechos, esta
+          tarjeta ocupaba 477px de los 2547 del Inicio — el 19% de la pantalla
+          más importante— y de eso, dos tercios eran instrucciones para cosas ya
+          hechas, cada una con su título y sus dos líneas de explicación.
+          Empujaban hacia abajo "Tu situación" y los compromisos próximos, que
+          es lo que de verdad se viene a mirar.
+          Lo hecho no necesita fila propia: cabe en el "2 de 3 listos" de
+          arriba, que además dice mejor cuánto falta. */}
       <ol className="flex flex-col gap-4">
-        <Step
-          icon="bank"
-          title="Crea tu primera cuenta"
-          description="Efectivo, banco, lo que uses. Todo gasto o ingreso sale o entra de una cuenta, así que este paso va primero."
-          done={hasAccounts}
-          action={<NewAccountForm accounts={[]} triggerLabel="Crear cuenta" />}
-        />
-        <Step
-          icon="budget"
-          title="Registra un gasto"
-          description="Con el botón + de abajo. Tu promedio de gasto por día se calcula de lo que registres, no de un presupuesto que tengas que inventar."
-          done={hasExpenses}
-        />
-        <Step
-          icon="wallet"
-          title="Dinos cuándo cobras"
-          description="Para que el ingreso se registre solo cada quincena y sepamos cuánto falta para el próximo."
-          done={hasSalarySettings}
-          action={
-            <Link
-              href="/ingresos"
-              className="inline-flex items-center gap-1.5 rounded-pill border border-line-strong px-3.5 min-h-11 text-sm font-semibold text-ink hover:bg-surface-sunken transition-colors"
-            >
-              <Icon name="wallet" size={16} />
-              Configurar
-            </Link>
-          }
-        />
+        {pendientes.map((p) => (
+          <Step
+            key={p.title}
+            icon={p.icon}
+            title={p.title}
+            description={p.description}
+            done={false}
+            action={p.action}
+          />
+        ))}
       </ol>
     </Card>
   );
