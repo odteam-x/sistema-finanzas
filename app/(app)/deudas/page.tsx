@@ -100,7 +100,7 @@ export default async function DeudasPage() {
             <MoneyValue
               value={outstanding}
               decimals={false}
-              className="block money-lg font-extrabold text-on-brand mt-1"
+              className="block money-hero font-extrabold text-on-brand mt-1"
             />
           </div>
           <span className="grid place-items-center size-14 rounded-pill bg-on-brand-well text-on-brand shrink-0">

@@ -269,7 +269,7 @@ export default async function ReportesPage({
               período que se está reportando, no del saldo de la billetera
               (que ya manda en Inicio y en Balance). Antes no había ninguna
               cifra dominante: cinco StatTile del mismo tamaño. */}
-          <section className="mb-6 rounded-hero tone-reportes bg-gradient-brand px-5 py-6 shadow-hero print:shadow-none">
+          <section className="mb-6 rounded-hero tone-reportes bg-gradient-brand px-5 py-6 shadow-hero print:shadow-none overflow-hidden">
             <p className="text-sm font-medium text-on-brand-muted">
               {hasIncomeHistory ? "Neto del período" : "Gasto del período"}
             </p>

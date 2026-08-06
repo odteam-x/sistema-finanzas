@@ -11,7 +11,21 @@ export const Tabs = TabsPrimitive.Root;
 export function TabsList({ className, ...props }: React.ComponentProps<typeof TabsPrimitive.List>) {
   return (
     <TabsPrimitive.List
-      className={cn("card inline-flex gap-1 rounded-pill p-1", className)}
+      className={cn(
+        "card inline-flex gap-1 rounded-pill p-1",
+        // Medido a escala de texto 1.3 en Calculadora: las tres píldoras
+        // ("Mi cobro / Meta de ahorro / Préstamo") llegan a 358px y desbordan
+        // los 375 de un teléfono, empujando la PÁGINA ENTERA a desplazarse en
+        // horizontal. Un scroll lateral en toda la pantalla se siente roto,
+        // porque desalinea todo lo demás con el borde.
+        //
+        // Aquí lo correcto no es encoger el texto —quien puso la escala grande
+        // la necesita— sino que el desbordamiento se quede DENTRO de su propia
+        // fila: la tira se desliza sola y el resto de la pantalla no se entera.
+        // Misma solución que ya usa PeekCarousel, con la barra oculta.
+        "max-w-full overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
+        className,
+      )}
       {...props}
     />
   );

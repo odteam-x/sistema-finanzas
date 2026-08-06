@@ -214,7 +214,7 @@ export default async function IngresosPage({
       <div className="tone-ingresos bg-gradient-brand rounded-card p-4 sm:p-5 mb-3 flex items-center justify-between gap-3 overflow-hidden shadow-hero">
         <div className="min-w-0">
           <p className="text-sm font-medium text-on-brand-muted">Recibido este mes</p>
-          <MoneyValue value={monthTotal} className="block money-lg font-extrabold text-on-brand mt-1" />
+          <MoneyValue value={monthTotal} className="block money-hero font-extrabold text-on-brand mt-1" />
         </div>
         <span className="grid place-items-center size-14 rounded-pill bg-on-brand-well text-on-brand shrink-0">
           <Icon name="wallet" size={28} />
