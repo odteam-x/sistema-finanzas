@@ -11,6 +11,7 @@ import { PendingSyncBanner } from "@/components/PendingSyncBanner";
 import { ToastProvider } from "@/components/ui/Toast";
 import { AppLockGate } from "@/components/AppLockGate";
 import { StatusBarColor } from "@/components/StatusBarColor";
+import { StorageScope } from "@/components/StorageScope";
 
 export default async function AppLayout({
   children,
@@ -37,7 +38,11 @@ export default async function AppLayout({
   const email = user.email ?? null;
 
   return (
-    <PersonalizeProvider accountTextScale={profile?.text_scale}>
+    /* StorageScope envuelve TODO: fija de quien es el localStorage antes de
+       que cualquier hijo lea una preferencia. Si quedara por dentro, los
+       modulos que leen al montar caerian en el espacio anon. */
+    <StorageScope userId={user.id}>
+      <PersonalizeProvider accountTextScale={profile?.text_scale}>
       <ToastProvider>
         {/* El re-bloqueo por inactividad solo aplica si el código está activo;
             es estado de la CUENTA, así que llega del servidor y no de
@@ -72,6 +77,7 @@ export default async function AppLayout({
           </div>
         </AppLockGate>
       </ToastProvider>
-    </PersonalizeProvider>
+      </PersonalizeProvider>
+    </StorageScope>
   );
 }

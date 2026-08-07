@@ -14,9 +14,10 @@ import { addExpense } from "@/app/(app)/presupuesto/actions";
 import { addSalary } from "@/app/(app)/ingresos/actions";
 import { addMovement } from "@/app/(app)/balance/actions";
 import { isAlreadySynced } from "./offlineDedup";
+import { getActiveUser, storageKey } from "./storageKey";
 import type { ActionResult } from "./actions-shared";
 
-const QUEUE_KEY = "cachin:offline-queue";
+const clave = () => storageKey("offline-queue");
 
 export type QueuedActionKey = "gasto" | "ingreso" | "movimiento";
 
@@ -29,6 +30,11 @@ export interface QueuedItem {
    *  encola — este módulo no sabe (ni le importa) qué campos tiene cada
    *  formulario. */
   label: string;
+  /** Quién lo encoló. Va DENTRO del elemento, no solo en la clave: es la
+   *  última línea de defensa si el espacio de nombres fallara alguna vez.
+   *  Opcional porque los pendientes guardados antes de la Fase 27 no lo
+   *  tienen — entonces la cola era global y no se sabía de quién eran. */
+  userId?: string;
 }
 
 const EMPTY_QUEUE: QueuedItem[] = [];
@@ -39,7 +45,7 @@ const listeners = new Set<Listener>();
 function readFromStorage(): QueuedItem[] {
   if (typeof window === "undefined") return EMPTY_QUEUE;
   try {
-    const raw = window.localStorage.getItem(QUEUE_KEY);
+    const raw = window.localStorage.getItem(clave());
     return raw ? (JSON.parse(raw) as QueuedItem[]) : EMPTY_QUEUE;
   } catch {
     return EMPTY_QUEUE;
@@ -49,7 +55,7 @@ function readFromStorage(): QueuedItem[] {
 function writeQueue(next: QueuedItem[]): void {
   cachedQueue = next;
   try {
-    window.localStorage.setItem(QUEUE_KEY, JSON.stringify(next));
+    window.localStorage.setItem(clave(), JSON.stringify(next));
   } catch {
     // localStorage lleno/no disponible: la cola vive solo en memoria de esta
     // pestaña — no rompe el resto de la app, solo no sobrevive un refresh.
@@ -81,6 +87,7 @@ function enqueue(actionKey: QueuedActionKey, formData: FormData, label: string):
     entries,
     createdAt: Date.now(),
     label,
+    userId: getActiveUser() ?? undefined,
   };
   writeQueue([...getQueue(), item]);
 }
@@ -135,8 +142,31 @@ const REGISTRY: Record<QueuedActionKey, (formData: FormData) => Promise<ActionRe
  *  antes duplicaba el gasto/ingreso/movimiento en cada reintento. */
 export async function flushQueue(): Promise<{ flushed: number; remaining: number }> {
   const items = getQueue();
+  const usuario = getActiveUser();
   let flushed = 0;
   for (const item of items) {
+    // GUARDIA DE PROPIETARIO. Si este pendiente lo encoló otra cuenta, se
+    // descarta sin enviarlo: mandarlo escribiría el dinero de una persona en
+    // la cuenta de otra, que es peor que perder el registro.
+    //
+    // Con el espacio de nombres por usuario esto no debería ocurrir nunca —
+    // cada cuenta lee su propia cola. Está por si esa primera capa falla: una
+    // clave mal construida es un error silencioso, y su consecuencia aquí es
+    // dinero mal registrado.
+    //
+    // Sin userId = encolado antes de la Fase 27, cuando la cola era global.
+    // No se puede saber de quién es, así que tampoco se envía.
+    if (item.userId !== usuario) {
+      console.warn(
+        "[cola offline] descartado: lo encoló otra sesión (" +
+          (item.userId ?? "desconocida") +
+          " / activa: " +
+          (usuario ?? "ninguna") +
+          ")",
+      );
+      removeFromQueue(item.id);
+      continue;
+    }
     try {
       const already = await isAlreadySynced(item.actionKey, item.entries, item.createdAt);
       if (already) {

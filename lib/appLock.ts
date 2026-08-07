@@ -10,8 +10,10 @@
 // credencial biométrica registrada. La verificación biométrica sigue sin
 // llamar al servidor — que el navegador entregue una aserción de WebAuthn ya
 // implica que el sensor verificó a la persona presente.
-const SETTINGS_KEY = "cachin:lock";
-const LAST_BACKGROUND_KEY = "cachin:lock-last-background";
+import { storageKey } from "./storageKey";
+
+const claveAjustes = () => storageKey("lock");
+const claveFondo = () => storageKey("lock-last-background");
 
 export interface LockSettings {
   timeoutMinutes: number;
@@ -53,7 +55,7 @@ const listeners = new Set<Listener>();
 
 export function getLockSettings(): LockSettings {
   if (cachedSettings === null) {
-    cachedSettings = { ...DEFAULT_SETTINGS, ...readStorage(SETTINGS_KEY, DEFAULT_SETTINGS) };
+    cachedSettings = { ...DEFAULT_SETTINGS, ...readStorage(claveAjustes(), DEFAULT_SETTINGS) };
   }
   return cachedSettings;
 }
@@ -74,7 +76,7 @@ export function subscribeToLockSettings(listener: Listener): () => void {
 
 function saveLockSettings(patch: Partial<LockSettings>): void {
   cachedSettings = { ...getLockSettings(), ...patch };
-  writeStorage(SETTINGS_KEY, cachedSettings);
+  writeStorage(claveAjustes(), cachedSettings);
   for (const l of listeners) l();
 }
 
@@ -89,7 +91,7 @@ export function setTimeoutMinutes(minutes: number): void {
 // ---- Actividad: cuándo se fue a segundo plano, para decidir si re-bloquear ----
 
 export function markBackgroundedNow(): void {
-  writeStorage(LAST_BACKGROUND_KEY, Date.now());
+  writeStorage(claveFondo(), Date.now());
 }
 
 /** true si pasó más tiempo del configurado desde que la app se fue a
@@ -97,7 +99,7 @@ export function markBackgroundedNow(): void {
 export function hasExceededTimeout(): boolean {
   const minutes = getTimeoutMinutes();
   if (minutes <= 0) return true;
-  const last = readStorage<number | null>(LAST_BACKGROUND_KEY, null);
+  const last = readStorage<number | null>(claveFondo(), null);
   if (last == null) return false;
   return Date.now() - last >= minutes * 60_000;
 }

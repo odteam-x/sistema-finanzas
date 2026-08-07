@@ -2,7 +2,9 @@
 // —localStorage, no la base— porque es preferencia de presentación, no un dato
 // financiero, y perderla al cambiar de teléfono no le hace daño a nadie.
 
-const KEY = "cachin:seen-tips";
+import { storageKey } from "./storageKey";
+
+const clave = () => storageKey("seen-tips");
 
 /** Referencia estable para el caso "nada leído". useSyncExternalStore compara
  *  snapshots por identidad: devolver un [] nuevo en cada llamada haría que
@@ -18,7 +20,7 @@ let lastValue: readonly string[] = EMPTY;
 export function readSeenTips(): readonly string[] {
   if (typeof window === "undefined") return EMPTY;
   try {
-    const raw = window.localStorage.getItem(KEY);
+    const raw = window.localStorage.getItem(clave());
     if (raw === lastRaw) return lastValue;
     lastRaw = raw;
     const parsed: unknown = raw ? JSON.parse(raw) : null;
@@ -46,7 +48,7 @@ export function markTipSeen(key: string): void {
   try {
     const actual = readSeenTips();
     if (actual.includes(key)) return;
-    window.localStorage.setItem(KEY, JSON.stringify([...actual, key]));
+    window.localStorage.setItem(clave(), JSON.stringify([...actual, key]));
   } catch {
     // localStorage no disponible (modo privado, cuota llena): el consejo no
     // se recuerda como leído, pero la pantalla sigue funcionando.

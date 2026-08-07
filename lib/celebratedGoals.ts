@@ -3,7 +3,9 @@
 // presentación: si cambias de teléfono y vuelves a ver una celebración, no
 // pasa nada; si se guardara en la base habría que migrarlo y limpiarlo.
 
-const KEY = "cachin:celebrated-goals";
+import { storageKey } from "./storageKey";
+
+const clave = () => storageKey("celebrated-goals");
 
 /** Referencia estable para "ninguna". useSyncExternalStore compara snapshots
  *  por identidad y devolver un [] nuevo cada vez haría re-render sin parar. */
@@ -15,7 +17,7 @@ let lastValue: readonly string[] = EMPTY;
 export function readCelebratedGoals(): readonly string[] {
   if (typeof window === "undefined") return EMPTY;
   try {
-    const raw = window.localStorage.getItem(KEY);
+    const raw = window.localStorage.getItem(clave());
     if (raw === lastRaw) return lastValue;
     lastRaw = raw;
     const parsed: unknown = raw ? JSON.parse(raw) : null;
@@ -39,7 +41,7 @@ export function markGoalCelebrated(id: string): void {
   try {
     const actual = readCelebratedGoals();
     if (actual.includes(id)) return;
-    window.localStorage.setItem(KEY, JSON.stringify([...actual, id]));
+    window.localStorage.setItem(clave(), JSON.stringify([...actual, id]));
   } catch {
     // localStorage no disponible: la celebración volverá a salir la próxima
     // vez. Molesta menos que romper la pantalla.
