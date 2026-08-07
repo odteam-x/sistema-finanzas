@@ -4,6 +4,7 @@ import {
   getExceptions,
   getExpenses,
   getPeriodOverrides,
+  getSalarySettings,
   getSavingsAccounts,
   getSubscriptions,
   getTags,
@@ -12,6 +13,7 @@ import { formatDateLong, todayISO, toISODate, parseISODate } from "@/lib/format"
 import { getPeriodDays } from "@/lib/periodConfig";
 import { countWorkdays, exceptionsMap } from "@/lib/calendar";
 import { resolveBudgetBasis } from "@/lib/budgetDays";
+import { PayCycleNotice } from "@/components/ui/PayCycleNotice";
 import { quincenaForDate } from "@/lib/periods";
 import { groupByDate } from "@/lib/group";
 import { SearchBar } from "@/components/ui/SearchBar";
@@ -119,8 +121,17 @@ export default async function PresupuestoPage({
   const monthEnd = toISODate(new Date(qEnd.getFullYear(), qEnd.getMonth() + 1, 0, 12));
 
   const window = spendingWindow(today);
-  const [exceptions, expenses, accounts, tags, overrides, subscriptions, rules, historyExpenses] =
-    await Promise.all([
+  const [
+    exceptions,
+    expenses,
+    accounts,
+    tags,
+    overrides,
+    subscriptions,
+    rules,
+    historyExpenses,
+    salarySettings,
+  ] = await Promise.all([
       getExceptions(monthStart, monthEnd),
       getExpenses(q.start, q.end),
       getSavingsAccounts(),
@@ -129,6 +140,10 @@ export default async function PresupuestoPage({
       getSubscriptions(),
       getCategorizationRules(),
       getExpenses(window.from, window.to),
+      // Solo para saber si el ciclo de cobro es una elección o el default del
+      // esquema: el presupuesto por día y los días laborables de la quincena
+      // salen de ahí, y son la cifra dominante de esta pantalla.
+      getSalarySettings(),
     ]);
   const activeSubs = subscriptions.filter((s) => s.active);
 
@@ -192,6 +207,11 @@ export default async function PresupuestoPage({
           />
         }
       />
+
+      {/* Antes del anillo: el presupuesto por dia y los dias laborables de la
+          quincena salen del ciclo de cobro. Si no es suyo, la cifra dominante
+          de esta pantalla esta adivinada. */}
+      {salarySettings.confirmed_at === null && <PayCycleNotice />}
 
       {/* El DATO antes que la herramienta: el anillo gastado-vs-presupuesto
           es la cifra dominante de la pantalla, y estaba por debajo de una

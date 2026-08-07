@@ -46,6 +46,11 @@ export async function saveSalarySettings(
     next_pay_date,
     payment_method,
     default_amount: Number.isFinite(amount) ? amount : 0,
+    // Marca que estos días son una ELECCIÓN, no el default del esquema. Todo
+    // lo que se calcula sobre ellos —quincenas, presupuesto por día, estimado
+    // del mes— deja de ser una suposición a partir de aquí, y las pantallas
+    // dejan de avisar de que lo era.
+    confirmed_at: new Date().toISOString(),
   });
   if (error) return { ok: false, error: "No se pudo guardar la configuración." };
 

@@ -25,6 +25,18 @@ export type PayFrequency = "semanal" | "quincenal" | "mensual" | "dias_fijos";
 
 export interface SalarySettings {
   user_id: string;
+  /** Cuándo el usuario guardó su ciclo de cobro A PROPÓSITO (v33).
+   *
+   *  NULL significa que `pay_day_1`/`pay_day_2` son el default del esquema
+   *  (15 y 30), no una elección — y entonces las quincenas, el presupuesto por
+   *  día y el estimado del mes salen de unos días que nadie eligió. Las
+   *  pantallas que dependen de eso tienen que decirlo, en vez de presentar
+   *  cifras adivinadas como si fueran suyas.
+   *
+   *  Antes se infería comparando con 15 y 30, que se equivoca justo con quien
+   *  de verdad cobra los 15 y 30: a esa persona le pediría para siempre que
+   *  configure algo que ya está bien. */
+  confirmed_at: string | null;
   /** Los dos días del mes de la frecuencia 'dias_fijos' (ej. 5 y 20). Se
    *  deprecaron en migration-v6 porque no todo el mundo cobra los 15 y 30
    *  fijos — pero quien SÍ cobra en días fijos necesita justo esto, así que
@@ -339,6 +351,13 @@ export interface UserProfileRow {
   personal_code: string | null;
   /** Asignarlo no lo activa — hace falta un paso explícito (ver 15.2). */
   personal_code_active: boolean;
+  /** La bienvenida se muestra UNA vez por usuario (v33). En la cuenta y no en
+   *  localStorage: desde la Fase 27 el almacenamiento local se limpia al
+   *  cerrar sesión, así que ahí volvería a salir en cada entrada. */
+  welcome_seen: boolean;
+  /** Pasos opcionales descartados con "Ahora no" (v33). Omitido cuenta como
+   *  resuelto para dejar de pedirlo, pero se distingue de hecho. */
+  onboarding_skipped: string[];
   /** Escala de texto (0.9 | 1 | 1.15 | 1.3), v32. Viaja con la CUENTA porque es
    *  accesibilidad: quien necesita texto grande lo necesita en todos sus
    *  dispositivos, no solo donde lo configuró. Puede llegar `undefined` en el

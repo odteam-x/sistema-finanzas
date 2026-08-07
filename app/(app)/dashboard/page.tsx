@@ -11,6 +11,7 @@ import { orderSituationTiles, type SituationTile } from "@/lib/situationHighligh
 import { HomeHero } from "@/components/ui/HomeHero";
 import { SectionHead } from "@/components/ui/SectionHead";
 import { PendingSalaryNotice } from "@/components/ui/PendingSalaryNotice";
+import { PayCycleNotice } from "@/components/ui/PayCycleNotice";
 import { Card } from "@/components/ui/Card";
 import { CollapsibleCard } from "@/components/ui/CollapsibleCard";
 import { StatTile } from "@/components/ui/StatTile";
@@ -268,6 +269,10 @@ export default async function DashboardPage() {
           hasSalarySettings={s.hasSalaryConfigured}
         />
       )}
+
+      {/* Antes de cualquier cifra de quincena: si el ciclo no es suyo, lo que
+          viene abajo esta calculado sobre dias que nadie eligio. */}
+      {!s.payCycleConfirmed && <PayCycleNotice />}
 
       {s.pendingSalary && <PendingSalaryNotice salary={s.pendingSalary} />}
 

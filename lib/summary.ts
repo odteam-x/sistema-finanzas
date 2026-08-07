@@ -60,6 +60,11 @@ export interface Commitment {
 export interface FinanceSummary {
   today: string;
   quincena: Period;
+  /** false = el ciclo de cobro sigue siendo el default del esquema (15 y 30),
+   *  no una eleccion del usuario. TODO lo que sale de `quincena` —el
+   *  presupuesto por dia, el estimado, los totales del periodo— esta calculado
+   *  sobre dias que nadie eligio, y las pantallas deben decirlo. */
+  payCycleConfirmed: boolean;
   ingresoQuincena: number;
   /** Ingreso auto-generado de esta quincena que el usuario aún no confirmó
    *  que llegó — mientras exista, no cuenta en `ingresoQuincena`. */
@@ -503,6 +508,7 @@ export async function getFinanceSummary(): Promise<FinanceSummary> {
   return {
     today,
     quincena: q,
+    payCycleConfirmed: settings.confirmed_at !== null,
     ingresoQuincena,
     pendingSalary,
     monthIncome,

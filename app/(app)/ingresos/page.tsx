@@ -166,9 +166,11 @@ export default async function IngresosPage({
   }
 
   const today = todayISO();
-  // "Puestos" = distintos de los valores por defecto del esquema (15 y 30):
-  // si nunca los tocó, no hay nada que avisar.
-  const diasDeCobroPuestos = settings.pay_day_1 !== 15 || settings.pay_day_2 !== 30;
+  // Antes se adivinaba comparando con 15 y 30, y se equivocaba justo con quien
+  // de verdad cobra los 15 y 30: a esa persona le pedía para siempre que
+  // configurara algo que ya estaba bien. Desde v33 hay una marca explícita de
+  // que el usuario GUARDÓ su ciclo, que es lo que se quería preguntar.
+  const cicloConfigurado = settings.confirmed_at !== null;
   const thisMonth = today.slice(0, 7);
   const monthTotal = salaries
     .filter((s) => s.confirmed && s.pay_date.slice(0, 7) === thisMonth)
@@ -256,7 +258,7 @@ export default async function IngresosPage({
                 hint en letra pequeña dentro del modal: se podía dejar puesto
                 "cobro el 5 y el 20" y que el sistema no lo leyera nunca. Ahora
                 se dice en la pantalla, no escondido en el formulario. */}
-            {settings.frequency !== "dias_fijos" && diasDeCobroPuestos && (
+            {settings.frequency !== "dias_fijos" && cicloConfigurado && (
               <p className="text-xs text-warning font-semibold mt-1">
                 Tienes puestos los días {settings.pay_day_1} y {settings.pay_day_2}, pero con
                 “{FREQ_LABEL[settings.frequency]}” no se usan. Cambia a “Días fijos del mes”
