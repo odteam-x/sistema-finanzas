@@ -12,6 +12,7 @@ import { ToastProvider } from "@/components/ui/Toast";
 import { AppLockGate } from "@/components/AppLockGate";
 import { StatusBarColor } from "@/components/StatusBarColor";
 import { StorageScope } from "@/components/StorageScope";
+import { WelcomeScreen } from "@/components/WelcomeScreen";
 
 export default async function AppLayout({
   children,
@@ -47,6 +48,13 @@ export default async function AppLayout({
         {/* El re-bloqueo por inactividad solo aplica si el código está activo;
             es estado de la CUENTA, así que llega del servidor y no de
             localStorage como antes. */}
+        {/* Antes que nada, y solo una vez: caer de golpe en un Inicio vacio no
+            explica nada. Va aqui y no en una ruta propia para no meter una
+            redireccion en el camino de todas las cargas. */}
+        {profile !== null && !profile.welcome_seen && (
+          <WelcomeScreen nombre={profile.display_name ?? undefined} />
+        )}
+
         <AppLockGate codeActive={profile?.personal_code_active ?? false}>
           <StatusBarColor />
           <div className="fixed top-0 inset-x-0 z-[100] flex flex-col print:hidden">
