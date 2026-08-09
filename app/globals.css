@@ -75,12 +75,20 @@
   --color-on-tint: #4C4C55;
 
   /* Semánticos de ESTADO.
-     `warning` es el único de la especificación que hubo que corregir: #A8710F
-     daba 4.17:1 sobre blanco, por debajo de AA. Se bajó solo la luminosidad
-     —matiz 38° y saturación 84% intactos— hasta 4.58:1. */
-  --color-danger: #C4403C;
+     Estos colores se usan de DOS formas y hay que medir las dos: como texto
+     sobre superficie blanca, y como texto sobre SU PROPIO TINTE (que es lo que
+     hace Badge: bg-tint-danger + text-danger). La segunda es la exigente, y se
+     escapó hasta que se midió la pantalla renderizada — la revisión de tokens
+     solo emparejaba `on-tint` con los tintes, no cada semántico con el suyo.
+
+     danger 4.20, warning 4.00 y expense 4.16 sobre su tinte. Los tres bajados
+     SOLO en luminosidad, con matiz y saturación intactos:
+       danger  #C4403C → #BC3D39  (4.51 sobre su tinte, 5.43 sobre blanco)
+       warning #9F6B0E → #91620D  (4.64 / 5.31)
+       expense #B4514E → #AC4C49  (4.53 / 5.41) */
+  --color-danger: #BC3D39;
   --color-danger-soft: #FBE5E4;
-  --color-warning: #9F6B0E;
+  --color-warning: #91620D;
   --color-warning-soft: #FBEEDA;
   --color-success: #1C6B5A;
   --color-success-soft: #DFF0EB;
@@ -98,7 +106,7 @@
      "entra/sale" no es "bien/mal", un gasto planificado no es un error.
      Verde azulado profundo para lo que entra, rosa arcilla para lo que sale. */
   --color-income: #1C6B5A;
-  --color-expense: #B4514E;
+  --color-expense: #AC4C49;
 
   /* Superficies. Todas OPACAS: no hay vidrio en el sistema, la separación
      viene del color real de la superficie. Prohibido backdrop-filter. */
