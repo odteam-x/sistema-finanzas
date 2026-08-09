@@ -47,7 +47,14 @@ if (!URL_SUPABASE || !SERVICE_ROLE) {
 // El "+prueba" hace evidente de un vistazo, en el panel de Supabase, que esta
 // cuenta no es de nadie. El dominio example.com no existe y nunca va a recibir
 // correo, que es lo que se quiere: el enlace se acuña por API, no por email.
-const CORREO = "cachin+prueba@example.com";
+// Dos usuarios, no uno: el aislamiento no se puede probar con una sola cuenta.
+// El segundo se pide con `node scripts/test-env.mjs entrar b`.
+const CORREOS = {
+  a: "cachin+prueba@example.com",
+  b: "cachin+prueba-b@example.com",
+};
+const cual = () => (process.argv[3] === "b" ? "b" : "a");
+let CORREO = CORREOS[cual()];
 const BASE = process.env.BASE_URL ?? "http://localhost:3000";
 
 const admin = createClient(URL_SUPABASE, SERVICE_ROLE, {

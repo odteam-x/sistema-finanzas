@@ -50,9 +50,14 @@ export default async function AppLayout({
             localStorage como antes. */}
         {/* Antes que nada, y solo una vez: caer de golpe en un Inicio vacio no
             explica nada. Va aqui y no en una ruta propia para no meter una
-            redireccion en el camino de todas las cargas. */}
-        {profile !== null && !profile.welcome_seen && (
-          <WelcomeScreen nombre={profile.display_name ?? undefined} />
+            redireccion en el camino de todas las cargas.
+
+            SIN FILA EN user_profile TAMBIEN CUENTA. Un usuario recien
+            registrado no tiene fila todavia, asi que `profile` es null y la
+            bienvenida no le salia — justo a quien iba dirigida. Lo encontro la
+            prueba de humo con la segunda cuenta, no la revision del codigo. */}
+        {!profile?.welcome_seen && (
+          <WelcomeScreen nombre={profile?.display_name ?? undefined} />
         )}
 
         <AppLockGate codeActive={profile?.personal_code_active ?? false}>

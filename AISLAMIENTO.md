@@ -100,3 +100,52 @@ justificada en el propio `storageKey.ts`.
 La **prueba de humo con dos cuentas reales** (punto 1.4 de la Fase 27). Esta
 auditoría dice que el mecanismo es correcto; la prueba de humo dice que además
 funciona. No son lo mismo y no se sustituyen.
+
+---
+
+## Prueba de humo con dos cuentas (punto 1.4)
+
+Ejecutada con dos usuarios reales alternando sesión en el mismo navegador.
+`scripts/test-env.mjs` acepta `a` (por defecto) y `b`:
+
+```bash
+node scripts/test-env.mjs entrar b
+```
+
+### Resultado
+
+Usuario **A** tiene 3 cuentas, 22 gastos, una deuda a 12 cuotas, dos
+suscripciones y su ciclo de cobro en los días 5 y 20.
+
+Con la sesión de **B**, sobre seis pantallas —Inicio, Balance, Gastos, Deudas,
+Ahorros y Movimientos— se buscó cada dato de A por su nombre:
+
+| Dato de A | ¿Aparece en la sesión de B? |
+|---|---|
+| Deuda "Nevera" | no |
+| Cuenta "Banco Popular" | no |
+| Gastos "Gasto de prueba N" | no |
+| Suscripción "Netflix" | no |
+
+Y B ve su ciclo de cobro **sin configurar** — no los días de A —, que es lo que
+el punto 1.2 exige.
+
+Volviendo a **A**: conserva sus cuentas, su deuda y su ciclo, sin nada de B.
+
+### Un fallo que solo apareció aquí
+
+B no veía la pantalla de bienvenida. La condición pedía que existiera fila en
+`user_profile`, y un usuario recién registrado **no tiene fila todavía** — así
+que la bienvenida no le salía justo a quien iba dirigida.
+
+Ninguna revisión del código lo había detectado: leyendo, la condición parece
+correcta. Hizo falta una cuenta de verdad recién creada. Es el argumento de que
+la auditoría y la prueba de humo no se sustituyen.
+
+### Lo que falta
+
+El paso de la **cola offline** (encolar sin señal como A, cerrar sesión, entrar
+como B y comprobar que no se envía) necesita interacción real con la interfaz.
+El mecanismo está cubierto por las 7 pruebas unitarias de `storageKey.test.ts` y
+por la guardia de propietario de `flushQueue()`, pero la comprobación de punta a
+punta sigue pendiente de hacerse a mano.
