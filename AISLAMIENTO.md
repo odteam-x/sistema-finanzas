@@ -95,14 +95,6 @@ justificada en el propio `storageKey.ts`.
 
 ---
 
-## Lo que falta antes de abrir el registro
-
-La **prueba de humo con dos cuentas reales** (punto 1.4 de la Fase 27). Esta
-auditoría dice que el mecanismo es correcto; la prueba de humo dice que además
-funciona. No son lo mismo y no se sustituyen.
-
----
-
 ## Prueba de humo con dos cuentas (punto 1.4)
 
 Ejecutada con dos usuarios reales alternando sesión en el mismo navegador.
