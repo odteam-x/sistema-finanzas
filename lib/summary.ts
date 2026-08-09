@@ -83,6 +83,12 @@ export interface FinanceSummary {
    *  saberlo: cae a hoy cuando no hay ancla, así que siempre trae algo.
    *  Lo consume el bloque de primeros pasos del Inicio. */
   hasSalaryConfigured: boolean;
+  /** Señales de los primeros pasos (Fase 27). Se calculan aquí porque el Inicio
+   *  ya tiene el resumen entero: pedirlas aparte serían cinco consultas más
+   *  solo para decidir si mostrar una tarjeta. */
+  hasAccounts: boolean;
+  hasExpenses: boolean;
+  hasDebts: boolean;
   nextDue: string | null;
   daysToDue: number | null;
   nextDueName: string | null;
@@ -521,6 +527,13 @@ export async function getFinanceSummary(): Promise<FinanceSummary> {
     saldoReal,
     nextPay,
     hasSalaryConfigured: Boolean(settings.next_pay_date) && Number(settings.default_amount) > 0,
+    hasAccounts: savingsAccounts.length > 0,
+    // Historial completo, no solo la quincena en curso: registrar un gasto es
+    // un paso que se cumple UNA vez, no algo que se pierda al cambiar de
+    // quincena. Mirando solo el período, el paso se desmarcaría solo y el
+    // usuario vería reaparecer una tarea que ya hizo.
+    hasExpenses: historyExpenses.length > 0 || expenses.length > 0,
+    hasDebts: debts.length > 0,
     daysToPay: daysBetween(today, nextPay),
     nextDue: next?.date ?? null,
     daysToDue: next ? daysBetween(today, next.date) : null,

@@ -264,9 +264,12 @@ export default async function DashboardPage() {
           sola: no hay estado que completar ni que marcar como visto. */}
       {(s.accountBalances.length === 0 || s.perDay <= 0 || !s.hasSalaryConfigured) && (
         <Onboarding
-          hasAccounts={s.accountBalances.length > 0}
-          hasExpenses={s.perDay > 0}
-          hasSalarySettings={s.hasSalaryConfigured}
+          hasAccounts={s.hasAccounts}
+          payCycleConfirmed={s.payCycleConfirmed}
+          hasExpenses={s.hasExpenses}
+          hasDebts={s.hasDebts}
+          codeActive={profile?.personal_code_active ?? false}
+          skipped={profile?.onboarding_skipped ?? []}
         />
       )}
 
