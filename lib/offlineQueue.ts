@@ -39,6 +39,14 @@ export interface QueuedItem {
 
 const EMPTY_QUEUE: QueuedItem[] = [];
 let cachedQueue: QueuedItem[] | null = null;
+/** De quien es lo que hay en cache. Sin esto, la cache de modulo sobrevive a un
+ *  cambio de sesion y getQueue() devolveria los pendientes del usuario
+ *  anterior — que es el mismo fallo que la guardia de flushQueue evita, pero
+ *  una capa mas arriba y sin nadie mirando.
+ *
+ *  Hoy no muerde porque cerrar sesion navega con window.location y el modulo se
+ *  reinstancia. Depender de eso es depender de un detalle de otro archivo. */
+let cacheDe: string | null = null;
 type Listener = () => void;
 const listeners = new Set<Listener>();
 
@@ -54,6 +62,7 @@ function readFromStorage(): QueuedItem[] {
 
 function writeQueue(next: QueuedItem[]): void {
   cachedQueue = next;
+  cacheDe = getActiveUser();
   try {
     window.localStorage.setItem(clave(), JSON.stringify(next));
   } catch {
@@ -66,7 +75,11 @@ function writeQueue(next: QueuedItem[]): void {
 /** Referencia ESTABLE mientras nada cambie — igual que lib/appLock.ts, para
  *  que useSyncExternalStore no entre en bucle de re-render. */
 export function getQueue(): QueuedItem[] {
-  if (cachedQueue === null) cachedQueue = readFromStorage();
+  const usuario = getActiveUser();
+  if (cachedQueue === null || cacheDe !== usuario) {
+    cachedQueue = readFromStorage();
+    cacheDe = usuario;
+  }
   return cachedQueue;
 }
 

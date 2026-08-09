@@ -134,10 +134,30 @@ Ninguna revisión del código lo había detectado: leyendo, la condición parece
 correcta. Hizo falta una cuenta de verdad recién creada. Es el argumento de que
 la auditoría y la prueba de humo no se sustituyen.
 
-### Lo que falta
+### La cola offline
 
-El paso de la **cola offline** (encolar sin señal como A, cerrar sesión, entrar
-como B y comprobar que no se envía) necesita interacción real con la interfaz.
-El mecanismo está cubierto por las 7 pruebas unitarias de `storageKey.test.ts` y
-por la guardia de propietario de `flushQueue()`, pero la comprobación de punta a
-punta sigue pendiente de hacerse a mano.
+El escenario de dinero —A encola sin señal, sale, entra B con conexión— está
+cubierto por pruebas, no por razonamiento. `lib/offlineQueue.test.ts` sustituye
+las Server Actions por espías y comprueba **que no se llaman**:
+
+| Caso | Resultado |
+|---|---|
+| Lo encoló la misma cuenta | se envía |
+| Lo encoló otra cuenta | **no se envía** y se descarta |
+| No dice de quién es (antes de v27) | **no se envía** |
+| Ajeno y propio en la misma pasada | solo se envía el propio |
+| Cambia la sesión con caché en memoria | la caché se invalida |
+
+Lo que importa de estas pruebas no es que el elemento se descarte: es que la
+Server Action **no llega a llamarse**. Enviarla es lo que registraría el dinero
+de una persona en la cuenta de otra.
+
+La última salió de escribir las otras: `cachedQueue` era de módulo y no se
+invalidaba al cambiar de usuario, así que `getQueue()` devolvía los pendientes
+del anterior. En producción no mordía porque cerrar sesión navega con
+`window.location` y el módulo se reinstancia — pero eso es depender de un
+detalle de otro archivo.
+
+Queda sin comprobar el recorrido completo con el dedo (modo avión, registrar,
+cerrar sesión, entrar como B). El mecanismo está probado en sus tres capas; lo
+que falta es la confirmación de que las tres se enganchan en un teléfono real.
