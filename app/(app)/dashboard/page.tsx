@@ -253,6 +253,7 @@ export default async function DashboardPage() {
 
       <HomeHero
         accounts={s.accountBalances}
+        primerGasto={!s.hasExpenses}
         rates={s.rates}
         displayName={profile?.display_name ?? undefined}
         periodLabel={s.quincena.label}

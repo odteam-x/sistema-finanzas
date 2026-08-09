@@ -20,6 +20,11 @@ export interface ReceiptData {
   /** Se guardó en la cola offline (lib/offlineQueue.ts) y todavía no llegó
    *  al servidor. El recibo NO puede decir "listo" en ese caso. */
   queued?: boolean;
+  /** Una frase que cierra el circulo, solo la PRIMERA vez que se registra algo
+   *  de ese tipo. Ensena la relacion entre lo que acaba de pasar y el resto de
+   *  la app en el momento exacto en que se entiende — despues seria ruido en
+   *  cada registro. */
+  lesson?: string;
 }
 
 const directionText = {
@@ -69,6 +74,13 @@ export function Receipt({ data, onDone }: { data: ReceiptData; onDone: () => voi
         <p className="mt-2 text-xs text-muted max-w-[34ch]">
           Se enviará solo en cuanto vuelvas a tener señal. Puedes cerrar la app.
         </p>
+      )}
+
+      {/* Sin celebracion: un gasto no es un logro. La regla de la Fase 25 deja
+          eso solo para Ahorros, asi que esto es una explicacion en gris y no
+          una felicitacion. */}
+      {!queued && data.lesson && (
+        <p className="mt-3 text-sm text-muted max-w-[36ch]">{data.lesson}</p>
       )}
 
       {/* Lista clave-valor: etiqueta a la izquierda, valor alineado a la

@@ -37,6 +37,9 @@ interface HomeHeroProps {
   /** Nombre desde la BD (fuente de verdad, sin parpadeo en SSR). Si no llega,
    *  se usa el espejo en localStorage como respaldo. */
   displayName?: string;
+  /** Todavia no hay ningun gasto: el recibo del primero explica la relacion
+   *  entre gasto, cuenta y quincena. Ver QuickForms. */
+  primerGasto?: boolean;
   periodLabel: string;
   alertCount: number;
   /** Lo que le pasa hoy a esta persona, ya resuelto en el servidor (ver
@@ -67,6 +70,7 @@ function subscribeNoop() {
  *  entero /balance, y aquí se recorre tocando los chips. */
 export function HomeHero({
   accounts,
+  primerGasto = false,
   rates,
   displayName,
   periodLabel,
@@ -277,6 +281,7 @@ export function HomeHero({
         active={activeForm}
         onClose={() => setActiveForm(null)}
         idPrefix="hero"
+        primerGasto={primerGasto}
       />
     </>
   );

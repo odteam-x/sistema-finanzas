@@ -79,10 +79,15 @@ export function QuickForms({
   active,
   onClose,
   idPrefix = "qa",
+  primerGasto = false,
 }: {
   accounts: QuickAccount[];
   active: QuickForm;
   onClose: () => void;
+  /** Todavia no hay ningun gasto registrado. Solo entonces el recibo explica
+   *  la relacion entre gasto, cuenta y quincena — repetirlo en cada registro
+   *  seria ruido. */
+  primerGasto?: boolean;
   /** Distingue los ids de los campos cuando hay dos juegos montados a la vez
    *  (Inicio monta el del hero y el del FAB en el mismo árbol). */
   idPrefix?: string;
@@ -115,6 +120,15 @@ export function QuickForms({
       ["Cuenta", accountName(fieldText(fd, "account_id")) ?? "Sin asociar"],
       ["Nota", fieldText(fd, "note")],
     ),
+    // El paso 3 es el de mayor abandono en cualquier app de finanzas: es el
+    // momento en que hay que ensenar que un gasto no es solo una fila, sino
+    // dinero que sale de una cuenta y cuenta contra la quincena. Se dice UNA
+    // vez, justo cuando se acaba de hacer y por tanto se entiende.
+    lesson: primerGasto
+      ? "Ese gasto ya salio de " +
+        (accountName(fieldText(fd, "account_id")) ?? "tu cuenta") +
+        " y cuenta para tu quincena."
+      : undefined,
   });
 
   const ingresoReceipt = (fd: FormData, queued: boolean): ReceiptData => ({
