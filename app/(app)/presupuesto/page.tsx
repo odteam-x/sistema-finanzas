@@ -132,18 +132,18 @@ export default async function PresupuestoPage({
     historyExpenses,
     salarySettings,
   ] = await Promise.all([
-      getExceptions(monthStart, monthEnd),
-      getExpenses(q.start, q.end),
-      getSavingsAccounts(),
-      getTags(),
-      getPeriodOverrides(),
-      getSubscriptions(),
-      getCategorizationRules(),
-      getExpenses(window.from, window.to),
-      // Solo para saber si el ciclo de cobro es una elección o el default del
-      // esquema: el presupuesto por día y los días laborables de la quincena
-      // salen de ahí, y son la cifra dominante de esta pantalla.
-      getSalarySettings(),
+    getExceptions(monthStart, monthEnd),
+    getExpenses(q.start, q.end),
+    getSavingsAccounts(),
+    getTags(),
+    getPeriodOverrides(),
+    getSubscriptions(),
+    getCategorizationRules(),
+    getExpenses(window.from, window.to),
+    // Solo para saber si el ciclo de cobro es una elección o el default del
+    // esquema: el presupuesto por día y los días laborables de la quincena
+    // salen de ahí, y son la cifra dominante de esta pantalla.
+    getSalarySettings(),
     ]);
   const activeSubs = subscriptions.filter((s) => s.active);
 
@@ -396,8 +396,8 @@ export default async function PresupuestoPage({
         <EmptyState
           icon="wallet"
           illustration="target"
-          title="Sin gastos aún"
-          message="Registra tus gastos reales para compararlos con el presupuesto."
+          title="Aquí va lo que gastas"
+          message="Cada gasto que anotes construye tu promedio por día. Ese número sale de lo que gastas de verdad, no de un presupuesto que tengas que inventar."
           action={
             <NewExpenseForm tags={tags} rules={rules} accounts={accounts} today={today} triggerLabel="Registrar gasto" />
           }

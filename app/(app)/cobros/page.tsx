@@ -227,8 +227,8 @@ export default async function CobrosPage({
         <EmptyState
           icon="arrowDownLeft"
           illustration="make-it-rain"
-          title="Nada por cobrar"
-          message="Registra el dinero que te deben o un préstamo que hiciste. Un cobro no suma a tu balance hasta que lo recibes; un préstamo dado sale de tu cuenta de una vez."
+          title="Aquí llevas lo que te deben"
+          message="El dinero que te deben y los préstamos que hiciste, para que no se te olvide cobrar. Un cobro no suma a tu balance hasta que lo recibes; un préstamo dado sale de tu cuenta de una vez."
           action={<NewReceivableForm today={today} triggerLabel="Registrar" accounts={accounts} />}
         />
       ) : visible.length === 0 ? (

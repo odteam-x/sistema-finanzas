@@ -141,11 +141,11 @@ export default async function DeudasPage() {
         <EmptyState
           icon="debt"
           illustration="receipt"
-          title={debts.length > 0 ? "Estás al día" : "Sin deudas registradas"}
+          title={debts.length > 0 ? "Estás al día" : "Aquí llevas lo que debes"}
           message={
             debts.length > 0
               ? "No te queda nada pendiente. Lo que ya saldaste está en el historial."
-              : "Registra una deuda para llevar control de sus pagos y vencimientos."
+              : "Cada deuda con sus cuotas y sus fechas. Es lo que hace que la app te avise ANTES de que venza, y que sepa cuánto te queda libre del próximo cobro."
           }
           action={<AddDebtForm triggerLabel="Registrar deuda" accounts={accounts} creditors={creditors} />}
         />

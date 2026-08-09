@@ -60,8 +60,8 @@ export default async function SuscripcionesPage() {
         <EmptyState
           icon="repeat"
           illustration="subscriptions"
-          title="Sin suscripciones"
-          message="Añade un cobro recurrente y lo generamos solo cada mes."
+          title="Aquí van los cobros que se repiten"
+          message="Netflix, el gimnasio, el seguro. Se registran solos cada mes, así que dejas de descubrirlos en el estado de cuenta."
           action={<NewSubscriptionForm tags={tags} accounts={accounts} today={today} triggerLabel="Añadir suscripción" />}
         />
       ) : (
