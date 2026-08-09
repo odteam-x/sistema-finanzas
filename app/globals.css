@@ -26,9 +26,11 @@
      más difíciles de acertar. */
   --spacing: max(0.25rem, 4px);
 
-  /* Fondo base: violáceo muy claro, no gris neutro. La app debe sentirse
-     diseñada, no ensamblada — el fondo comparte familia con el primario. */
-  --color-bg: #F7F6FB;
+  /* Fondo base NEUTRO, por el mismo motivo que el oscuro (ver más abajo): las
+     tarjetas son blanco puro y el fondo era violáceo, así que la diferencia se
+     leía como un tinte de color y no como profundidad. El fondo separa; no
+     compite. La marca vive en el índigo de los heroes y los botones. */
+  --color-bg: #F4F4F5;
 
   /* Marca: índigo profundo. Se retira el teal por completo — era el territorio
      de confort de todo el sector, y de ahí venía la sensación de que todas las
@@ -64,13 +66,13 @@
 
   /* Neutros con temperatura violácea sutil: ni gris puro ni teal apagado.
      `subtle` queda solo para texto deshabilitado, que WCAG 1.4.3 exime. */
-  --color-ink: #1A1826;
-  --color-muted: #5E5A73;
-  --color-subtle: #8B87A0;
+  --color-ink: #18181B;
+  --color-muted: #5B5B63;
+  --color-subtle: #8A8A92;
 
   /* Texto secundario SOBRE UN TINTE. Verificado contra el peor de los tintes
      reales, no contra blanco: 6.74:1 sobre tint-brand. */
-  --color-on-tint: #4F4B63;
+  --color-on-tint: #4C4C55;
 
   /* Semánticos de ESTADO.
      `warning` es el único de la especificación que hubo que corregir: #A8710F
@@ -102,14 +104,14 @@
      viene del color real de la superficie. Prohibido backdrop-filter. */
   --color-surface: #FFFFFF;
   --color-surface-raised: #FFFFFF;
-  --color-surface-sunken: #F0EEF8;
+  --color-surface-sunken: #EFEFF1;
   --color-surface-nav: #FFFFFF;
   --color-surface-modal: #FFFFFF;
   --color-surface-sheet: #FFFFFF;
 
   /* Líneas. `line` separa sin pesar; `line-strong` delimita un control. */
-  --color-line: #E6E3F0;
-  --color-line-strong: #BFB9D4;
+  --color-line: #E4E4E7;
+  --color-line-strong: #B7B7BE;
 
   /* Tintes SÓLIDOS para tiles e IconBubble. Los cuatro últimos no venían en la
      especificación pero existen y se usan; se recalculan a la familia nueva en
@@ -121,10 +123,10 @@
   --color-tint-danger: #FBE5E4;
   --color-tint-warning: #FBEEDA;
   --color-tint-info: #E7EAF3;
-  --color-tint-neutral: #EEECF4;
+  --color-tint-neutral: #EEEEF0;
 
   /* Relleno de ícono "neutral" (IconBubble). Alias histórico de tint-neutral. */
-  --color-neutral-soft: #EEECF4;
+  --color-neutral-soft: #EEEEF0;
 
   --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, -apple-system,
     "Segoe UI", Roboto, sans-serif;
@@ -221,23 +223,34 @@
 [data-mode="dark"] {
   color-scheme: dark;
 
-  /* El fondo oscuro es VIOLÁCEO, no gris. Es lo que separa una identidad
-     propia de un modo oscuro genérico, y es el modo principal de esta app: el
-     uso real es casi todo en oscuro, así que se diseña acá primero y el claro
-     es la comprobación posterior. */
-  --color-bg: #14121F;
+  /* EL FONDO OSCURO ES NEUTRO. La Fase 26 lo puso violáceo para que el modo
+     oscuro no fuera genérico, y sobre el papel la idea es buena — pero en un
+     teléfono no funcionó: el fondo (#14121F) es tan oscuro que el ojo lo lee
+     NEGRO, mientras las superficies (#262236) sí llegan a mostrar el violeta.
+     El matiz era el mismo en todos, pero la sensación era "página negra con un
+     modal morado encima", que es peor que cualquiera de los dos extremos.
+
+     Se resuelve hacia el neutro: fondo casi negro y superficies en grises que
+     se separan solo por luminancia. La identidad no vive aquí — vive en el
+     índigo de los heroes, los botones y los tintes, que no se tocan. Un fondo
+     no necesita marca; necesita desaparecer. */
+  --color-bg: #0A0A0B;
 
   /* Superficies. En oscuro se distinguen por LUMINANCIA, no por sombra: sobre
      fondo oscuro una sombra apenas se ve. Lo que se eleva, se aclara.
      `raised` venía en #262236 y daba 1.09:1 contra `surface` —una diferencia
      que no se percibe—, así que se aclaró a #2E2941 (1.21:1) para que la
      regla se cumpla de verdad. */
-  --color-surface: #1E1B2E;
-  --color-surface-raised: #2E2941;
-  --color-surface-sunken: #272338;
-  --color-surface-nav: #1E1B2E;
-  --color-surface-modal: #262236;
-  --color-surface-sheet: #262236;
+  --color-surface: #161618;
+  /* 1.212 contra `surface`, que es exactamente la separacion que tenia la
+     paleta violeta (1.21): al pasar a neutro la primera version se quedo en
+     1.11 y lo elevado dejaba de distinguirse. En oscuro la elevacion se ve por
+     LUMINANCIA, no por sombra — sobre un fondo oscuro una sombra no existe. */
+  --color-surface-raised: #272729;
+  --color-surface-sunken: #1B1B1D;
+  --color-surface-nav: #161618;
+  --color-surface-modal: #272729;
+  --color-surface-sheet: #272729;
 
   /* El primario oscuro NO puede ser el mismo: #3A2E7E sobre una superficie
      oscura es ilegible. Pero `--color-primary` es un RELLENO —el día
@@ -269,10 +282,10 @@
   --color-on-brand-muted: #D8D2F0;
   --color-on-brand-well: #16122B;
 
-  --color-ink: #EDEBF5;
-  --color-muted: #A5A0BC;
-  --color-subtle: #7A7590;
-  --color-on-tint: #B8B3CC;
+  --color-ink: #EDEDEF;
+  --color-muted: #A3A3A8;
+  --color-subtle: #77777D;
+  --color-on-tint: #B6B6BB;
 
   --color-income: #4FBF9F;
   --color-expense: #E88A85;
@@ -289,8 +302,8 @@
   --color-achievement: #E8B860;
   --color-achievement-soft: #3D3120;
 
-  --color-line: #2E2A42;
-  --color-line-strong: #423C5C;
+  --color-line: #34343A;
+  --color-line-strong: #46464E;
 
   --color-tint-brand: #2A2445;
   --color-tint-income: #1B3730;
@@ -299,8 +312,8 @@
   --color-tint-danger: #3A2220;
   --color-tint-warning: #35291A;
   --color-tint-info: #232838;
-  --color-tint-neutral: #2E2A42;
-  --color-neutral-soft: #2E2A42;
+  --color-tint-neutral: #2C2C31;
+  --color-neutral-soft: #2C2C31;
 
   --elev-tint: rgba(0, 0, 0, 0.4);
   --elev-tint-strong: rgba(0, 0, 0, 0.6);
