@@ -223,6 +223,15 @@ export function QuickForms({
         <Field label="Fecha del pago" htmlFor={`${idPrefix}-inc-date`} required>
           <DateField id={`${idPrefix}-inc-date`} name="pay_date" defaultValue={today} required />
         </Field>
+        {/* Faltaba, y addSalary cae en "quincena" cuando no llega: cualquier
+            bono o ingreso extra registrado desde aqui quedaba contado como
+            sueldo del periodo. El formulario de la seccion si lo pregunta. */}
+        <Field label="Tipo" htmlFor={`${idPrefix}-inc-kind`}>
+          <Select id={`${idPrefix}-inc-kind`} name="kind" defaultValue="quincena">
+            <option value="quincena">Sueldo</option>
+            <option value="extra">Extra (bono, otro)</option>
+          </Select>
+        </Field>
         <Field
           label="¿Cómo cobras?"
           htmlFor={`${idPrefix}-inc-method`}
@@ -309,8 +318,36 @@ export function QuickForms({
       >
         <input type="hidden" name="payment_type" value="unico" />
         <input type="hidden" name="acquired_date" value={today} />
-        <Field label="Acreedor / nombre" htmlFor={`${idPrefix}-debt-name`} required>
-          <Input id={`${idPrefix}-debt-name`} name="name" placeholder="Ej.: Préstamo banco" required />
+        {/* El acreedor es una entidad propia desde v27 y addDebt lo lee de
+            `creditor_name` (o `creditor_id` si se elige de la lista). Este campo
+            mandaba `name`, que en addDebt es la DESCRIPCION de la deuda — asi
+            que el acreedor llegaba vacio y la accion respondia siempre
+            "Escribe o elige a quien le debes". Crear una deuda desde el boton +
+            era imposible desde la Fase 6.2. */}
+        <Field label="¿A quién le debes?" htmlFor={`${idPrefix}-debt-creditor`} required>
+          <Input
+            id={`${idPrefix}-debt-creditor`}
+            name="creditor_name"
+            placeholder="Ej.: Mami, Banco Popular"
+            required
+          />
+        </Field>
+        {/* Cambia lo que se ESCRIBE EN EL LEDGER, asi que no puede quedarse en
+            un default silencioso: un prestamo mete dinero en una cuenta
+            (debt_disbursement) y un credito no. Sin este campo, todo lo que se
+            creaba desde aqui era "credito". */}
+        <Field
+          label="¿Recibiste el dinero?"
+          htmlFor={`${idPrefix}-debt-kind`}
+          hint="Un préstamo entra a tu cuenta. Lo comprado a crédito no."
+        >
+          <Select id={`${idPrefix}-debt-kind`} name="kind" defaultValue="credito">
+            <option value="credito">Compré a crédito / me fiaron</option>
+            <option value="prestamo">Me prestaron dinero (lo recibí)</option>
+          </Select>
+        </Field>
+        <Field label="Descripción" htmlFor={`${idPrefix}-debt-name`} hint="Opcional. Útil si le debes varias cosas a la misma persona.">
+          <Input id={`${idPrefix}-debt-name`} name="name" placeholder="Ej.: Desayuno" />
         </Field>
         <Field label="Monto total" htmlFor={`${idPrefix}-debt-amount`} required>
           <MoneyInput id={`${idPrefix}-debt-amount`} name="total_amount" required />
