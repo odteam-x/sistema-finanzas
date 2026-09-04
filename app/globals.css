@@ -87,13 +87,13 @@
        warning #9F6B0E → #91620D  (4.64 / 5.31)
        expense #B4514E → #AC4C49  (4.53 / 5.41) */
   --color-danger: #BC3D39;
-  --color-danger-soft: #FBE5E4;
   --color-warning: #91620D;
-  --color-warning-soft: #FBEEDA;
-  --color-success: #1C6B5A;
-  --color-success-soft: #DFF0EB;
+  /* `success` e `income` son EL MISMO color, y ya lo eran en los dos modos:
+     el estado "salió bien" y la dirección "entra dinero" comparten swatch en
+     esta app (Badge lo demuestra: bg-tint-income + text-success). Como alias
+     no pueden divergir al retocar uno solo; como dos literales, sí. */
+  --color-success: var(--color-income);
   --color-info: #4A5B87;
-  --color-info-soft: #E7EAF3;
 
   /* LOGRO. Sigue restringido a DOS sitios —pantalla de éxito de una meta e
      ícono de meta al 100%— y prohibido en Deudas.
@@ -121,20 +121,20 @@
   --color-line: #E4E4E7;
   --color-line-strong: #B7B7BE;
 
-  /* Tintes SÓLIDOS para tiles e IconBubble. Los cuatro últimos no venían en la
-     especificación pero existen y se usan; se recalculan a la familia nueva en
-     vez de borrarlos, que habría roto IconBubble y StatTile. */
-  --color-tint-brand: #E8E5F7;
+  /* Tintes SÓLIDOS para tiles e IconBubble. `tint-brand` es alias de
+     `primary-soft`: eran el mismo hex en los dos modos, y separados podían
+     divergir sin que nada avisara. El resto son literales propios.
+     Se retiraron `danger-soft`, `warning-soft`, `info-soft`, `success-soft`,
+     `neutral-soft` y `tint-achievement`: duplicaban un tinte que sí se usa y
+     no tenían un solo consumidor en el marcado. El swatch equivalente sigue
+     existiendo en la otra mitad de cada pareja. */
+  --color-tint-brand: var(--color-primary-soft);
   --color-tint-income: #DFF0EB;
   --color-tint-expense: #F9E7E6;
-  --color-tint-achievement: #F7ECD9;
   --color-tint-danger: #FBE5E4;
   --color-tint-warning: #FBEEDA;
   --color-tint-info: #E7EAF3;
   --color-tint-neutral: #EEEEF0;
-
-  /* Relleno de ícono "neutral" (IconBubble). Alias histórico de tint-neutral. */
-  --color-neutral-soft: #EEEEF0;
 
   --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, -apple-system,
     "Segoe UI", Roboto, sans-serif;
@@ -299,13 +299,8 @@
   --color-expense: #E88A85;
 
   --color-danger: #E8756F;
-  --color-danger-soft: #3A2220;
   --color-warning: #D9A045;
-  --color-warning-soft: #35291A;
-  --color-success: #4FBF9F;
-  --color-success-soft: #1B3730;
   --color-info: #8B9DC7;
-  --color-info-soft: #232838;
 
   --color-achievement: #E8B860;
   --color-achievement-soft: #3D3120;
@@ -313,15 +308,12 @@
   --color-line: #34343A;
   --color-line-strong: #46464E;
 
-  --color-tint-brand: #2A2445;
   --color-tint-income: #1B3730;
   --color-tint-expense: #3A2220;
-  --color-tint-achievement: #3D3120;
   --color-tint-danger: #3A2220;
   --color-tint-warning: #35291A;
   --color-tint-info: #232838;
   --color-tint-neutral: #2C2C31;
-  --color-neutral-soft: #2C2C31;
 
   --elev-tint: rgba(0, 0, 0, 0.4);
   --elev-tint-strong: rgba(0, 0, 0, 0.6);

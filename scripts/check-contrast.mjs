@@ -38,7 +38,15 @@ const ratio = (a, b) => {
 /** Los tokens de un bloque, por número de línea: `@theme` es el modo claro y
  *  `[data-mode="dark"]` solo redefine los que cambian. */
 function bloque(selector) {
-  const i = lineas.findIndex((l) => l.trim().startsWith(selector));
+  // LA LÍNEA TIENE QUE ABRIR EL BLOQUE, no solo mencionar el selector. Con un
+  // `startsWith` a secas, '[data-mode="dark"]' encontraba primero la línea del
+  // comentario de cabecera que lo nombra, y devolvía el bloque CLARO: la mitad
+  // "oscuro" de esta auditoría midió el modo claro por segunda vez durante
+  // fases enteras, informando como comprobados pares que nunca se miraron.
+  const i = lineas.findIndex((l) => {
+    const t = l.trim();
+    return t.startsWith(selector) && t.endsWith("{");
+  });
   if (i === -1) throw new Error(`No se encontró el bloque ${selector}`);
   let j = i;
   while (j < lineas.length && lineas[j] !== "}") j++;
@@ -46,13 +54,28 @@ function bloque(selector) {
   for (const m of lineas
     .slice(i, j)
     .join("\n")
-    .matchAll(/(--color-[a-z-]+):\s*(#[0-9a-fA-F]{6})/g))
+    .matchAll(/(--color-[a-z-]+):\s*(#[0-9a-fA-F]{6}|var\(--color-[a-z-]+\))/g))
     o[m[1]] = m[2];
   return o;
 }
 
-const claro = bloque("@theme");
-const oscuro = { ...claro, ...bloque('[data-mode="dark"]') };
+/** Un token puede ser alias de otro (`--color-success: var(--color-income)`).
+ *  Sin resolverlo su valor no es un hex, y entonces `comprobar()` lo saltaría
+ *  en silencio — justo lo que este script existe para no permitir. */
+function resolver(tokens) {
+  const o = { ...tokens };
+  for (const k of Object.keys(o)) {
+    let v = o[k];
+    let saltos = 0;
+    while (v && v.startsWith("var(") && saltos++ < 10) v = o[v.slice(4, -1)];
+    if (!v || !v.startsWith("#")) throw new Error(`Alias sin resolver: ${k} -> ${o[k]}`);
+    o[k] = v;
+  }
+  return o;
+}
+
+const claro = resolver(bloque("@theme"));
+const oscuro = resolver({ ...bloque("@theme"), ...bloque('[data-mode="dark"]') });
 
 let fallos = 0;
 let medidos = 0;
@@ -79,6 +102,9 @@ const SUPERFICIES = [
   "bg",
 ];
 const SEMANTICOS = ["danger", "warning", "income", "expense", "info", "achievement"];
+// Los tintes vivos. `achievement` no está: su tinte no tenía consumidores y se
+// retiró; ese swatch vive en `achievement-soft`, que sí se usa (Metas).
+const TINTES = ["brand", "danger", "warning", "income", "expense", "info", "neutral"];
 
 for (const [modo, T] of [
   ["claro ", claro],
@@ -102,18 +128,33 @@ for (const [modo, T] of [
   );
 
   // Texto secundario sobre cada tinte sólido.
-  for (const k of ["brand", ...SEMANTICOS, "neutral"])
+  for (const k of TINTES)
     comprobar(modo, `on-tint sobre tint-${k}`, T["--color-on-tint"], T[`--color-tint-${k}`], 4.5);
 
   // CADA SEMÁNTICO SOBRE SU PROPIO TINTE. Es lo que hace Badge
   // (bg-tint-danger + text-danger) y es el par más exigente de todos — el que
   // se escapó hasta que se miró la pantalla renderizada.
-  for (const k of SEMANTICOS)
+  for (const k of TINTES.filter((k) => k !== "brand" && k !== "neutral"))
     comprobar(modo, `${k} sobre tint-${k}`, T[`--color-${k}`], T[`--color-tint-${k}`], 4.5);
 
-  // Y sobre su versión -soft, que usan los avisos.
-  for (const k of ["danger", "warning", "success", "info", "achievement"])
-    comprobar(modo, `${k} sobre ${k}-soft`, T[`--color-${k}`], T[`--color-${k}-soft`], 4.5);
+  // Y sobre su versión -soft. Solo queda `achievement`: los otros cuatro
+  // `-soft` duplicaban un `tint-*` y no tenían un consumidor en el marcado.
+  comprobar(
+    modo,
+    "achievement sobre achievement-soft",
+    T["--color-achievement"],
+    T["--color-achievement-soft"],
+    4.5,
+  );
+
+  // PARES CON USO REAL QUE ESTA LISTA NO MIRABA. Todos salen de leer el
+  // marcado, no de combinar tokens por simetría: si un componente los pinta
+  // juntos, tienen que medirse juntos.
+  comprobar(modo, "muted sobre tint-neutral (IconBubble neutral)", T["--color-muted"], T["--color-tint-neutral"], 4.5);
+  comprobar(modo, "danger sobre tint-expense (borrar, feriado)", T["--color-danger"], T["--color-tint-expense"], 4.5);
+  comprobar(modo, "success sobre tint-income (Badge success)", T["--color-success"], T["--color-tint-income"], 4.5);
+  comprobar(modo, "muted sobre surface-sunken (Badge neutral)", T["--color-muted"], T["--color-surface-sunken"], 4.5);
+  comprobar(modo, "blanco sobre on-brand-well (chip del hero)", T["--color-on-brand"], T["--color-on-brand-well"], 4.5);
 
   // Los DOS extremos del gradiente de marca: blanco y el label secundario.
   for (const e of ["primary-grad-start", "primary-grad-end"]) {
@@ -138,6 +179,37 @@ for (const m of css.matchAll(/\.tone-([a-z]+) \{([^}]+)\}/g)) {
     comprobar("tono  ", `label sobre ${m[1]} ${punto}`, o["--color-on-brand-muted"], o[e], 4.5);
   }
   comprobar("tono  ", `blanco sobre el pozo de ${m[1]}`, "#FFFFFF", o["--color-on-brand-well"], 4.5);
+}
+
+// EL ÚNICO COLOR QUE VIVE FUERA DE globals.css. `viewport.themeColor` en
+// app/layout.tsx son dos hex a mano, porque Next los emite como <meta> y ahí no
+// llega una variable CSS. Nada obliga a que sigan al token: si alguien cambia
+// la marca, la franja del navegador se queda con la anterior y no falla nada.
+// Se comprueba que sigan siendo el arranque del gradiente de cada modo.
+{
+  const layout = readFileSync(path.join(root, "app", "layout.tsx"), "utf8");
+  const declarado = (esquema) =>
+    layout.match(
+      new RegExp(`prefers-color-scheme:\\s*${esquema}\\)"\\s*,\\s*color:\\s*"(#[0-9a-fA-F]{6})"`),
+    )?.[1];
+  for (const [esquema, T] of [
+    ["light", claro],
+    ["dark", oscuro],
+  ]) {
+    const esperado = T["--color-primary-grad-start"];
+    const real = declarado(esquema);
+    if (!real) {
+      fallos++;
+      console.error(`  FALLA  themeColor ${esquema} no se pudo leer de app/layout.tsx`);
+    } else if (real.toLowerCase() !== esperado.toLowerCase()) {
+      fallos++;
+      console.error(
+        `  FALLA  themeColor ${esquema} es ${real} pero primary-grad-start es ${esperado} (app/layout.tsx)`,
+      );
+    } else {
+      medidos++;
+    }
+  }
 }
 
 if (fallos > 0) {
