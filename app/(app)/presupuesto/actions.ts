@@ -12,20 +12,10 @@ import { getQuincenaBudgetStatus } from "@/lib/budgetStatus";
 import { sendPushToCurrentUser } from "@/lib/webpush";
 import { formatDOP } from "@/lib/format";
 
-
-/** El límite mensual es opcional: un campo vacío guarda NULL (sin límite). */
-function parseOptionalAmount(value: FormDataEntryValue | null): number | null {
-  const raw = String(value ?? "").trim();
-  if (!raw) return null;
-  const n = parseAmount(raw);
-  return Number.isFinite(n) && n > 0 ? n : null;
-}
-
 export async function addCategory(formData: FormData): Promise<ActionResult> {
   const user = await requireUser();
   const name = String(formData.get("name") ?? "").trim();
   const amount = parseAmount(formData.get("amount_per_workday"));
-  const monthly_limit = parseOptionalAmount(formData.get("monthly_limit"));
   if (!name) return { ok: false, error: "Escribe un nombre." };
   if (!Number.isFinite(amount) || amount < 0) {
     return { ok: false, error: "Ingresa un monto válido." };
@@ -35,7 +25,6 @@ export async function addCategory(formData: FormData): Promise<ActionResult> {
     user_id: user.id,
     name,
     amount_per_workday: amount,
-    monthly_limit,
   });
   if (error) return { ok: false, error: "No se pudo agregar." };
   revalidateEverything();
@@ -47,7 +36,6 @@ export async function updateCategory(formData: FormData): Promise<ActionResult> 
   const id = String(formData.get("id") ?? "");
   const name = String(formData.get("name") ?? "").trim();
   const amount = parseAmount(formData.get("amount_per_workday"));
-  const monthly_limit = parseOptionalAmount(formData.get("monthly_limit"));
   if (!id) return { ok: false };
   if (!name) return { ok: false, error: "Escribe un nombre." };
   if (!Number.isFinite(amount) || amount < 0) {
@@ -56,7 +44,7 @@ export async function updateCategory(formData: FormData): Promise<ActionResult> 
   const supabase = await createClient();
   const { error } = await supabase
     .from("budget_categories")
-    .update({ name, amount_per_workday: amount, monthly_limit })
+    .update({ name, amount_per_workday: amount })
     .eq("id", id);
   if (error) return { ok: false, error: "No se pudo actualizar." };
   revalidateEverything();

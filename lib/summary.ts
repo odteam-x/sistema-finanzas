@@ -3,7 +3,6 @@
 // que cualquier dato nuevo se refleja al instante en todas las secciones.
 import {
   getAccountBalances,
-  getBudgetCategories,
   getDebtIncrements,
   getDebts,
   getExceptions,
@@ -43,11 +42,6 @@ export interface Alert {
   tone: "warning" | "danger" | "info" | "success";
   title: string;
   message: string;
-}
-
-export interface NamedValue {
-  name: string;
-  value: number;
 }
 
 export interface Commitment {
@@ -118,8 +112,6 @@ export interface FinanceSummary {
   /** Gastos recurrentes detectados que no están dados de alta como
    *  suscripción — ver el bloque de detección más abajo. */
   subscriptionCandidates: { name: string; amount: number; occurrences: number }[];
-  estByCategory: NamedValue[];
-  realByCategory: NamedValue[];
   alerts: Alert[];
   upcomingCommitments: Commitment[];
   recentMovements: SavingsMovement[];
@@ -151,7 +143,6 @@ export async function getFinanceSummary(): Promise<FinanceSummary> {
 
   const [
     salaries,
-    categories,
     exceptions,
     expenses,
     debts,
@@ -171,7 +162,6 @@ export async function getFinanceSummary(): Promise<FinanceSummary> {
     historyExpenses,
   ] = await Promise.all([
     getSalaries(),
-    getBudgetCategories(),
     getExceptions(monthStart, monthEnd),
     getExpenses(q.start, q.end),
     getDebts(),
@@ -259,26 +249,11 @@ export async function getFinanceSummary(): Promise<FinanceSummary> {
   // fuente única compartida por las 3 pantallas que lo necesitan).
   const basis = resolveBudgetBasis(q, periodOverrides, exMap);
   const workedQuincena = basis.days;
-  const activeCats = categories.filter((c) => c.active);
   // Lo que de verdad gastas al día (lib/spendingHistory.ts), no lo que
-  // configuraste que querías gastar. El desglose por categoría de abajo sí
-  // sigue usando `amount_per_workday`: ahí las categorías sí son la fuente.
+  // configuraste que querías gastar.
   const perDay = perDayFromHistory(historyExpenses, today);
   const estQuincena = perDay * workedQuincena;
   const realQuincena = expenses.reduce((s, e) => s + Number(e.amount), 0);
-
-  const estByCategory: NamedValue[] = activeCats
-    .map((c) => ({ name: c.name, value: Number(c.amount_per_workday) * workedQuincena }))
-    .filter((c) => c.value > 0);
-
-  const realByCategory: NamedValue[] = (() => {
-    const map = new Map<string, number>();
-    for (const e of expenses) {
-      const name = (e.tag_id && tags.find((t) => t.id === e.tag_id)?.name) || "General";
-      map.set(name, (map.get(name) ?? 0) + Number(e.amount));
-    }
-    return Array.from(map, ([name, value]) => ({ name, value }));
-  })();
 
   // Gastos inusuales: gasto de este mes por etiqueta vs. el promedio de los
   // meses anteriores con datos. Sin backfill de category_id → tag_id (no
@@ -548,8 +523,6 @@ export async function getFinanceSummary(): Promise<FinanceSummary> {
     netWorth: savingsTotal - outstandingDebt,
     rates,
     subscriptionCandidates,
-    estByCategory,
-    realByCategory,
     alerts,
     upcomingCommitments,
     recentMovements,

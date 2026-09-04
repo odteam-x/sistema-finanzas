@@ -319,6 +319,16 @@ por-enlace (ver historial de commits); no volver a una `<Suspense>` global
 ni a un spinner de página completa sin discutirlo antes, porque es
 exactamente lo que se pidió quitar.
 
+**Addendum — REVERTIDO:** todo lo de arriba describe la decisión original
+(commit `e8e8fff`), pero ya **no** es el estado actual. La Fase 22
+(`2f76093`, "reintroducir el esqueleto de carga en las 17 rutas") volvió a
+añadir `loading.tsx` en las 17 rutas bajo `app/(app)/`, y `b80883e`
+("Esqueletos con la forma real de la pantalla") los refinó después para que
+cada esqueleto tenga la forma de su pantalla. Hoy sí hay 17 archivos
+`loading.tsx`, todos usando `PageSkeleton`. La sección se conserva por el
+razonamiento del trade-off, que sigue siendo válido; pero para el estado
+real, manda el código.
+
 ## 7d. Por qué offline se siente más rápido que online — esto NO es un bug
 
 Offline, la navegación de Next intenta traer el payload de la ruta, falla

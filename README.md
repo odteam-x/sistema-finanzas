@@ -30,8 +30,7 @@ de gastos diarios, metas de ahorro, deudas y un dashboard con resumen y gráfico
    retiros e historial de movimientos.
 6. **Deudas** — pago único o en cuotas, vencimientos y estado.
 7. **Consejos** — tips de finanzas + alertas según tus datos.
-8. **Dashboard** — saldo estimado, próximo pago, próxima deuda, ahorros, metas
-   y gráfico de distribución de gastos.
+8. **Dashboard** — saldo estimado, próximo pago, próxima deuda, ahorros y metas.
 
 Incluye animaciones fluidas (Framer Motion), skeleton loaders e ilustraciones.
 
