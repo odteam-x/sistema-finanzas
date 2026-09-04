@@ -274,6 +274,36 @@ opaca + sombra + línea.
   copia `.dark.svg` por ilustración generada por script. Para añadir una:
   agrega la entrada al mapa `ART` con la misma rejilla 120×96 y esas clases.
 
+**Addendum — LA PALETA YA NO ES TEAL.** Las reglas de estructura de arriba
+(superficies sólidas, nada de alfa sobre negro/blanco, `money-*`, `StatTile`,
+`[data-mode="dark"]`) siguen vigentes tal cual. Lo que cambió es el color, y
+esta sección quedó describiendo la familia anterior:
+
+- **Marca: índigo profundo `#3A2E7E` + acento ámbar `#E0A03C`.** El teal se
+  retiró por completo, y el motivo está en `globals.css`: era el territorio de
+  confort de todo el sector. El ámbar da 2.27:1 contra blanco, así que **nunca
+  lleva texto encima** — es solo relleno, barra, borde e ícono. A cambio
+  desbloquea el nivel intermedio de urgencia que con el teal no existía (todo
+  era "normal" o "peligro").
+- **Los tokens del gradiente se llaman `--color-primary-grad-start` /
+  `-end`.** `--brand-grad-from` / `-to`, como aparecen arriba, **ya no
+  existen** — buscarlos no encuentra nada.
+- **Los ratios citados arriba son de la era teal.** Los vigentes están medidos
+  en los comentarios de `globals.css`: `primary-fg` en oscuro va a 6.79:1, y
+  `on-tint` se verificó contra el peor tinte real (6.74:1 sobre `tint-brand`),
+  no contra blanco. En oscuro, `primary` es un RELLENO que además necesita 3:1
+  contra la superficie, así que hover y active **oscurecen en vez de aclarar**.
+- **Dos sistemas que esta sección no menciona y hoy existen:**
+  - `.tone-ingresos|metas|reportes|calc|deudas` — tono por sección. Cada clase
+    redefine CUATRO tokens en su subárbol (los dos del gradiente más
+    `on-brand-muted` y `on-brand-well`), no dos: pisando solo el gradiente, el
+    label secundario hereda el lila de marca y falla AA en los cinco tonos.
+  - `--color-achievement` — el único tono celebratorio, restringido a DOS
+    sitios (pantalla de meta lograda e ícono de meta al 100%) y **prohibido en
+    Deudas**: la gamificación funciona en ahorro y genera ansiedad en deuda.
+- `npm run check:contrast` mide 121 pares en claro, oscuro y los cinco tonos.
+  Correr eso antes de dar por buena cualquier pareja de color nueva.
+
 ## 7b. Barra de estado / theme-color
 
 `components/StatusBarColor.tsx` ajusta `<meta name="theme-color">` según la
