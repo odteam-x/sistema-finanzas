@@ -45,6 +45,7 @@ function installment(overrides: Partial<DebtInstallment>): DebtInstallment {
     amount: 100,
     paid: false,
     paid_date: null,
+    paid_offline: false,
     ...overrides,
   };
 }
@@ -87,9 +88,32 @@ describe("paidOfDebt", () => {
     ];
     expect(paidOfDebt(debt({ payment_type: "cuotas" }), installments)).toBe(100);
   });
+
+  it("una cuota pagada antes de la app cuenta igual que cualquier otra", () => {
+    // `paid_offline` decide si el pago escribe en el ledger, no si redujo la
+    // deuda. Confundir las dos cosas es justo el error que la columna evita:
+    // el dinero salió del bolsillo, solo que antes de que hubiera ledger.
+    const installments = [
+      installment({ debt_id: "d1", amount: 100, paid: true, paid_offline: true }),
+      installment({ debt_id: "d1", amount: 100, paid: true, paid_offline: false }),
+      installment({ debt_id: "d1", amount: 100, paid: false }),
+    ];
+    expect(paidOfDebt(debt({ payment_type: "cuotas" }), installments)).toBe(200);
+  });
 });
 
 describe("outstandingOfDebt", () => {
+  it("una deuda que ya venías pagando debe solo lo que falta", () => {
+    // El caso que motiva migration-v35: registras un préstamo de 12 cuotas del
+    // que ya cubriste 5. Debe decir que debes 7, sin que esas 5 hayan tocado
+    // el saldo de ninguna cuenta.
+    const d = debt({ payment_type: "cuotas", total_amount: 1200 });
+    const cuotas = Array.from({ length: 12 }, (_, i) =>
+      installment({ id: `i${i}`, debt_id: "d1", amount: 100, paid: i < 5, paid_offline: i < 5 }),
+    );
+    expect(outstandingOfDebt(d, cuotas, [])).toBe(700);
+  });
+
   it("resta lo abonado del total (con incrementos)", () => {
     const d = debt({ payment_type: "cuotas", total_amount: 1000 });
     const installments = [installment({ debt_id: "d1", amount: 300, paid: true })];

@@ -297,7 +297,7 @@ async function checkOrphanMovements() {
 async function checkDebtTotals() {
   const [debts, installments, expenses] = await Promise.all([
     all("debts", "id, name, payment_type, total_amount, status"),
-    all("debt_installments", "id, debt_id, amount, paid"),
+    all("debt_installments", "id, debt_id, amount, paid, paid_offline"),
     all("expenses", "id, amount, source, source_ref_id"),
   ]);
   // El gasto de una cuota de deuda NO tiene su propio id igual al de la
@@ -309,7 +309,16 @@ async function checkDebtTotals() {
 
   for (const d of debts) {
     if (d.payment_type !== "cuotas") continue;
-    const own = installments.filter((i) => i.debt_id === d.id);
+    // Las cuotas pagadas ANTES de usar la app (migration-v35) no tienen espejo
+    // en el ledger, y es correcto que no lo tengan: ese dinero salió del
+    // bolsillo antes de que hubiera ledger que lo registrara. Se excluyen de
+    // los dos lados del cuadre, no solo de uno — si solo se quitaran del
+    // ledger, seguirían inflando el lado de las cuotas y el descuadre sería
+    // idéntico. Una base anterior a v35 no trae la columna: `?? false` la deja
+    // comportarse como antes en vez de excluirlo todo.
+    const own = installments.filter(
+      (i) => i.debt_id === d.id && !(i.paid_offline ?? false),
+    );
     const paidTotal = own.filter((i) => i.paid).reduce((s, i) => s + Number(i.amount), 0);
     // El gasto espejo de cada cuota pagada es lo que de verdad cuenta como
     // "salió de tu bolsillo" — se compara contra ESO, no contra

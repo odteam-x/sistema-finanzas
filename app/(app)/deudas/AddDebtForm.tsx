@@ -27,6 +27,7 @@ export function AddDebtForm({
   const [open, setOpen] = useState(false);
   const [type, setType] = useState<"unico" | "cuotas">("unico");
   const [kind, setKind] = useState<"prestamo" | "credito">("prestamo");
+  const [existing, setExisting] = useState(false);
   const [creditorId, setCreditorId] = useState(creditors[0]?.id ?? NEW_CREDITOR);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -73,9 +74,11 @@ export function AddDebtForm({
             label="¿Qué tipo de deuda es?"
             htmlFor="debt-kind"
             hint={
-              kind === "prestamo"
-                ? "El monto entra a tu cuenta ahora, porque ese dinero ya está en tus manos."
-                : "No entra dinero a tu cuenta: el gasto ya lo hiciste al comprar, y solo lo pagarás después."
+              kind === "credito"
+                ? "No entra dinero a tu cuenta: el gasto ya lo hiciste al comprar, y solo lo pagarás después."
+                : existing
+                  ? "No entra nada a tu cuenta: ese dinero te lo dieron antes, y tu saldo de hoy ya lo refleja."
+                  : "El monto entra a tu cuenta ahora, porque ese dinero ya está en tus manos."
             }
           >
             <Select
@@ -88,6 +91,22 @@ export function AddDebtForm({
               <option value="credito">Compré a crédito / me fiaron</option>
             </Select>
           </Field>
+
+          {/* DEUDA ANTERIOR A CACHIN'. Sin esto solo había dos salidas malas:
+              marcar las cuotas ya cubiertas —y ver el saldo de hoy bajar por
+              pagos hechos hace meses— o no marcarlas y que la deuda diga que
+              debes el total original. El ledger empieza el día que empiezas a
+              usar la app; lo de antes es saldo de apertura. */}
+          <label className="flex items-center gap-2 text-sm text-ink cursor-pointer">
+            <input
+              type="checkbox"
+              name="existing"
+              checked={existing}
+              onChange={(e) => setExisting(e.target.checked)}
+              className="size-4 accent-primary shrink-0"
+            />
+            Ya venía pagando esta deuda de antes
+          </label>
 
           {/* El acreedor es una entidad propia desde v27: elegirlo de la lista
               evita que "Banco BHD" y "banco bhd" queden como dos personas
@@ -208,10 +227,27 @@ export function AddDebtForm({
               >
                 <MoneyInput id="installment_amount" name="installment_amount" />
               </Field>
+              {existing && (
+                <Field
+                  label="¿Cuántas cuotas ya pagaste?"
+                  htmlFor="paid_installments"
+                  hint="Se marcan como pagadas y bajan lo que debes, pero no tocan el saldo de tus cuentas ni cuentan como gasto de esta quincena: ese dinero salió antes."
+                >
+                  <Input
+                    id="paid_installments"
+                    name="paid_installments"
+                    type="number"
+                    min="0"
+                    step="1"
+                    inputMode="numeric"
+                    defaultValue="0"
+                  />
+                </Field>
+              )}
             </div>
           )}
 
-          {kind === "prestamo" && accounts.length > 0 && (
+          {kind === "prestamo" && !existing && accounts.length > 0 && (
             <Field
               label="¿A qué cuenta entró el dinero?"
               htmlFor="debt-account"

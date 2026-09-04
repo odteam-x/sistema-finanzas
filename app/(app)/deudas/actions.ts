@@ -247,9 +247,19 @@ export async function addDebt(formData: FormData): Promise<ActionResult> {
   const kind: DebtKind = rawKind === "prestamo" ? "prestamo" : "credito";
   const chosenAccount = String(formData.get("account_id") ?? "") || null;
 
+  // ¿Esta deuda es anterior a Cachin'? Entonces su historia ya pasó fuera del
+  // ledger: ni el dinero prestado entró a una cuenta de la app, ni las cuotas
+  // que ya cubriste salieron de ella. Registrarlas como movimientos de hoy
+  // movería un saldo que ya refleja ese pasado. Ver migration-v35.
+  const existing = String(formData.get("existing") ?? "") === "on";
+
   /** Acredita el dinero recibido a la cuenta elegida (solo en 'prestamo'). */
   async function creditDisbursement(debtId: string, amount: number) {
     if (kind !== "prestamo") return;
+    // Un préstamo que ya tenías te lo dieron —y seguramente gastaste— antes de
+    // que existiera este ledger. Depositarlo ahora inventaría dinero que tu
+    // saldo real no tiene.
+    if (existing) return;
     const account_id = chosenAccount ?? (await getOrCreateDefaultAccountId(supabase, user.id));
     if (!account_id) return;
     await supabase.from("savings_movements").insert({
@@ -296,18 +306,53 @@ export async function addDebt(formData: FormData): Promise<ActionResult> {
       .single();
     if (debtErr || !debt) return { ok: false, error: "No se pudo crear la deuda." };
 
-    const rows = Array.from({ length: count }, (_, i) => ({
-      debt_id: debt.id,
-      user_id: user.id,
-      seq: i + 1,
-      due_date: stepDate(firstDue, frequency, i),
-      amount: perAmount,
-      paid: false,
-    }));
+    // Cuántas cuotas ya habías cubierto antes de registrar la deuda acá. Se
+    // acota al total: pedir 30 pagadas de un plan de 12 no es un error del
+    // usuario que valga la pena rechazar, es un número que se recorta.
+    const rawPaid = Number(formData.get("paid_installments"));
+    const alreadyPaid = existing && Number.isFinite(rawPaid)
+      ? Math.min(Math.max(0, Math.trunc(rawPaid)), count)
+      : 0;
+
+    const rows = Array.from({ length: count }, (_, i) => {
+      const due_date = stepDate(firstDue, frequency, i);
+      // Se dan por cubiertas las PRIMERAS: un plan de cuotas se paga en orden,
+      // y la alternativa —que el usuario marque cuáles— pide una pantalla
+      // entera para un caso que casi no ocurre.
+      const yaPagada = i < alreadyPaid;
+      return {
+        debt_id: debt.id,
+        user_id: user.id,
+        seq: i + 1,
+        due_date,
+        amount: perAmount,
+        paid: yaPagada,
+        // La fecha exacta no la sabe nadie; el vencimiento es la aproximación
+        // honesta y deja el historial en orden cronológico.
+        paid_date: yaPagada ? due_date : null,
+        // La columna solo se manda cuando hace falta: las migraciones se corren
+        // a mano, así que entre el deploy y v35 la base puede no tenerla, y
+        // mandarla igual rompería la creación de CUALQUIER deuda en cuotas —
+        // no solo la de este caso nuevo. Mismo criterio de degradación que el
+        // resto del proyecto (getAccountBalances, pay_debt).
+        ...(alreadyPaid > 0 ? { paid_offline: yaPagada } : {}),
+      };
+    });
     const { error: instErr } = await supabase
       .from("debt_installments")
       .insert(rows);
-    if (instErr) return { ok: false, error: "No se pudieron crear las cuotas." };
+    if (instErr) {
+      // Si falla SOLO cuando se marcan cuotas viejas, la causa casi segura es
+      // que v35 no se ha corrido: se dice, en vez de un "no se pudo" que deja
+      // al usuario sin saber qué arreglar.
+      return {
+        ok: false,
+        error:
+          alreadyPaid > 0
+            ? "No se pudieron crear las cuotas. Si querías marcar cuotas ya pagadas, corre la migración v35 en Supabase."
+            : "No se pudieron crear las cuotas.",
+      };
+    }
     await creditDisbursement(debt.id, total);
   } else {
     const due_date = String(formData.get("due_date") ?? "") || null;
@@ -573,6 +618,15 @@ export async function toggleInstallment(
     if (!ok) return { ok: false, error: "No se pudo registrar el pago." };
   } else {
     await unpayDebt(supabase, debtId, installmentId);
+    // Si venía marcada como pagada ANTES de la app, al desmarcarla deja de
+    // serlo: si el usuario vuelve a marcarla, tiene que mover dinero de verdad
+    // como cualquier otra cuota. Sin esto quedaría exenta para siempre.
+    // El error no se revisa a propósito: si v35 aún no se ha corrido no hay
+    // columna que limpiar, y tampoco hay nada marcado que limpiar.
+    await supabase
+      .from("debt_installments")
+      .update({ paid_offline: false })
+      .eq("id", installmentId);
   }
 
   revalidateEverything();

@@ -144,6 +144,12 @@ export interface DebtInstallment {
   amount: number;
   paid: boolean;
   paid_date: string | null;
+  /** Pagada ANTES de usar Cachin' (o fuera de la app). Resta de lo que debes
+   *  igual que cualquier cuota pagada, pero no tiene movimiento en el ledger
+   *  ni gasto espejo: ese dinero salió de tu bolsillo antes de que el ledger
+   *  existiera, así que descontarlo hoy bajaría un saldo que ya estaba bajo.
+   *  Ver migration-v35. */
+  paid_offline: boolean;
 }
 
 /** Aumento posterior de una deuda existente (le volviste a deber a la misma

@@ -110,6 +110,12 @@ export function InstallmentRow({
         {!i.paid && overdue && (
           <span className="text-xs font-bold text-danger shrink-0">vencida</span>
         )}
+        {/* Sin esto, una cuota marcada pagada que no movió ningún saldo parece
+            un fallo. La etiqueta dice que el pago es anterior a la app, no que
+            falte registrarlo (migration-v35). */}
+        {i.paid_offline && (
+          <span className="text-xs text-muted shrink-0">de antes</span>
+        )}
         <span
           className={cn(
             "text-sm font-semibold shrink-0",
